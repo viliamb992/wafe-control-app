@@ -130,8 +130,15 @@ public class SpecialModesCardViewModel : ReactiveObject, IDisposable
 
     private void OnStatusUpdated(object? sender, Shared.Models.SystemStatus status)
     {
-        IsSilentMode = status.SilentActive;
-        IsHolidayMode = status.HolidayActive;
+        if (!IsSilentModeChanging)
+        {
+            IsSilentMode = status.SilentActive;
+        }
+
+        if (!IsHolidayModeChanging)
+        {
+            IsHolidayMode = status.HolidayActive;
+        }
     }
 
     public void Dispose()

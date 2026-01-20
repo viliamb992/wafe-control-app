@@ -4,40 +4,31 @@
              x:Class="RecuperationSystem.Desktop.Views.Controls.FlowSpeedCard"
              x:DataType="vm:FlowSpeedCardViewModel">
     
-    <Border Background="{StaticResource BackgroundDarkBrush}"
-            CornerRadius="12"
-            Padding="20"
-            BorderThickness="1"
-            BorderBrush="{StaticResource BackgroundLightBrush}">
-        <StackPanel Spacing="15">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                
-                <TextBlock Grid.Column="0"
-                          Text="Flow Speed" 
-                          FontSize="16" 
-                          FontWeight="Bold"
-                          Foreground="{StaticResource TextPrimaryBrush}"/>
-                
-                <!-- Loading Spinner -->
-                <Border Grid.Column="1"
-                       Margin="0,0,10,0"
-                       VerticalAlignment="Center"
-                       IsVisible="{Binding IsChanging}">
-                    <Grid Width="20" Height="20">
-                        <Ellipse Stroke="{StaticResource BackgroundLightBrush}"
-                                StrokeThickness="2"
-                                Width="20"
-                                Height="20"/>
-                        <Ellipse Stroke="{StaticResource PrimaryLightBrush}"
-                                StrokeThickness="2"
-                                StrokeDashArray="12,8"
-                                Width="20"
-                                Height="20">
+    <Border Background="{DynamicResource CardBackgroundBrush}"
+            CornerRadius="{StaticResource CornerRadiusLarge}"
+            Padding="{StaticResource CardPadding}"
+            BorderThickness="{StaticResource CardBorderThickness}"
+            BorderBrush="{DynamicResource CardBorderBrush}">
+        <StackPanel Spacing="12">
+            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" RowSpacing="6">
+                <TextBlock Grid.Row="0" Grid.Column="0"
+                           Text="Flow speed"
+                           FontSize="16"
+                           FontWeight="SemiBold"/>
+
+                <TextBlock Grid.Row="1" Grid.Column="0"
+                           Text="Adjust airflow in manual mode"
+                           FontSize="12"
+                           Foreground="{DynamicResource SystemBaseMediumColor}"
+                           TextWrapping="Wrap"/>
+
+                <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="1"
+                        Margin="0,0,0,0"
+                        VerticalAlignment="Center"
+                        IsVisible="{Binding IsChanging}">
+                    <Grid Width="18" Height="18">
+                        <Ellipse Stroke="{DynamicResource CardBorderBrush}" StrokeThickness="2" Width="18" Height="18"/>
+                        <Ellipse Stroke="{DynamicResource SystemAccentColor}" StrokeThickness="2" StrokeDashArray="10,6" Width="18" Height="18">
                             <Ellipse.RenderTransform>
                                 <RotateTransform/>
                             </Ellipse.RenderTransform>
@@ -58,19 +49,34 @@
                         </Ellipse>
                     </Grid>
                 </Border>
-                
-                <Border Grid.Column="2"
-                        Background="{StaticResource BackgroundMediumBrush}"
-                        CornerRadius="6"
-                        Padding="10,5">
-                    <TextBlock x:Name="FlowSpeedDisplay"
-                              FontSize="16"
-                              FontWeight="Bold"
-                              Foreground="{StaticResource PrimaryLightBrush}">
-                        <Run x:Name="FlowSpeedValue" Text="0"/><Run Text=" m"/><Run Text="3" BaselineAlignment="Superscript" FontSize="11"/><Run Text="/h"/>
-                    </TextBlock>
-                </Border>
             </Grid>
+
+            <Border Background="{DynamicResource WindowBackgroundBrush}"
+                    CornerRadius="{StaticResource CornerRadiusMedium}"
+                    BorderThickness="1"
+                    BorderBrush="{DynamicResource CardBorderBrush}"
+                    ClipToBounds="True">
+                <StackPanel>
+                    <Border Padding="{StaticResource CardRowPadding}">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                            <TextBlock Text="Speed" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
+
+                            <Border Grid.Column="1"
+                                    Background="{DynamicResource CardBackgroundBrush}"
+                                    CornerRadius="{StaticResource CornerRadiusSmall}"
+                                    Padding="10,6"
+                                    BorderThickness="1"
+                                    BorderBrush="{DynamicResource CardBorderBrush}">
+                                <TextBlock x:Name="FlowSpeedDisplay"
+                                           FontSize="14"
+                                           FontWeight="SemiBold">
+                                    <Run x:Name="FlowSpeedValue" Text="0"/><Run Text=" m"/><Run Text="3" BaselineAlignment="Superscript" FontSize="10"/><Run Text="/h"/>
+                                </TextBlock>
+                            </Border>
+                        </Grid>
+                    </Border>
+
+                    <Border Height="1" Background="{StaticResource CardDividerBrush}"/>
             
             <Slider x:Name="FlowSpeedSlider"
                    Minimum="50" 
@@ -83,21 +89,21 @@
                    PointerPressed="OnSliderPointerPressed"
                    PointerReleased="OnSliderPointerReleased"/>
             
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" 
-                          Text="Min (50)" 
-                          FontSize="11"
-                          Foreground="{StaticResource TextSecondaryBrush}"/>
-                <TextBlock Grid.Column="1" 
-                          Text="Max (220)" 
-                          FontSize="11"
-                          Foreground="{StaticResource TextSecondaryBrush}"
-                          HorizontalAlignment="Right"/>
-            </Grid>
+                    <Border Padding="{StaticResource CardRowPaddingCompact}">
+                        <Grid ColumnDefinitions="*,*">
+                            <TextBlock Grid.Column="0" 
+                                      Text="Min 50" 
+                                      FontSize="12"
+                                      Foreground="{DynamicResource SystemBaseMediumColor}"/>
+                            <TextBlock Grid.Column="1" 
+                                      Text="Max 220" 
+                                      FontSize="12"
+                                      Foreground="{DynamicResource SystemBaseMediumColor}"
+                                      HorizontalAlignment="Right"/>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+            </Border>
         </StackPanel>
     </Border>
 </UserControl>

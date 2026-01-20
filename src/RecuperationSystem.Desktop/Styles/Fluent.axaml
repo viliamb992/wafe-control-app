@@ -1,0 +1,73 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!--
+    Fluent-ish baseline resources.
+    Keep these as a thin layer on top of Avalonia's FluentTheme.
+  -->
+
+  <!-- Corner radii used throughout the app (Win11-style) -->
+  <CornerRadius x:Key="CornerRadiusSmall">6</CornerRadius>
+  <CornerRadius x:Key="CornerRadiusMedium">10</CornerRadius>
+  <CornerRadius x:Key="CornerRadiusLarge">12</CornerRadius>
+
+  <Thickness x:Key="CardPadding">20</Thickness>
+  <Thickness x:Key="CardRowPadding">14,10</Thickness>
+  <Thickness x:Key="CardRowPaddingCompact">12,8</Thickness>
+  <x:Double x:Key="CardRowSpacing">10</x:Double>
+
+  <!-- Subtle stroke for cards/surfaces in both light/dark -->
+  <Thickness x:Key="CardBorderThickness">1</Thickness>
+
+  <!-- Typography helpers (match Fluent defaults; avoid over-customization) -->
+  <x:Double x:Key="TitleFontSize">18</x:Double>
+  <x:Double x:Key="SubtitleFontSize">14</x:Double>
+  <x:Double x:Key="BodyFontSize">12</x:Double>
+
+  <!-- Surface brushes. Use DynamicResource so they respond to theme changes. -->
+  <!--
+    Deterministic surfaces.
+    Relying on Fluent system tokens varies across platforms/themes and caused white/black/transparent surfaces.
+    These values follow a Windows 11 Settings-like neutral palette.
+  -->
+
+  <ResourceDictionary.ThemeDictionaries>
+    <ResourceDictionary x:Key="Light">
+      <SolidColorBrush x:Key="WindowBackgroundBrush" Color="#F3F3F3" />
+      <SolidColorBrush x:Key="CardBackgroundBrush" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="CardBorderBrush" Color="#1A000000" />
+      <SolidColorBrush x:Key="CardDividerBrush" Color="#12000000" />
+
+      <LinearGradientBrush x:Key="WindowAccentTintBrush" StartPoint="0%,0%" EndPoint="100%,100%">
+        <GradientStop Color="#143B82F6" Offset="0"/>
+        <GradientStop Color="#00000000" Offset="0.55"/>
+        <GradientStop Color="#0F3B82F6" Offset="1"/>
+      </LinearGradientBrush>
+    </ResourceDictionary>
+    <ResourceDictionary x:Key="Dark">
+      <SolidColorBrush x:Key="WindowBackgroundBrush" Color="#202020" />
+      <SolidColorBrush x:Key="CardBackgroundBrush" Color="#2B2B2B" />
+      <SolidColorBrush x:Key="CardBorderBrush" Color="#33FFFFFF" />
+      <SolidColorBrush x:Key="CardDividerBrush" Color="#1FFFFFFF" />
+
+      <LinearGradientBrush x:Key="WindowAccentTintBrush" StartPoint="0%,0%" EndPoint="100%,100%">
+        <GradientStop Color="#203B82F6" Offset="0"/>
+        <GradientStop Color="#00000000" Offset="0.6"/>
+        <GradientStop Color="#123B82F6" Offset="1"/>
+      </LinearGradientBrush>
+    </ResourceDictionary>
+  </ResourceDictionary.ThemeDictionaries>
+
+  <!-- Fallback (used if theme key is unavailable) -->
+  <SolidColorBrush x:Key="WindowBackgroundBrush" Color="#202020" />
+  <SolidColorBrush x:Key="CardBackgroundBrush" Color="#2B2B2B" />
+  <SolidColorBrush x:Key="CardBorderBrush" Color="#33FFFFFF" />
+  <SolidColorBrush x:Key="CardDividerBrush" Color="#1FFFFFFF" />
+
+  <LinearGradientBrush x:Key="WindowAccentTintBrush" StartPoint="0%,0%" EndPoint="100%,100%">
+    <GradientStop Color="#203B82F6" Offset="0"/>
+    <GradientStop Color="#00000000" Offset="0.6"/>
+    <GradientStop Color="#123B82F6" Offset="1"/>
+  </LinearGradientBrush>
+
+</ResourceDictionary>

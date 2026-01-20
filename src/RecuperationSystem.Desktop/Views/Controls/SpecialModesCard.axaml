@@ -4,167 +4,136 @@
              x:Class="RecuperationSystem.Desktop.Views.Controls.SpecialModesCard"
              x:DataType="vm:SpecialModesCardViewModel">
     
-    <Border Background="{StaticResource BackgroundDarkBrush}"
-            CornerRadius="12"
-            Padding="20"
-            BorderThickness="1"
-            BorderBrush="{StaticResource BackgroundLightBrush}">
+    <Border Background="{DynamicResource CardBackgroundBrush}"
+            CornerRadius="{StaticResource CornerRadiusLarge}"
+            Padding="{StaticResource CardPadding}"
+            BorderThickness="{StaticResource CardBorderThickness}"
+            BorderBrush="{DynamicResource CardBorderBrush}">
         <StackPanel Spacing="15">
             <TextBlock Text="Special Modes" 
                       FontSize="16" 
-                      FontWeight="Bold"
-                      Foreground="{StaticResource TextPrimaryBrush}"/>
+                      FontWeight="Bold"/>
             
-            <!-- Silent Mode -->
-            <Border Background="{StaticResource BackgroundMediumBrush}"
-                    CornerRadius="8"
-                    Padding="15">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    
-                    <StackPanel Grid.Column="0" Spacing="5" Orientation="Horizontal">
-                        <Viewbox Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,8,0">
-                            <Canvas Width="24" Height="24">
-                                <Path Data="M3,9H7L12,4V20L7,15H3V9M16.59,12L14,9.41L15.41,8L18,10.59L20.59,8L22,9.41L19.41,12L22,14.59L20.59,16L18,13.41L15.41,16L14,14.59L16.59,12Z" 
-                                      Fill="{StaticResource TextPrimaryBrush}"/>
-                            </Canvas>
-                        </Viewbox>
-                        <StackPanel>
-                            <TextBlock Text="Silent Mode" 
-                                      FontSize="14"
-                                      FontWeight="SemiBold"
-                                      Foreground="{StaticResource TextPrimaryBrush}"/>
-                            <TextBlock Text="Reduced noise operation for quiet hours"
-                                      FontSize="11"
-                                      Foreground="{StaticResource TextSecondaryBrush}"
-                                      TextWrapping="Wrap"/>
+            <!-- Rows container (Win11 settings-card style) -->
+            <Border Background="{DynamicResource WindowBackgroundBrush}"
+                    CornerRadius="{StaticResource CornerRadiusMedium}"
+                    BorderThickness="1"
+                    BorderBrush="{DynamicResource CardBorderBrush}"
+                    ClipToBounds="True">
+                <StackPanel>
+                    <!-- Silent Mode row -->
+                    <Border Padding="{StaticResource CardRowPadding}">
+                        <Grid ColumnDefinitions="*,Auto,Auto">
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10">
+                            <Viewbox Width="18" Height="18" VerticalAlignment="Center">
+                                <Canvas Width="24" Height="24">
+                                    <Path Data="M3,9H7L12,4V20L7,15H3V9M16.59,12L14,9.41L15.41,8L18,10.59L20.59,8L22,9.41L19.41,12L22,14.59L20.59,16L18,13.41L15.41,16L14,14.59L16.59,12Z"
+                                          Fill="{DynamicResource SystemBaseHighColor}"/>
+                                </Canvas>
+                            </Viewbox>
+                            <StackPanel>
+                                <TextBlock Text="Silent Mode" FontSize="14" FontWeight="SemiBold"/>
+                                <TextBlock Text="Reduced noise operation for quiet hours"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource SystemBaseMediumColor}"
+                                           TextWrapping="Wrap"/>
+                            </StackPanel>
                         </StackPanel>
-                    </StackPanel>
-                    
-                    <!-- Loading Spinner for Silent Mode -->
-                    <Border Grid.Column="1"
-                           Margin="0,0,10,0"
-                           VerticalAlignment="Center"
-                           IsVisible="{Binding IsSilentModeChanging}">
-                        <Grid Width="20" Height="20">
-                            <Ellipse Stroke="{StaticResource BackgroundLightBrush}"
-                                    StrokeThickness="2"
-                                    Width="20"
-                                    Height="20"/>
-                            <Ellipse Stroke="{StaticResource PrimaryLightBrush}"
-                                    StrokeThickness="2"
-                                    StrokeDashArray="12,8"
-                                    Width="20"
-                                    Height="20">
-                                <Ellipse.RenderTransform>
-                                    <RotateTransform/>
-                                </Ellipse.RenderTransform>
-                                <Ellipse.Styles>
-                                    <Style Selector="Ellipse">
-                                        <Style.Animations>
-                                            <Animation Duration="0:0:1" IterationCount="Infinite" Easing="LinearEasing">
-                                                <KeyFrame Cue="0%">
-                                                    <Setter Property="(RotateTransform.Angle)" Value="0"/>
-                                                </KeyFrame>
-                                                <KeyFrame Cue="100%">
-                                                    <Setter Property="(RotateTransform.Angle)" Value="360"/>
-                                                </KeyFrame>
-                                            </Animation>
-                                        </Style.Animations>
-                                    </Style>
-                                </Ellipse.Styles>
-                            </Ellipse>
+
+                        <Border Grid.Column="1"
+                                Margin="0,0,10,0"
+                                VerticalAlignment="Center"
+                                IsVisible="{Binding IsSilentModeChanging}">
+                            <Grid Width="18" Height="18">
+                                <Ellipse Stroke="{DynamicResource CardBorderBrush}" StrokeThickness="2" Width="18" Height="18"/>
+                                <Ellipse Stroke="{DynamicResource SystemAccentColor}" StrokeThickness="2" StrokeDashArray="10,6" Width="18" Height="18">
+                                    <Ellipse.RenderTransform>
+                                        <RotateTransform/>
+                                    </Ellipse.RenderTransform>
+                                    <Ellipse.Styles>
+                                        <Style Selector="Ellipse">
+                                            <Style.Animations>
+                                                <Animation Duration="0:0:1" IterationCount="Infinite" Easing="LinearEasing">
+                                                    <KeyFrame Cue="0%">
+                                                        <Setter Property="(RotateTransform.Angle)" Value="0"/>
+                                                    </KeyFrame>
+                                                    <KeyFrame Cue="100%">
+                                                        <Setter Property="(RotateTransform.Angle)" Value="360"/>
+                                                    </KeyFrame>
+                                                </Animation>
+                                            </Style.Animations>
+                                        </Style>
+                                    </Ellipse.Styles>
+                                </Ellipse>
+                            </Grid>
+                        </Border>
+
+                        <ToggleSwitch Grid.Column="2"
+                                      IsChecked="{Binding IsSilentMode}"
+                                      IsCheckedChanged="OnSilentModeToggled"
+                                      IsEnabled="{Binding !IsSilentModeChanging}"
+                                      VerticalAlignment="Center"/>
                         </Grid>
                     </Border>
-                    
-                    <ToggleSwitch Grid.Column="2"
-                                IsChecked="{Binding IsSilentMode}"
-                                OnContent="ON"
-                                OffContent="OFF"
-                                IsCheckedChanged="OnSilentModeToggled"
-                                IsEnabled="{Binding !IsSilentModeChanging}"
-                                VerticalAlignment="Center"/>
-                </Grid>
-            </Border>
-            
-            <!-- Holiday Mode -->
-            <Border Background="{StaticResource BackgroundMediumBrush}"
-                    CornerRadius="8"
-                    Padding="15">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    
-                    <StackPanel Grid.Column="0" Spacing="5" Orientation="Horizontal">
-                        <Viewbox Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,8,0">
-                            <Canvas Width="24" Height="24">
-                                <Path Data="M20,18V19H4V18H6V12A6,6 0 0,1 12,6C16.42,6 20,9.58 20,14V18H20M12,2A1,1 0 0,1 13,3V4.08C15.84,4.56 18,7.03 18,10V16H6V10C6,7.03 8.16,4.56 11,4.08V3A1,1 0 0,1 12,2Z" 
-                                      Fill="{StaticResource TextPrimaryBrush}"/>
-                            </Canvas>
-                        </Viewbox>
-                        <StackPanel>
-                            <TextBlock Text="Holiday Mode" 
-                                      FontSize="14"
-                                      FontWeight="SemiBold"
-                                      Foreground="{StaticResource TextPrimaryBrush}"/>
-                            <TextBlock Text="Minimal ventilation when away from home"
-                                      FontSize="11"
-                                      Foreground="{StaticResource TextSecondaryBrush}"
-                                      TextWrapping="Wrap"/>
+
+                    <!-- Divider -->
+                    <Border Height="1" Background="{StaticResource CardDividerBrush}" />
+
+                    <!-- Holiday Mode row -->
+                    <Border Padding="{StaticResource CardRowPadding}">
+                        <Grid ColumnDefinitions="*,Auto,Auto">
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10">
+                            <Viewbox Width="18" Height="18" VerticalAlignment="Center">
+                                <Canvas Width="24" Height="24">
+                                    <Path Data="M20,18V19H4V18H6V12A6,6 0 0,1 12,6C16.42,6 20,9.58 20,14V18H20M12,2A1,1 0 0,1 13,3V4.08C15.84,4.56 18,7.03 18,10V16H6V10C6,7.03 8.16,4.56 11,4.08V3A1,1 0 0,1 12,2Z"
+                                          Fill="{DynamicResource SystemBaseHighColor}"/>
+                                </Canvas>
+                            </Viewbox>
+                            <StackPanel>
+                                <TextBlock Text="Holiday Mode" FontSize="14" FontWeight="SemiBold"/>
+                                <TextBlock Text="Minimal ventilation when away from home"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource SystemBaseMediumColor}"
+                                           TextWrapping="Wrap"/>
+                            </StackPanel>
                         </StackPanel>
-                    </StackPanel>
-                    
-                    <!-- Loading Spinner for Holiday Mode -->
-                    <Border Grid.Column="1"
-                           Margin="0,0,10,0"
-                           VerticalAlignment="Center"
-                           IsVisible="{Binding IsHolidayModeChanging}">
-                        <Grid Width="20" Height="20">
-                            <Ellipse Stroke="{StaticResource BackgroundLightBrush}"
-                                    StrokeThickness="2"
-                                    Width="20"
-                                    Height="20"/>
-                            <Ellipse Stroke="{StaticResource PrimaryLightBrush}"
-                                    StrokeThickness="2"
-                                    StrokeDashArray="12,8"
-                                    Width="20"
-                                    Height="20">
-                                <Ellipse.RenderTransform>
-                                    <RotateTransform/>
-                                </Ellipse.RenderTransform>
-                                <Ellipse.Styles>
-                                    <Style Selector="Ellipse">
-                                        <Style.Animations>
-                                            <Animation Duration="0:0:1" IterationCount="Infinite" Easing="LinearEasing">
-                                                <KeyFrame Cue="0%">
-                                                    <Setter Property="(RotateTransform.Angle)" Value="0"/>
-                                                </KeyFrame>
-                                                <KeyFrame Cue="100%">
-                                                    <Setter Property="(RotateTransform.Angle)" Value="360"/>
-                                                </KeyFrame>
-                                            </Animation>
-                                        </Style.Animations>
-                                    </Style>
-                                </Ellipse.Styles>
-                            </Ellipse>
+
+                        <Border Grid.Column="1"
+                                Margin="0,0,10,0"
+                                VerticalAlignment="Center"
+                                IsVisible="{Binding IsHolidayModeChanging}">
+                            <Grid Width="18" Height="18">
+                                <Ellipse Stroke="{DynamicResource CardBorderBrush}" StrokeThickness="2" Width="18" Height="18"/>
+                                <Ellipse Stroke="{DynamicResource SystemAccentColor}" StrokeThickness="2" StrokeDashArray="10,6" Width="18" Height="18">
+                                    <Ellipse.RenderTransform>
+                                        <RotateTransform/>
+                                    </Ellipse.RenderTransform>
+                                    <Ellipse.Styles>
+                                        <Style Selector="Ellipse">
+                                            <Style.Animations>
+                                                <Animation Duration="0:0:1" IterationCount="Infinite" Easing="LinearEasing">
+                                                    <KeyFrame Cue="0%">
+                                                        <Setter Property="(RotateTransform.Angle)" Value="0"/>
+                                                    </KeyFrame>
+                                                    <KeyFrame Cue="100%">
+                                                        <Setter Property="(RotateTransform.Angle)" Value="360"/>
+                                                    </KeyFrame>
+                                                </Animation>
+                                            </Style.Animations>
+                                        </Style>
+                                    </Ellipse.Styles>
+                                </Ellipse>
+                            </Grid>
+                        </Border>
+
+                        <ToggleSwitch Grid.Column="2"
+                                      IsChecked="{Binding IsHolidayMode}"
+                                      IsCheckedChanged="OnHolidayModeToggled"
+                                      IsEnabled="{Binding !IsHolidayModeChanging}"
+                                      VerticalAlignment="Center"/>
                         </Grid>
                     </Border>
-                    
-                    <ToggleSwitch Grid.Column="2"
-                                IsChecked="{Binding IsHolidayMode}"
-                                OnContent="ON"
-                                OffContent="OFF"
-                                IsCheckedChanged="OnHolidayModeToggled"
-                                IsEnabled="{Binding !IsHolidayModeChanging}"
-                                VerticalAlignment="Center"/>
-                </Grid>
+                </StackPanel>
             </Border>
         </StackPanel>
     </Border>

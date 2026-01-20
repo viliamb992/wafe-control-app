@@ -10,13 +10,15 @@
         x:Name="MainWindowRoot"
         Title="Wafe Recuperation Controller" 
         Icon="/Assets/app-icon.ico"
-        Width="800"
         SizeToContent="Height"
+		Width="640"
+        MinWidth="640"
+        MaxWidth="980"
         MaxHeight="1080"
         MinHeight="700"
         WindowStartupLocation="CenterScreen"
-        Background="Transparent"
-        TransparencyLevelHint="Transparent"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        TransparencyLevelHint="None"
         ExtendClientAreaToDecorationsHint="True"
         ExtendClientAreaChromeHints="NoChrome"
         ExtendClientAreaTitleBarHeightHint="40"
@@ -27,12 +29,17 @@
         <vm:AppViewModel/>
     </Design.DataContext>
 
-    <Border Background="{StaticResource BackgroundMediumBrush}" 
-            CornerRadius="12"
-            BorderThickness="1"
-            BorderBrush="{StaticResource BorderBrush}"
+    <Border Background="{DynamicResource WindowBackgroundBrush}"
+            CornerRadius="{StaticResource CornerRadiusLarge}"
+            BorderThickness="{StaticResource CardBorderThickness}"
+            BorderBrush="{DynamicResource CardBorderBrush}"
             ClipToBounds="True">
         <Grid Margin="0">
+            <!-- Accent tint overlay (subtle) -->
+            <Border Background="{DynamicResource WindowAccentTintBrush}"
+                    Opacity="0.85"
+                    IsHitTestVisible="False"/>
+
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -44,59 +51,209 @@
                                     x:Name="TitleBar"
                                     HeaderPointerPressed="OnHeaderPointerPressed"
                                     MinimizeClicked="OnMinimizeClick"
-                                    CloseClicked="OnCloseClick"/>
+                                    MaximizeRestoreClicked="OnMaximizeRestoreClick"
+                                    CloseClicked="OnCloseClick"
+                                    />
 
             <!-- Sensor Display Bar -->
             <controls:SensorDisplayBar Grid.Row="1" 
                                       DataContext="{Binding}"
                                       IsVisible="{Binding IsAuthenticated}"/>
 
-            <!-- Connecting Screen -->
-            <controls:ConnectingScreen Grid.Row="2"
-                                      IsVisible="{Binding !IsAuthenticated}"/>
+            <!-- Inline Login (Fluent/Win11 style) -->
+            <Border Grid.Row="2"
+                    IsVisible="{Binding IsLoginRequired}"
+                    Padding="20,20,20,20">
+                <StackPanel HorizontalAlignment="Center" Spacing="16" MaxWidth="480">
+                    <StackPanel.Styles>
+                        <!-- Keep TextBox surfaces consistent even when focused/active -->
+                        <Style Selector="TextBox">
+                            <Setter Property="Theme" Value="{x:Null}"/>
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="BorderThickness" Value="0"/>
+                        </Style>
+                        <Style Selector="TextBox:focus">
+                            <Setter Property="Background" Value="Transparent"/>
+                        </Style>
+                        <Style Selector="TextBox:pointerover">
+                            <Setter Property="Background" Value="Transparent"/>
+                        </Style>
+                    </StackPanel.Styles>
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Sign in"
+                                   FontSize="22"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Text="Connect to the Wafe API to control your ventilation"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource SystemBaseMediumColor}"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+
+                    <Border Background="{DynamicResource CardBackgroundBrush}"
+                            CornerRadius="{StaticResource CornerRadiusLarge}"
+                            BorderThickness="{StaticResource CardBorderThickness}"
+                            BorderBrush="{DynamicResource CardBorderBrush}"
+                            Padding="18"
+                            ClipToBounds="True">
+                        <StackPanel Spacing="10">
+                            <!-- Username field -->
+                            <Border Background="{DynamicResource WindowBackgroundBrush}"
+                                    CornerRadius="{StaticResource CornerRadiusMedium}"
+                                    BorderThickness="1"
+                                    BorderBrush="{DynamicResource CardBorderBrush}"
+                                    Padding="10,6">
+                                <Border.Styles>
+                                    <Style Selector="Border:focus-within">
+                                        <Setter Property="Background" Value="{DynamicResource WindowBackgroundBrush}"/>
+                                        <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColor}"/>
+                                    </Style>
+                                </Border.Styles>
+                                <TextBox Text="{Binding Login.Username}"
+                                         Watermark="Username"
+                                         Height="40"
+                                         Background="Transparent"
+                                         BorderThickness="0"/>
+                            </Border>
+
+                            <!-- Password field with reveal toggle -->
+                            <Border Background="{DynamicResource WindowBackgroundBrush}"
+                                    CornerRadius="{StaticResource CornerRadiusMedium}"
+                                    BorderThickness="1"
+                                    BorderBrush="{DynamicResource CardBorderBrush}"
+                                    Padding="10,6">
+                                <Border.Styles>
+                                    <Style Selector="Border:focus-within">
+                                        <Setter Property="Background" Value="{DynamicResource WindowBackgroundBrush}"/>
+                                        <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColor}"/>
+                                    </Style>
+                                </Border.Styles>
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                    <TextBox x:Name="InlinePasswordBox"
+                                             Text="{Binding Login.Password}"
+                                             PasswordChar="•"
+                                             Watermark="Password"
+                                             Height="40"
+                                             Background="Transparent"
+                                             BorderThickness="0"/>
+
+                                    <Button x:Name="RevealPasswordButton"
+                                            Grid.Column="1"
+                                            Width="34"
+                                            Height="34"
+                                            VerticalAlignment="Center"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            PointerPressed="OnRevealPasswordPressed"
+                                            PointerReleased="OnRevealPasswordReleased"
+                                            PointerCaptureLost="OnRevealPasswordCaptureLost"
+                                            PointerExited="OnRevealPasswordExited">
+                                        <Viewbox Width="16" Height="16">
+                                            <Canvas Width="24" Height="24">
+                                                <Path Data="M12,6C7,6 2.73,9.11 1,13.5C2.73,17.89 7,21 12,21C17,21 21.27,17.89 23,13.5C21.27,9.11 17,6 12,6M12,19A5.5,5.5 0 0,1 6.5,13.5A5.5,5.5 0 0,1 12,8A5.5,5.5 0 0,1 17.5,13.5A5.5,5.5 0 0,1 12,19M12,10A3.5,3.5 0 0,0 8.5,13.5A3.5,3.5 0 0,0 12,17A3.5,3.5 0 0,0 15.5,13.5A3.5,3.5 0 0,0 12,10Z"
+                                                      Fill="{DynamicResource SystemBaseHighColor}"/>
+                                            </Canvas>
+                                        </Viewbox>
+                                    </Button>
+                                </Grid>
+                            </Border>
+
+                            <CheckBox Content="Remember me"
+                                      IsChecked="{Binding Login.RememberMe}"
+                                      HorizontalAlignment="Left"
+                                      Margin="0,0,0,0" />
+
+                            <TextBlock Text="{Binding Login.ErrorMessage}"
+                                       IsVisible="{Binding Login.ErrorMessage}"
+                                       Foreground="#E81123"
+                                       TextWrapping="Wrap" />
+
+                            <Button Command="{Binding SubmitLoginCommand}"
+                                    Height="44"
+                                    HorizontalAlignment="Stretch"
+                                    IsDefault="True"
+                                    HorizontalContentAlignment="Center"
+                                    VerticalContentAlignment="Center">
+                                <Button.Padding>
+                                    <Thickness>14,0</Thickness>
+                                </Button.Padding>
+                                <TextBlock Text="Sign in" FontSize="14" FontWeight="SemiBold"/>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
 
             <!-- Main Control Panel -->
-            <Grid Grid.Row="2" 
-                  IsVisible="{Binding IsAuthenticated}"
-                  Margin="20,10,20,20"
-                  x:Name="MainControlPanel">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-                
-                <!-- System Status Card -->
-                <controls:SystemControlCard Grid.Row="0"
-                                           x:Name="SystemControl"
-                                           DataContext="{Binding SystemControl}"
-                                           Margin="0,0,0,10"/>
+            <Border Grid.Row="2"
+                    IsVisible="{Binding IsAuthenticated}"
+                    Padding="20,10,20,20">
+                <StackPanel Spacing="10"
+                            x:Name="MainControlPanel"
+                            HorizontalAlignment="Center"
+                            MaxWidth="720">
+
+                <!-- Power + Boost (compact row) -->
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                    <controls:SystemControlCard Grid.Column="0"
+                                               x:Name="SystemControl"
+                                               DataContext="{Binding SystemControl}"/>
+
+                    <controls:BoostModeCard Grid.Column="1"
+                                           DataContext="{Binding BoostMode}"/>
+                </Grid>
 
                 <!-- Operating Mode Card -->
-                <controls:OperatingModeCard Grid.Row="1"
-                                           x:Name="OperatingMode"
-                                           DataContext="{Binding OperatingMode}"
-                                           Margin="0,0,0,10"/>
+                <controls:OperatingModeCard x:Name="OperatingMode"
+                                           DataContext="{Binding OperatingMode}"/>
 
                 <!-- Flow Speed Card - Only visible in Manual Mode -->
-                <controls:FlowSpeedCard Grid.Row="2"
-                                       x:Name="FlowSpeedCard"
+                <controls:FlowSpeedCard x:Name="FlowSpeedCard"
                                        DataContext="{Binding FlowSpeed}"
-                                       IsVisible="{Binding #MainWindowRoot.DataContext.IsManualMode}"
-                                       Margin="0,0,0,10"/>
+                                       IsVisible="{Binding #MainWindowRoot.DataContext.IsManualMode}"/>
 
                 <!-- Special Modes Card -->
-                <controls:SpecialModesCard Grid.Row="3"
-                                          DataContext="{Binding SpecialModes}"
-                                          Margin="0,0,0,10"/>
+                <controls:SpecialModesCard DataContext="{Binding SpecialModes}"/>
+                </StackPanel>
+            </Border>
 
-                <!-- Boost Mode Card -->
-                <controls:BoostModeCard Grid.Row="4"
-                                       DataContext="{Binding BoostMode}"
-                                       Margin="0,0,0,10"/>
-            </Grid>
+            <!-- Full-window login progress overlay -->
+            <Border Grid.RowSpan="3"
+                    IsVisible="{Binding IsLoggingIn}"
+                    Background="#80000000">
+                <Border Background="{DynamicResource CardBackgroundBrush}"
+                        BorderBrush="{DynamicResource CardBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="{StaticResource CornerRadiusLarge}"
+                        Padding="18"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <Grid Width="20" Height="20">
+                            <Ellipse Stroke="{DynamicResource CardBorderBrush}" StrokeThickness="2" Width="20" Height="20"/>
+                            <Ellipse Stroke="{DynamicResource SystemAccentColor}" StrokeThickness="2" StrokeDashArray="12,8" Width="20" Height="20">
+                                <Ellipse.RenderTransform>
+                                    <RotateTransform/>
+                                </Ellipse.RenderTransform>
+                                <Ellipse.Styles>
+                                    <Style Selector="Ellipse">
+                                        <Style.Animations>
+                                            <Animation Duration="0:0:1" IterationCount="Infinite" Easing="LinearEasing">
+                                                <KeyFrame Cue="0%">
+                                                    <Setter Property="(RotateTransform.Angle)" Value="0"/>
+                                                </KeyFrame>
+                                                <KeyFrame Cue="100%">
+                                                    <Setter Property="(RotateTransform.Angle)" Value="360"/>
+                                                </KeyFrame>
+                                            </Animation>
+                                        </Style.Animations>
+                                    </Style>
+                                </Ellipse.Styles>
+                            </Ellipse>
+                        </Grid>
+                        <TextBlock Text="Signing in..." VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+            </Border>
         </Grid>
     </Border>
 </Window>

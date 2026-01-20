@@ -1,6 +1,7 @@
 using System;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using RecuperationSystem.Desktop.Services;
 using RecuperationSystem.Desktop.ViewModels;
 
@@ -14,6 +15,8 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+
+        // password reveal is handled via PointerPressed/PointerReleased on the reveal button in XAML
         
         // Handle window state changes to minimize to tray
         PropertyChanged += (sender, e) =>
@@ -64,4 +67,42 @@ public partial class MainWindow : Window
     {
         Close();
     }
+
+    private void OnMaximizeRestoreClick(object? sender, EventArgs e)
+    {
+        WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+    }
+
+    private void SetPasswordReveal(bool reveal)
+    {
+        var passwordBox = this.FindControl<TextBox>("InlinePasswordBox");
+        if (passwordBox is null)
+        {
+            return;
+        }
+
+        passwordBox.PasswordChar = reveal ? '\0' : '•';
+    }
+
+    private void OnRevealPasswordPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (sender is Control c)
+        {
+            e.Pointer.Capture(c);
+        }
+
+        SetPasswordReveal(true);
+    }
+
+    private void OnRevealPasswordReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        e.Pointer.Capture(null);
+        SetPasswordReveal(false);
+    }
+
+    private void OnRevealPasswordCaptureLost(object? sender, PointerCaptureLostEventArgs e)
+        => SetPasswordReveal(false);
+
+    private void OnRevealPasswordExited(object? sender, PointerEventArgs e)
+        => SetPasswordReveal(false);
 }

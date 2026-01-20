@@ -7,33 +7,54 @@
         Width="420"
         SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource WindowBackgroundBrush}"
         CanResize="False">
 
-  <StackPanel Margin="20" Spacing="12">
+  <Border Padding="20" ClipToBounds="True">
+    <Grid>
+      <!-- subtle accent tint like MainWindow -->
+      <Border Background="{DynamicResource WindowAccentTintBrush}"
+              Opacity="0.6"
+              IsHitTestVisible="False"/>
 
-    <TextBlock Text="Wafe API sign in" FontSize="18" FontWeight="SemiBold" />
+      <Border Background="{DynamicResource CardBackgroundBrush}"
+              CornerRadius="{StaticResource CornerRadiusLarge}"
+              BorderThickness="{StaticResource CardBorderThickness}"
+              BorderBrush="{DynamicResource CardBorderBrush}"
+              Padding="{StaticResource CardPadding}">
+        <StackPanel Spacing="12">
 
-    <StackPanel Spacing="6">
-      <TextBlock Text="Username" />
-      <TextBox Text="{Binding Username}" />
-    </StackPanel>
+          <StackPanel Spacing="4">
+            <TextBlock Text="Sign in" FontSize="18" FontWeight="SemiBold" />
+            <TextBlock Text="Connect to Wafe API"
+                       FontSize="12"
+                       Foreground="{DynamicResource SystemBaseMediumColor}" />
+          </StackPanel>
 
-    <StackPanel Spacing="6">
-      <TextBlock Text="Password" />
-      <TextBox Text="{Binding Password}" PasswordChar="•" />
-    </StackPanel>
+          <StackPanel Spacing="6">
+            <TextBlock Text="Username" Foreground="{DynamicResource SystemBaseMediumColor}"/>
+            <TextBox Text="{Binding Username}" Watermark="Username" />
+          </StackPanel>
 
-    <CheckBox Content="Remember me" IsChecked="{Binding RememberMe}" />
+          <StackPanel Spacing="6">
+            <TextBlock Text="Password" Foreground="{DynamicResource SystemBaseMediumColor}"/>
+            <TextBox Text="{Binding Password}" PasswordChar="•" Watermark="Password" />
+          </StackPanel>
 
-    <TextBlock Text="{Binding ErrorMessage}"
-               IsVisible="{Binding ErrorMessage}"
-               Foreground="Tomato"
-               TextWrapping="Wrap" />
+          <CheckBox Content="Remember me" IsChecked="{Binding RememberMe}" />
 
-    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
-      <Button Content="Cancel" Command="{Binding CancelCommand}" />
-      <Button Content="Sign in" Command="{Binding SubmitCommand}" IsDefault="True" />
-    </StackPanel>
+          <TextBlock Text="{Binding ErrorMessage}"
+                     IsVisible="{Binding ErrorMessage}"
+                     Foreground="#E81123"
+                     TextWrapping="Wrap" />
 
-  </StackPanel>
+          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+            <Button Content="Cancel" Command="{Binding CancelCommand}" />
+            <Button Content="Sign in" Command="{Binding SubmitCommand}" IsDefault="True" />
+          </StackPanel>
+
+        </StackPanel>
+      </Border>
+    </Grid>
+  </Border>
 </Window>

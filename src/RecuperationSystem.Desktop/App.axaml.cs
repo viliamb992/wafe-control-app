@@ -65,9 +65,7 @@ public partial class App : Application
         MainWindow mainWindow,
         IAuthenticationService authService)
     {
-        // Ensure we have an owner window for modal dialogs.
-        // We keep the app from hitting the API before credentials are available,
-        // but we still need a shown window to own the login dialog.
+        // Ensure the main window is shown immediately.
         if (!mainWindow.IsVisible)
         {
             mainWindow.Show();
@@ -80,64 +78,9 @@ public partial class App : Application
 
         mainWindow.Activate();
 
-        // First try auto-login, otherwise show the prompt.
-        var loggedIn = await authService.TryAutoLoginAsync();
-        if (!loggedIn)
-        {
-            await PromptForLoginIfNeededAsync(mainWindow, authService);
-        }
+        // Try auto-login. If it fails, the inline login UI will be shown by MainWindow.
+        _ = await authService.TryAutoLoginAsync();
 
-        // Only show the main window if we have credentials and authentication passed.
-        if (authService.IsAuthenticated)
-        {
-            desktop.MainWindow = mainWindow;
-        }
-        else
-        {
-            desktop.Shutdown();
-        }
-    }
-
-    private static async Task PromptForLoginIfNeededAsync(Avalonia.Controls.Window owner, IAuthenticationService authService)
-    {
-        try
-        {
-            var vm = new LoginViewModel();
-            var dialog = new LoginWindow { DataContext = vm };
-
-            vm.SubmitRequested += async (_, _) =>
-            {
-                if (string.IsNullOrWhiteSpace(vm.Username) || string.IsNullOrEmpty(vm.Password))
-                {
-                    vm.ErrorMessage = "Username and password are required.";
-                    return;
-                }
-
-                try
-                {
-                    var success = await authService.LoginAsync(vm.Username, vm.Password, vm.RememberMe);
-                    if (success)
-                    {
-                        dialog.Close();
-                    }
-                    else
-                    {
-                        vm.ErrorMessage = "Invalid username or password.";
-                    }
-                }
-                catch
-                {
-                    vm.ErrorMessage = "Sign in failed.";
-                }
-            };
-
-            vm.CancelRequested += (_, _) => dialog.Close();
-
-            await dialog.ShowDialog(owner);
-        }
-        catch
-        {
-            // Let existing logging handle errors in the view model/service.
-        }
+        desktop.MainWindow = mainWindow;
     }
 }
