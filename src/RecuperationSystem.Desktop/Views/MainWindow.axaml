@@ -1,0 +1,102 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:RecuperationSystem.Desktop.ViewModels"
+        xmlns:controls="using:RecuperationSystem.Desktop.Views.Controls"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="950"
+        x:Class="RecuperationSystem.Desktop.Views.MainWindow"
+        x:DataType="vm:AppViewModel"
+        x:Name="MainWindowRoot"
+        Title="Wafe Recuperation Controller" 
+        Icon="/Assets/app-icon.ico"
+        Width="800"
+        SizeToContent="Height"
+        MaxHeight="1080"
+        MinHeight="700"
+        WindowStartupLocation="CenterScreen"
+        Background="Transparent"
+        TransparencyLevelHint="Transparent"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="NoChrome"
+        ExtendClientAreaTitleBarHeightHint="40"
+        SystemDecorations="None"
+        CanResize="True">
+
+    <Design.DataContext>
+        <vm:AppViewModel/>
+    </Design.DataContext>
+
+    <Border Background="{StaticResource BackgroundMediumBrush}" 
+            CornerRadius="12"
+            BorderThickness="1"
+            BorderBrush="{StaticResource BorderBrush}"
+            ClipToBounds="True">
+        <Grid Margin="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Custom Header with Window Controls -->
+            <controls:CustomTitleBar Grid.Row="0" 
+                                    x:Name="TitleBar"
+                                    HeaderPointerPressed="OnHeaderPointerPressed"
+                                    MinimizeClicked="OnMinimizeClick"
+                                    CloseClicked="OnCloseClick"/>
+
+            <!-- Sensor Display Bar -->
+            <controls:SensorDisplayBar Grid.Row="1" 
+                                      DataContext="{Binding}"
+                                      IsVisible="{Binding IsAuthenticated}"/>
+
+            <!-- Connecting Screen -->
+            <controls:ConnectingScreen Grid.Row="2"
+                                      IsVisible="{Binding !IsAuthenticated}"/>
+
+            <!-- Main Control Panel -->
+            <Grid Grid.Row="2" 
+                  IsVisible="{Binding IsAuthenticated}"
+                  Margin="20,10,20,20"
+                  x:Name="MainControlPanel">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                
+                <!-- System Status Card -->
+                <controls:SystemControlCard Grid.Row="0"
+                                           x:Name="SystemControl"
+                                           DataContext="{Binding SystemControl}"
+                                           Margin="0,0,0,10"/>
+
+                <!-- Operating Mode Card -->
+                <controls:OperatingModeCard Grid.Row="1"
+                                           x:Name="OperatingMode"
+                                           DataContext="{Binding OperatingMode}"
+                                           Margin="0,0,0,10"/>
+
+                <!-- Flow Speed Card - Only visible in Manual Mode -->
+                <controls:FlowSpeedCard Grid.Row="2"
+                                       x:Name="FlowSpeedCard"
+                                       DataContext="{Binding FlowSpeed}"
+                                       IsVisible="{Binding #MainWindowRoot.DataContext.IsManualMode}"
+                                       Margin="0,0,0,10"/>
+
+                <!-- Special Modes Card -->
+                <controls:SpecialModesCard Grid.Row="3"
+                                          DataContext="{Binding SpecialModes}"
+                                          Margin="0,0,0,10"/>
+
+                <!-- Boost Mode Card -->
+                <controls:BoostModeCard Grid.Row="4"
+                                       DataContext="{Binding BoostMode}"
+                                       Margin="0,0,0,10"/>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

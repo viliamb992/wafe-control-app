@@ -1,0 +1,105 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RecuperationSystem.Desktop.ViewModels"
+             x:Class="RecuperationSystem.Desktop.Views.Controls.CustomTitleBar"
+             x:DataType="vm:AppViewModel">
+    
+    <Border Padding="20,15"
+            PointerPressed="OnHeaderPointerPressed"
+            Background="{StaticResource PrimaryGradient}">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12">
+                <!-- Wind Icon -->
+                <Viewbox Width="28" Height="28" VerticalAlignment="Center">
+                    <Canvas Width="24" Height="24">
+                        <Path Data="M9 10C9 10.55 9.45 11 10 11H16C17.1 11 18 10.1 18 9C18 7.9 17.1 7 16 7C15.45 7 15 6.55 15 6C15 5.45 15.45 5 16 5C17.66 5 19 6.34 19 8C19 9.66 17.66 11 16 11H10C8.34 11 7 9.66 7 8C7 6.34 8.34 5 10 5M19 12H10C8.34 12 7 13.34 7 15C7 16.66 8.34 18 10 18H19C20.1 18 21 17.1 21 16C21 14.9 20.1 14 19 14C18.45 14 18 13.55 18 13C18 12.45 18.45 12 19 12M6 9C6 7.34 7.34 6 9 6H19C20.1 6 21 6.9 21 8C21 9.1 20.1 10 19 10H9C7.9 10 7 9.1 7 8C7 7.45 6.55 7 6 7C5.45 7 5 7.45 5 8C5 9.66 6.34 11 8 11H9C9 9.34 7.66 8 6 8M15 20H6C4.34 20 3 18.66 3 17C3 15.34 4.34 14 6 14H15C15.55 14 16 14.45 16 15C16 15.55 15.55 16 15 16C13.9 16 13 16.9 13 18C13 19.1 13.9 20 15 20Z" 
+                              Fill="White"/>
+                    </Canvas>
+                </Viewbox>
+                <StackPanel>
+                    <TextBlock Text="Wafe Recuperation" 
+                              FontSize="22" 
+                              FontWeight="Bold"
+                              Foreground="White"/>
+                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
+                        <TextBlock Text="Smart Ventilation Control" 
+                                  FontSize="12" 
+                                  Foreground="#BFDBFE"
+                                  VerticalAlignment="Center"/>
+                        <!-- Online Status Badge -->
+                        <Border Background="#10B98140"
+                               CornerRadius="4"
+                               Padding="6,2"
+                               IsVisible="{Binding IsSystemOnline}">
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <Ellipse Width="6" Height="6" 
+                                        Fill="{StaticResource SuccessBrush}"
+                                        VerticalAlignment="Center"/>
+                                <TextBlock Text="ONLINE" 
+                                          FontSize="10" 
+                                          FontWeight="Bold"
+                                          Foreground="{StaticResource SuccessBrush}"/>
+                            </StackPanel>
+                        </Border>
+                        <!-- Offline Status Badge -->
+                        <Border Background="#6B728040"
+                               CornerRadius="4"
+                               Padding="6,2"
+                               IsVisible="{Binding !IsSystemOnline}">
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <Ellipse Width="6" Height="6" 
+                                        Fill="#94A3B8"
+                                        VerticalAlignment="Center"/>
+                                <TextBlock Text="OFFLINE" 
+                                          FontSize="10" 
+                                          FontWeight="Bold"
+                                          Foreground="#94A3B8"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+            
+            <!-- Window Controls -->
+            <StackPanel Grid.Column="1" 
+                       Orientation="Horizontal" 
+                       Spacing="5">
+                <Button Click="OnMinimizeClick"
+                       Background="Transparent"
+                       Foreground="White"
+                       BorderThickness="0"
+                       Width="40"
+                       Height="32"
+                       HorizontalContentAlignment="Center"
+                       VerticalContentAlignment="Center">
+                    <Viewbox Width="12" Height="12">
+                        <Canvas Width="24" Height="24">
+                            <Path Data="M19,13H5V11H19V13Z" 
+                                  Fill="White"/>
+                        </Canvas>
+                    </Viewbox>
+                </Button>
+                <Button Click="OnCloseClick"
+                       Background="Transparent"
+                       Foreground="White"
+                       BorderThickness="0"
+                       Width="40"
+                       Height="32"
+                       HorizontalContentAlignment="Center"
+                       VerticalContentAlignment="Center">
+                    <Viewbox Width="12" Height="12">
+                        <Canvas Width="24" Height="24">
+                            <Path Data="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" 
+                                  Fill="White"/>
+                        </Canvas>
+                    </Viewbox>
+                </Button>
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>

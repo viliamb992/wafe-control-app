@@ -1,0 +1,216 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="RecuperationSystem.Desktop.App"
+             RequestedThemeVariant="Dark">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceInclude Source="/Styles/Colors.axaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+    
+    <Application.Styles>
+        <FluentTheme />
+        
+        <!-- Global Styles -->
+        <Style Selector="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        
+        <!-- Button Hover Effect - Lighter instead of darker -->      
+        <Style Selector="Button:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Opacity" Value="0.7"/>
+        </Style>
+        
+        <Style Selector="Button:disabled">
+            <Setter Property="Cursor" Value="Arrow"/>
+            <Setter Property="Opacity" Value="0.5"/>
+        </Style>
+        
+        <Style Selector="ToggleButton">
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        
+        <Style Selector="ToggleButton:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Opacity" Value="0.7"/>
+        </Style>
+        
+        <Style Selector="RadioButton">
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        
+        <!-- RadioButton better visibility for dark mode -->
+        <Style Selector="RadioButton /template/ Ellipse#OuterEllipse">
+            <Setter Property="Stroke" Value="{StaticResource TextMutedBrush}"/>
+            <Setter Property="StrokeThickness" Value="2"/>
+            <Setter Property="Fill" Value="{StaticResource BackgroundMediumBrush}"/>
+        </Style>
+        
+        <Style Selector="RadioButton:checked /template/ Ellipse#OuterEllipse">
+            <Setter Property="Stroke" Value="{StaticResource PrimaryBrush}"/>
+            <Setter Property="StrokeThickness" Value="2"/>
+            <Setter Property="Fill" Value="{StaticResource PrimaryBrush}"/>
+        </Style>
+        
+        <Style Selector="RadioButton:checked /template/ Ellipse#CheckGlyph">
+            <Setter Property="Fill" Value="White"/>
+        </Style>
+        
+        <!-- Alternative RadioButton selectors for different template structures -->
+        <Style Selector="RadioButton /template/ Border#Border">
+            <Setter Property="BorderBrush" Value="{StaticResource TextMutedBrush}"/>
+            <Setter Property="Background" Value="{StaticResource BackgroundMediumBrush}"/>
+            <Setter Property="BorderThickness" Value="2"/>
+        </Style>
+        
+        <Style Selector="RadioButton:checked /template/ Border#Border">
+            <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
+            <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
+            <Setter Property="BorderThickness" Value="2"/>
+        </Style>
+        
+        <Style Selector="CheckBox">
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        
+        <!-- CheckBox hover effect for better visibility -->       
+        <Style Selector="CheckBox /template/ Border#NormalRectangle">
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+            <Setter Property="Background" Value="{StaticResource BackgroundMediumBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        
+        <Style Selector="CheckBox:checked /template/ Border#NormalRectangle">
+            <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
+            <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        
+        <!-- ToggleSwitch better visibility for dark mode -->
+        <Style Selector="ToggleSwitch">
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        
+        <!-- ToggleSwitch content text (ON/OFF labels) -->
+        <Style Selector="ToggleSwitch ContentPresenter">
+            <Setter Property="TextElement.Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+        </Style>
+        
+        <Style Selector="ToggleSwitch:checked ContentPresenter">
+            <Setter Property="TextElement.Foreground" Value="White"/>
+        </Style>
+        
+        <Style Selector="ToggleSwitch /template/ Grid#SwitchKnob">
+            <Setter Property="Background" Value="{StaticResource TextPrimaryBrush}"/>
+        </Style>
+        
+        <Style Selector="ToggleSwitch /template/ Border#OuterBorder">
+            <Setter Property="Background" Value="{StaticResource TextMutedBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource TextPrimaryBrush}"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+        </Style>
+        
+        <Style Selector="ToggleSwitch:checked /template/ Border#OuterBorder">
+            <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        
+        <Style Selector="ToggleSwitch:checked:pointerover /template/ Border#OuterBorder">
+            <Setter Property="Background" Value="{StaticResource PrimaryLightBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource PrimaryLightBrush}"/>
+            <Setter Property="BorderThickness" Value="2"/>
+        </Style>
+        
+        <Style Selector="ToggleSwitch /template/ Border#SwitchKnobBounds">
+            <Setter Property="Background" Value="{StaticResource TextMutedBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource TextPrimaryBrush}"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+        </Style>
+        
+        <Style Selector="ToggleSwitch:checked /template/ Border#SwitchKnobBounds">
+            <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        
+        
+        <Style Selector="ToggleSwitch /template/ Ellipse#SwitchKnob">
+            <Setter Property="Fill" Value="{StaticResource TextPrimaryBrush}"/>
+        </Style>
+        
+        <Style Selector="ToggleSwitch:checked /template/ Ellipse#SwitchKnob">
+            <Setter Property="Fill" Value="White"/>
+        </Style>
+        
+        <Style Selector="ToggleSwitch /template/ Border#SwitchKnob">
+            <Setter Property="Background" Value="{StaticResource TextPrimaryBrush}"/>
+        </Style>
+        
+        <Style Selector="ToggleSwitch:checked /template/ Border#SwitchKnob">
+            <Setter Property="Background" Value="White"/>
+        </Style>
+        
+        <Style Selector="Slider">
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        
+        <Style Selector="ComboBox">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+        </Style>
+        
+        <!-- ComboBox better visibility for dark mode -->
+        <Style Selector="ComboBox /template/ Border#Background">
+            <Setter Property="Background" Value="{StaticResource BackgroundMediumBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        
+        <Style Selector="ComboBox:pointerover /template/ Border#Background">
+            <Setter Property="Background" Value="{StaticResource BackgroundLight}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource PrimaryLightBrush}"/>
+            <Setter Property="BorderThickness" Value="2"/>
+        </Style>
+        
+        <Style Selector="ComboBox:focus /template/ Border#Background">
+            <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
+            <Setter Property="BorderThickness" Value="2"/>
+        </Style>
+        
+        <Style Selector="ComboBox /template/ TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+        </Style>
+        
+        <!-- ComboBoxItem styling for dropdown -->
+        <Style Selector="ComboBoxItem">
+            <Setter Property="Background" Value="{StaticResource BackgroundMediumBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+        </Style>
+        
+        <Style Selector="ComboBoxItem:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource BackgroundLightBrush}"/>
+        </Style>
+        
+        <Style Selector="ComboBoxItem:selected /template/ ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
+        </Style>
+        
+        <Style Selector="ComboBoxItem:selected:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource PrimaryLightBrush}"/>
+        </Style>
+        
+        <Style Selector="ComboBoxItem TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+        </Style>
+        
+        <Style Selector="ComboBoxItem:selected TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        
+        <Style Selector="TextBlock">
+            <Setter Property="FontFamily" Value="Segoe UI, Inter, Roboto, Arial, sans-serif"/>
+        </Style>
+    </Application.Styles>
+</Application>

@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Android workload isn't available in all dev/build environments.
+         Build this project only when explicitly requested (e.g. /p:BuildAndroid=true). -->
+    <BuildAndroid Condition="'$(BuildAndroid)'==''">false</BuildAndroid>
+    <IsBuildable Condition="'$(BuildAndroid)'!='true'">false</IsBuildable>
+
+    <TargetFrameworks>net10.0-android</TargetFrameworks>
+    <OutputType>Exe</OutputType>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationId>com.recuperation.controller</ApplicationId>
+    <ApplicationVersion>1</ApplicationVersion>
+    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+    <SupportedOSPlatformVersion>21</SupportedOSPlatformVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RecuperationSystem.Shared\RecuperationSystem.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

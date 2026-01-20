@@ -1,0 +1,39 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:RecuperationSystem.Desktop.ViewModels"
+        x:Class="RecuperationSystem.Desktop.Views.LoginWindow"
+        x:DataType="vm:LoginViewModel"
+        Title="Sign in"
+        Width="420"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+
+  <StackPanel Margin="20" Spacing="12">
+
+    <TextBlock Text="Wafe API sign in" FontSize="18" FontWeight="SemiBold" />
+
+    <StackPanel Spacing="6">
+      <TextBlock Text="Username" />
+      <TextBox Text="{Binding Username}" />
+    </StackPanel>
+
+    <StackPanel Spacing="6">
+      <TextBlock Text="Password" />
+      <TextBox Text="{Binding Password}" PasswordChar="•" />
+    </StackPanel>
+
+    <CheckBox Content="Remember me" IsChecked="{Binding RememberMe}" />
+
+    <TextBlock Text="{Binding ErrorMessage}"
+               IsVisible="{Binding ErrorMessage}"
+               Foreground="Tomato"
+               TextWrapping="Wrap" />
+
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+      <Button Content="Cancel" Command="{Binding CancelCommand}" />
+      <Button Content="Sign in" Command="{Binding SubmitCommand}" IsDefault="True" />
+    </StackPanel>
+
+  </StackPanel>
+</Window>

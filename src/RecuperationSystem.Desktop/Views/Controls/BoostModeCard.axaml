@@ -1,0 +1,164 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RecuperationSystem.Desktop.ViewModels.Cards"
+             x:Class="RecuperationSystem.Desktop.Views.Controls.BoostModeCard"
+             x:DataType="vm:BoostModeCardViewModel">
+    
+    <Border Background="{StaticResource BackgroundDarkBrush}"
+            CornerRadius="12"
+            Padding="20"
+            BorderThickness="1"
+            BorderBrush="{StaticResource BackgroundLightBrush}">
+        <StackPanel Spacing="15">
+            <!-- Header with Boost indicator -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
+                    <Viewbox Width="20" Height="20" VerticalAlignment="Center">
+                        <Canvas Width="24" Height="24">
+                            <Path Data="M7,2V13H10V22L17,10H13L17,2H7Z" 
+                                  Fill="{StaticResource PrimaryBrush}"/>
+                        </Canvas>
+                    </Viewbox>
+                    <TextBlock Text="Boost Mode" 
+                              FontSize="16" 
+                              FontWeight="Bold"
+                              Foreground="{StaticResource TextPrimaryBrush}"/>
+                </StackPanel>
+                
+                <!-- Boost Active Indicator -->
+                <Border Grid.Column="1"
+                       IsVisible="{Binding IsBoostActive}"
+                       Background="{StaticResource BackgroundMediumBrush}"
+                       BorderBrush="{StaticResource PrimaryBrush}"
+                       BorderThickness="1"
+                       CornerRadius="6"
+                       Padding="10,6">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <!-- Pulsing indicator -->
+                        <Border Width="8" Height="8" 
+                               CornerRadius="4"
+                               Background="{StaticResource PrimaryBrush}">
+                            <Border.Styles>
+                                <Style Selector="Border">
+                                    <Style.Animations>
+                                        <Animation Duration="0:0:1" IterationCount="Infinite">
+                                            <KeyFrame Cue="0%">
+                                                <Setter Property="Opacity" Value="1.0"/>
+                                            </KeyFrame>
+                                            <KeyFrame Cue="50%">
+                                                <Setter Property="Opacity" Value="0.3"/>
+                                            </KeyFrame>
+                                            <KeyFrame Cue="100%">
+                                                <Setter Property="Opacity" Value="1.0"/>
+                                            </KeyFrame>
+                                        </Animation>
+                                    </Style.Animations>
+                                </Style>
+                            </Border.Styles>
+                        </Border>
+                        <TextBlock FontSize="12"
+                                  Foreground="{StaticResource TextSecondaryBrush}"
+                                  VerticalAlignment="Center">
+                            <Run Text="Remaining: "/>
+                            <Run Text="{Binding BoostRemainingText}" 
+                                 FontWeight="Bold" 
+                                 Foreground="{StaticResource PrimaryLightBrush}"/>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+            </Grid>
+            
+            <TextBlock Text="Temporarily increase ventilation for quick air refresh"
+                      FontSize="12"
+                      Foreground="{StaticResource TextSecondaryBrush}"
+                      TextWrapping="Wrap"/>
+            
+            <StackPanel Orientation="Horizontal" Spacing="10">
+                <Button Command="{Binding SetBoostCommand}"
+                       CommandParameter="900"
+                       Width="130"
+                       Height="36"
+                       Background="{StaticResource PrimaryGradient}"
+                       Foreground="White"
+                       BorderThickness="0"
+                       CornerRadius="6"
+                       FontWeight="SemiBold">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Viewbox Width="14" Height="14">
+                            <Canvas Width="24" Height="24">
+                                <Path Data="M12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22C6.47,22 2,17.5 2,12A10,10 0 0,1 12,2M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z" 
+                                      Fill="White"/>
+                            </Canvas>
+                        </Viewbox>
+                        <TextBlock Text="15 Min" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+                <Button Command="{Binding SetBoostCommand}"
+                       CommandParameter="1800"
+                       Width="130"
+                       Height="36"
+                       Background="{StaticResource PrimaryGradient}"
+                       Foreground="White"
+                       BorderThickness="0"
+                       CornerRadius="6"
+                       FontWeight="SemiBold">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Viewbox Width="14" Height="14">
+                            <Canvas Width="24" Height="24">
+                                <Path Data="M12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22C6.47,22 2,17.5 2,12A10,10 0 0,1 12,2M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z" 
+                                      Fill="White"/>
+                            </Canvas>
+                        </Viewbox>
+                        <TextBlock Text="30 Min" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+                <Button Command="{Binding SetBoostCommand}"
+                       CommandParameter="3600"
+                       Width="130"
+                       Height="36"
+                       Background="{StaticResource PrimaryGradient}"
+                       Foreground="White"
+                       BorderThickness="0"
+                       CornerRadius="6"
+                       FontWeight="SemiBold">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Viewbox Width="14" Height="14">
+                            <Canvas Width="24" Height="24">
+                                <Path Data="M12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22C6.47,22 2,17.5 2,12A10,10 0 0,1 12,2M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z" 
+                                      Fill="White"/>
+                            </Canvas>
+                        </Viewbox>
+                        <TextBlock Text="60 Min" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+            
+            <Button Command="{Binding SetBoostCommand}"
+                   CommandParameter="0"
+                   Width="200"
+                   Height="36"
+                   Background="{StaticResource AccentGradient}"
+                   Foreground="White"
+                   BorderThickness="0"
+                   CornerRadius="6"
+                   FontWeight="SemiBold"
+                   HorizontalAlignment="Left"
+                   IsVisible="{Binding IsBoostActive}">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <Viewbox Width="14" Height="14">
+                        <Canvas Width="24" Height="24">
+                            <Path Data="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" 
+                                  Fill="White"/>
+                        </Canvas>
+                    </Viewbox>
+                    <TextBlock Text="Stop Boost" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+        </StackPanel>
+    </Border>
+</UserControl>
