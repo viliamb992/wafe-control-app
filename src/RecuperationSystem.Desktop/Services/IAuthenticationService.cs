@@ -10,7 +10,6 @@ public interface IAuthenticationService
     
     bool IsAuthenticated { get; }
     string Username { get; }
-    string Password { get; }
     
     Task<bool> AuthenticateAsync(CancellationToken cancellationToken = default);
     Task<bool> TryAutoLoginAsync(CancellationToken cancellationToken = default);

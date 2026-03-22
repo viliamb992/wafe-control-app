@@ -9,12 +9,12 @@ namespace RecuperationSystem.Desktop.ViewModels.Cards;
 public class SystemControlCardViewModel : ReactiveObject, IDisposable
 {
     private readonly ISystemControlService _systemControl;
-    private readonly AppViewModel _app;
+    private readonly IAppContext _app;
     private bool _disposed;
 
     private bool _isOperationInProgress;
 
-    public SystemControlCardViewModel(ISystemControlService systemControl, AppViewModel app)
+    public SystemControlCardViewModel(ISystemControlService systemControl, IAppContext app)
     {
         _systemControl = systemControl;
         _app = app;

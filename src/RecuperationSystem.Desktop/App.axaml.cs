@@ -13,6 +13,10 @@ namespace RecuperationSystem.Desktop;
 
 public partial class App : Application
 {
+    public IServiceProvider? Services { get; private set; }
+
+    public void SetServices(IServiceProvider services) => Services = services;
+
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
@@ -23,9 +27,9 @@ public partial class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             // Get services from DI container
-            var viewModel = Program.ServiceProvider?.GetRequiredService<AppViewModel>();
-            var authService = Program.ServiceProvider?.GetRequiredService<IAuthenticationService>();
-            var trayIconService = Program.ServiceProvider?.GetRequiredService<ITrayIconService>() as TrayIconService;
+            var viewModel = Services?.GetRequiredService<AppViewModel>();
+            var authService = Services?.GetRequiredService<IAuthenticationService>();
+            var trayIconService = Services?.GetRequiredService<ITrayIconService>() as TrayIconService;
             
             var mainWindow = new MainWindow
             {

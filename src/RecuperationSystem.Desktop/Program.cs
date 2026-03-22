@@ -10,8 +10,6 @@ namespace RecuperationSystem.Desktop;
 
 class Program
 {
-    public static IServiceProvider? ServiceProvider { get; private set; }
-
     [STAThread]
     public static void Main(string[] args)
     {
@@ -37,12 +35,12 @@ class Program
         // Setup Dependency Injection
         var services = new ServiceCollection();
         services.AddApplicationServices(configuration);
-        ServiceProvider = services.BuildServiceProvider();
+        var serviceProvider = services.BuildServiceProvider();
 
         try
         {
             Log.Information("Starting Recuperation System Desktop Application in {Environment} mode", environment);
-            BuildAvaloniaApp()
+            BuildAvaloniaApp(serviceProvider)
                 .StartWithClassicDesktopLifetime(args);
         }
         catch (Exception ex)
@@ -52,17 +50,23 @@ class Program
         finally
         {
             // Dispose service provider
-            if (ServiceProvider is IDisposable disposable)
+            if (serviceProvider is IDisposable disposable)
             {
                 disposable.Dispose();
             }
-            
+
             Log.CloseAndFlush();
         }
     }
 
-    public static AppBuilder BuildAvaloniaApp()
-        => AppBuilder.Configure<App>()
+    public static AppBuilder BuildAvaloniaApp(IServiceProvider? serviceProvider = null)
+        => AppBuilder.Configure(() =>
+            {
+                var app = new App();
+                if (serviceProvider != null)
+                    app.SetServices(serviceProvider);
+                return app;
+            })
             .UsePlatformDetect()
             .WithInterFont()
             .UseReactiveUI()

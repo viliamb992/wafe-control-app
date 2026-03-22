@@ -9,7 +9,7 @@ namespace RecuperationSystem.Desktop.ViewModels.Cards;
 public class SpecialModesCardViewModel : ReactiveObject, IDisposable
 {
     private readonly ISystemControlService _systemControl;
-    private readonly AppViewModel _app;
+    private readonly IAppContext _app;
     private bool _disposed;
 
     private bool _isSilentMode;
@@ -17,7 +17,7 @@ public class SpecialModesCardViewModel : ReactiveObject, IDisposable
     private bool _isSilentModeChanging;
     private bool _isHolidayModeChanging;
 
-    public SpecialModesCardViewModel(ISystemControlService systemControl, AppViewModel app)
+    public SpecialModesCardViewModel(ISystemControlService systemControl, IAppContext app)
     {
         _systemControl = systemControl;
         _app = app;

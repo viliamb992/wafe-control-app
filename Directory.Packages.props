@@ -1,0 +1,54 @@
+<!--
+  Central Package Management — single source of truth for all NuGet versions.
+  See: https://learn.microsoft.com/nuget/consume-packages/central-package-management
+
+  To update a package: change the Version here; all projects pick it up automatically.
+  Projects must NOT specify Version on <PackageReference> — only metadata such as
+  PrivateAssets / IncludeAssets / Condition may remain there.
+-->
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <!-- ── UI Framework ──────────────────────────────────────────────────── -->
+  <ItemGroup Label="Avalonia">
+    <PackageVersion Include="Avalonia" Version="11.3.12" />
+    <PackageVersion Include="Avalonia.Desktop" Version="11.3.12" />
+    <PackageVersion Include="Avalonia.Diagnostics" Version="11.3.12" />
+    <PackageVersion Include="Avalonia.Fonts.Inter" Version="11.3.12" />
+    <PackageVersion Include="Avalonia.ReactiveUI" Version="11.3.8" />
+    <PackageVersion Include="Avalonia.Themes.Fluent" Version="11.3.12" />
+  </ItemGroup>
+  <!-- ── Microsoft Extensions ─────────────────────────────────────────── -->
+  <ItemGroup Label="Microsoft Extensions">
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.5" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="10.0.5" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.5" />
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.5" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.5" />
+    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.5" />
+  </ItemGroup>
+  <!-- ── Logging ───────────────────────────────────────────────────────── -->
+  <ItemGroup Label="Logging">
+    <PackageVersion Include="Serilog" Version="4.3.1" />
+    <PackageVersion Include="Serilog.Settings.Configuration" Version="10.0.0" />
+    <PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1" />
+    <PackageVersion Include="Serilog.Sinks.File" Version="7.0.0" />
+  </ItemGroup>
+  <!-- ── Resilience ────────────────────────────────────────────────────── -->
+  <ItemGroup Label="Resilience">
+    <PackageVersion Include="Polly" Version="8.6.6" />
+  </ItemGroup>
+  <!-- ── Security ──────────────────────────────────────────────────────── -->
+  <ItemGroup Label="Security">
+    <PackageVersion Include="System.Security.Cryptography.ProtectedData" Version="10.0.5" />
+  </ItemGroup>
+  <!-- ── Testing ───────────────────────────────────────────────────────── -->
+  <ItemGroup Label="Testing">
+    <PackageVersion Include="coverlet.collector" Version="8.0.1" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.3.0" />
+    <PackageVersion Include="NSubstitute" Version="5.3.0" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+  </ItemGroup>
+</Project>

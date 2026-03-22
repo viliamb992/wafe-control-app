@@ -11,7 +11,7 @@ namespace RecuperationSystem.Desktop.ViewModels.Cards;
 public class FlowSpeedCardViewModel : ReactiveObject, IDisposable
 {
     private readonly ISystemControlService _systemControl;
-    private readonly AppViewModel _app;
+    private readonly IAppContext _app;
     private CancellationTokenSource? _debounceCts;
     private bool _disposed;
 
@@ -21,7 +21,7 @@ public class FlowSpeedCardViewModel : ReactiveObject, IDisposable
     private bool _isChanging;
     private bool _isDragging;
 
-    public FlowSpeedCardViewModel(ISystemControlService systemControl, AppViewModel app)
+    public FlowSpeedCardViewModel(ISystemControlService systemControl, IAppContext app)
     {
         _systemControl = systemControl;
         _app = app;

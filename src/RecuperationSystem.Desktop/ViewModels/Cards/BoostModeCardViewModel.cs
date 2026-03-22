@@ -9,20 +9,19 @@ namespace RecuperationSystem.Desktop.ViewModels.Cards;
 public class BoostModeCardViewModel : ReactiveObject, IDisposable
 {
     private readonly ISystemControlService _systemControl;
-    private readonly AppViewModel _app;
+    private readonly IAppContext _app;
     private bool _disposed;
 
     private int _boostRemaining;
-    private bool _isBoostActive;
 
-    public BoostModeCardViewModel(ISystemControlService systemControl, AppViewModel app)
+    public BoostModeCardViewModel(ISystemControlService systemControl, IAppContext app)
     {
         _systemControl = systemControl;
         _app = app;
 
         _systemControl.StatusUpdated += OnStatusUpdated;
 
-        SetBoostCommand = ReactiveCommand.CreateFromTask<object>(
+        SetBoostCommand = ReactiveCommand.CreateFromTask<string>(
             SetBoostAsync,
             this.WhenAnyValue(x => x._app.IsAuthenticated));
     }
@@ -54,22 +53,13 @@ public class BoostModeCardViewModel : ReactiveObject, IDisposable
         }
     }
 
-    public ReactiveCommand<object, System.Reactive.Unit> SetBoostCommand { get; }
+    public ReactiveCommand<string, System.Reactive.Unit> SetBoostCommand { get; }
 
-    private async Task SetBoostAsync(object secondsObject)
+    private async Task SetBoostAsync(string secondsString)
     {
         try
         {
-            int seconds;
-            if (secondsObject is string secondsString && int.TryParse(secondsString, out var parsedSeconds))
-            {
-                seconds = parsedSeconds;
-            }
-            else if (secondsObject is int secondsInt)
-            {
-                seconds = secondsInt;
-            }
-            else
+            if (!int.TryParse(secondsString, out var seconds))
             {
                 _app.StatusMessage = "Invalid boost duration";
                 return;

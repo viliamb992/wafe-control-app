@@ -14,7 +14,7 @@ namespace RecuperationSystem.Desktop.ViewModels;
 /// <summary>
 /// Application-level ViewModel coordinating card ViewModels and managing shared state
 /// </summary>
-public class AppViewModel : ReactiveObject, IDisposable
+public class AppViewModel : ReactiveObject, IDisposable, IAppContext
 {
     private readonly IAuthenticationService _authService;
     private readonly ISystemControlService _systemControl;

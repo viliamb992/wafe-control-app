@@ -8,14 +8,11 @@ namespace RecuperationSystem.Shared.Services;
 public class WafeApiService : IWafeApiService, IDisposable
 {
     private readonly HttpClient _httpClient;
-    private string? _sandcastleKey;
+    private volatile string? _sandcastleKey;
 
-    public WafeApiService()
+    public WafeApiService(HttpClient httpClient)
     {
-        _httpClient = new HttpClient
-        {
-            BaseAddress = new Uri(AppConstants.WafeApiBaseUrl)
-        };
+        _httpClient = httpClient;
     }
 
     // ==================== AUTHENTICATION ====================
@@ -44,7 +41,6 @@ public class WafeApiService : IWafeApiService, IDisposable
                 {
                     _sandcastleKey = keys.FirstOrDefault();
                     Log.Information("Sandcastle-Key received and stored");
-                    Log.Debug("Sandcastle-Key value: {Key}", _sandcastleKey);
                     return true;
                 }
                 else
@@ -61,8 +57,7 @@ public class WafeApiService : IWafeApiService, IDisposable
                             {
                                 var keyValue = cookie.Split(';')[0].Split('=')[1];
                                 _sandcastleKey = keyValue;
-                                Log.Information("Sandcastle-Key extracted from Set-Cookie");
-                                Log.Debug("Sandcastle-Key value: {Key}", _sandcastleKey);
+                                    Log.Information("Sandcastle-Key extracted from Set-Cookie");
                                 return true;
                             }
                         }
@@ -88,19 +83,18 @@ public class WafeApiService : IWafeApiService, IDisposable
     {
         try
         {
-            AddAuthHeader();
             Log.Information("? GET {Endpoint}", AppConstants.MainEndpoint);
-            
-            var response = await _httpClient.GetAsync(AppConstants.MainEndpoint, cancellationToken);
+            using var req = CreateAuthRequest(HttpMethod.Get, AppConstants.MainEndpoint);
+            var response = await _httpClient.SendAsync(req, cancellationToken);
             var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-            
+
             Log.Debug("? Status code: {StatusCode}, Response Body: {ResponseBody}", response.StatusCode, responseBody);
-            
+
             if (response.IsSuccessStatusCode)
             {
-                return await response.Content.ReadFromJsonAsync<SystemStatus>(cancellationToken: cancellationToken);
+                return System.Text.Json.JsonSerializer.Deserialize<SystemStatus>(responseBody);
             }
-            
+
             Log.Warning("Failed to get main status: {StatusCode}", response.StatusCode);
             return null;
         }
@@ -115,20 +109,19 @@ public class WafeApiService : IWafeApiService, IDisposable
     {
         try
         {
-            AddAuthHeader();
             Log.Information("? GET {Endpoint}", AppConstants.HeaderEndpoint);
-            
-            var response = await _httpClient.GetAsync(AppConstants.HeaderEndpoint, cancellationToken);
+            using var req = CreateAuthRequest(HttpMethod.Get, AppConstants.HeaderEndpoint);
+            var response = await _httpClient.SendAsync(req, cancellationToken);
             var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-            
+
             Log.Debug("? Header Info Response: {StatusCode}", response.StatusCode);
             Log.Debug("? Response Body: {ResponseBody}", responseBody);
-            
+
             if (response.IsSuccessStatusCode)
             {
-                return await response.Content.ReadFromJsonAsync<HeaderInfo>(cancellationToken: cancellationToken);
+                return System.Text.Json.JsonSerializer.Deserialize<HeaderInfo>(responseBody);
             }
-            
+
             Log.Warning("Failed to get header info: {StatusCode}", response.StatusCode);
             return null;
         }
@@ -143,20 +136,19 @@ public class WafeApiService : IWafeApiService, IDisposable
     {
         try
         {
-            AddAuthHeader();
             Log.Information("? GET {Endpoint}", AppConstants.InfoEndpoint);
-            
-            var response = await _httpClient.GetAsync(AppConstants.InfoEndpoint, cancellationToken);
+            using var req = CreateAuthRequest(HttpMethod.Get, AppConstants.InfoEndpoint);
+            var response = await _httpClient.SendAsync(req, cancellationToken);
             var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-            
+
             Log.Debug("? System Info Response: {StatusCode}", response.StatusCode);
             Log.Debug("? Response Body: {ResponseBody}", responseBody);
-            
+
             if (response.IsSuccessStatusCode)
             {
-                return await response.Content.ReadFromJsonAsync<SystemInfo>(cancellationToken: cancellationToken);
+                return System.Text.Json.JsonSerializer.Deserialize<SystemInfo>(responseBody);
             }
-            
+
             Log.Warning("Failed to get system info: {StatusCode}", response.StatusCode);
             return null;
         }
@@ -171,20 +163,19 @@ public class WafeApiService : IWafeApiService, IDisposable
     {
         try
         {
-            AddAuthHeader();
             Log.Information("? GET {Endpoint}", AppConstants.MessagesEndpoint);
-            
-            var response = await _httpClient.GetAsync(AppConstants.MessagesEndpoint, cancellationToken);
+            using var req = CreateAuthRequest(HttpMethod.Get, AppConstants.MessagesEndpoint);
+            var response = await _httpClient.SendAsync(req, cancellationToken);
             var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-            
+
             Log.Debug("? Messages Response: {StatusCode}", response.StatusCode);
             Log.Debug("? Response Body: {ResponseBody}", responseBody);
-            
+
             if (response.IsSuccessStatusCode)
             {
-                return await response.Content.ReadFromJsonAsync<MessagesResponse>(cancellationToken: cancellationToken);
+                return System.Text.Json.JsonSerializer.Deserialize<MessagesResponse>(responseBody);
             }
-            
+
             Log.Warning("Failed to get messages: {StatusCode}", response.StatusCode);
             return null;
         }
@@ -199,20 +190,19 @@ public class WafeApiService : IWafeApiService, IDisposable
     {
         try
         {
-            AddAuthHeader();
             Log.Information("? GET {Endpoint}", AppConstants.ScheduleEndpoint);
-            
-            var response = await _httpClient.GetAsync(AppConstants.ScheduleEndpoint, cancellationToken);
+            using var req = CreateAuthRequest(HttpMethod.Get, AppConstants.ScheduleEndpoint);
+            var response = await _httpClient.SendAsync(req, cancellationToken);
             var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-            
+
             Log.Debug("? Schedule Response: {StatusCode}", response.StatusCode);
             Log.Debug("? Response Body: {ResponseBody}", responseBody);
-            
+
             if (response.IsSuccessStatusCode)
             {
-                return await response.Content.ReadFromJsonAsync<ScheduleResponse>(cancellationToken: cancellationToken);
+                return System.Text.Json.JsonSerializer.Deserialize<ScheduleResponse>(responseBody);
             }
-            
+
             Log.Warning("Failed to get schedule: {StatusCode}", response.StatusCode);
             return null;
         }
@@ -229,20 +219,14 @@ public class WafeApiService : IWafeApiService, IDisposable
     {
         try
         {
-            AddAuthHeader();
-            var request = new ValueRequest<bool> { Value = stop };
-            var requestJson = JsonSerializer.Serialize(request);
-            
-            Log.Information("? PUT {Endpoint} - Setting stop-active to {Value} (stop={Stop}, start={Start})", 
+            var payload = new ValueRequest<bool> { Value = stop };
+            Log.Information("? PUT {Endpoint} - Setting stop-active to {Value} (stop={Stop}, start={Start})",
                 AppConstants.StopActiveEndpoint, stop, stop, !stop);
-            Log.Debug("? Request Body: {RequestBody}", requestJson);
-            
-            var response = await _httpClient.PutAsJsonAsync(AppConstants.StopActiveEndpoint, request, cancellationToken);
-            var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-            
+            Log.Debug("? Request Body: {RequestBody}", JsonSerializer.Serialize(payload));
+            using var req = CreateAuthRequest(HttpMethod.Put, AppConstants.StopActiveEndpoint);
+            req.Content = JsonContent.Create(payload);
+            var response = await _httpClient.SendAsync(req, cancellationToken);
             Log.Debug("? Stop-Active Response: {StatusCode}", response.StatusCode);
-            Log.Debug("? Response Body: {ResponseBody}", responseBody);
-            
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)
@@ -256,20 +240,14 @@ public class WafeApiService : IWafeApiService, IDisposable
     {
         try
         {
-            AddAuthHeader();
-            var request = new ValueRequest<bool> { Value = silent };
-            var requestJson = JsonSerializer.Serialize(request);
-            
-            Log.Information("? PUT {Endpoint} - Setting silent mode to {Silent}", 
+            var payload = new ValueRequest<bool> { Value = silent };
+            Log.Information("? PUT {Endpoint} - Setting silent mode to {Silent}",
                 AppConstants.SilentActiveEndpoint, silent);
-            Log.Debug("? Request Body: {RequestBody}", requestJson);
-            
-            var response = await _httpClient.PutAsJsonAsync(AppConstants.SilentActiveEndpoint, request, cancellationToken);
-            var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-            
+            Log.Debug("? Request Body: {RequestBody}", JsonSerializer.Serialize(payload));
+            using var req = CreateAuthRequest(HttpMethod.Put, AppConstants.SilentActiveEndpoint);
+            req.Content = JsonContent.Create(payload);
+            var response = await _httpClient.SendAsync(req, cancellationToken);
             Log.Debug("? Silent Mode Response: {StatusCode}", response.StatusCode);
-            Log.Debug("? Response Body: {ResponseBody}", responseBody);
-            
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)
@@ -283,20 +261,14 @@ public class WafeApiService : IWafeApiService, IDisposable
     {
         try
         {
-            AddAuthHeader();
-            var request = new ValueRequest<bool> { Value = holiday };
-            var requestJson = JsonSerializer.Serialize(request);
-            
-            Log.Information("? PUT {Endpoint} - Setting holiday mode to {Holiday}", 
+            var payload = new ValueRequest<bool> { Value = holiday };
+            Log.Information("? PUT {Endpoint} - Setting holiday mode to {Holiday}",
                 AppConstants.HolidayActiveEndpoint, holiday);
-            Log.Debug("? Request Body: {RequestBody}", requestJson);
-            
-            var response = await _httpClient.PutAsJsonAsync(AppConstants.HolidayActiveEndpoint, request, cancellationToken);
-            var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-            
+            Log.Debug("? Request Body: {RequestBody}", JsonSerializer.Serialize(payload));
+            using var req = CreateAuthRequest(HttpMethod.Put, AppConstants.HolidayActiveEndpoint);
+            req.Content = JsonContent.Create(payload);
+            var response = await _httpClient.SendAsync(req, cancellationToken);
             Log.Debug("? Holiday Mode Response: {StatusCode}", response.StatusCode);
-            Log.Debug("? Response Body: {ResponseBody}", responseBody);
-            
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)
@@ -310,20 +282,14 @@ public class WafeApiService : IWafeApiService, IDisposable
     {
         try
         {
-            AddAuthHeader();
-            var request = new ValueRequest<int> { Value = seconds };
-            var requestJson = JsonSerializer.Serialize(request);
-            
-            Log.Information("? PUT {Endpoint} - Setting boost to {Seconds} seconds ({Minutes} minutes)", 
+            var payload = new ValueRequest<int> { Value = seconds };
+            Log.Information("? PUT {Endpoint} - Setting boost to {Seconds} seconds ({Minutes} minutes)",
                 AppConstants.BoostRemainingEndpoint, seconds, seconds / 60);
-            Log.Debug("? Request Body: {RequestBody}", requestJson);
-            
-            var response = await _httpClient.PutAsJsonAsync(AppConstants.BoostRemainingEndpoint, request, cancellationToken);
-            var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-            
+            Log.Debug("? Request Body: {RequestBody}", JsonSerializer.Serialize(payload));
+            using var req = CreateAuthRequest(HttpMethod.Put, AppConstants.BoostRemainingEndpoint);
+            req.Content = JsonContent.Create(payload);
+            var response = await _httpClient.SendAsync(req, cancellationToken);
             Log.Debug("? Boost Response: {StatusCode}", response.StatusCode);
-            Log.Debug("? Response Body: {ResponseBody}", responseBody);
-            
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)
@@ -337,20 +303,14 @@ public class WafeApiService : IWafeApiService, IDisposable
     {
         try
         {
-            AddAuthHeader();
-            var request = new ValueRequest<string> { Value = mode };
-            var requestJson = JsonSerializer.Serialize(request);
-            
-            Log.Information("? PUT {Endpoint} - Setting authority mode to {Mode}", 
+            var payload = new ValueRequest<string> { Value = mode };
+            Log.Information("? PUT {Endpoint} - Setting authority mode to {Mode}",
                 AppConstants.AuthorityEndpoint, mode);
-            Log.Debug("? Request Body: {RequestBody}", requestJson);
-            
-            var response = await _httpClient.PutAsJsonAsync(AppConstants.AuthorityEndpoint, request, cancellationToken);
-            var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-            
+            Log.Debug("? Request Body: {RequestBody}", JsonSerializer.Serialize(payload));
+            using var req = CreateAuthRequest(HttpMethod.Put, AppConstants.AuthorityEndpoint);
+            req.Content = JsonContent.Create(payload);
+            var response = await _httpClient.SendAsync(req, cancellationToken);
             Log.Debug("? Authority Mode Response: {StatusCode}", response.StatusCode);
-            Log.Debug("? Response Body: {ResponseBody}", responseBody);
-            
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)
@@ -370,20 +330,14 @@ public class WafeApiService : IWafeApiService, IDisposable
                 return false;
             }
 
-            AddAuthHeader();
-            var request = new ValueRequest<int> { Value = speed };
-            var requestJson = JsonSerializer.Serialize(request);
-            
-            Log.Information("? PUT {Endpoint} - Setting flow speed to {Speed} m³/h", 
+            var payload = new ValueRequest<int> { Value = speed };
+            Log.Information("? PUT {Endpoint} - Setting flow speed to {Speed} m³/h",
                 AppConstants.FlowRequestedEndpoint, speed);
-            Log.Debug("? Request Body: {RequestBody}", requestJson);
-            
-            var response = await _httpClient.PutAsJsonAsync(AppConstants.FlowRequestedEndpoint, request, cancellationToken);
-            var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-            
+            Log.Debug("? Request Body: {RequestBody}", JsonSerializer.Serialize(payload));
+            using var req = CreateAuthRequest(HttpMethod.Put, AppConstants.FlowRequestedEndpoint);
+            req.Content = JsonContent.Create(payload);
+            var response = await _httpClient.SendAsync(req, cancellationToken);
             Log.Debug("? Flow Speed Response: {StatusCode}", response.StatusCode);
-            Log.Debug("? Response Body: {ResponseBody}", responseBody);
-            
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)
@@ -397,19 +351,13 @@ public class WafeApiService : IWafeApiService, IDisposable
     {
         try
         {
-            AddAuthHeader();
-            var request = new ValueRequest<string> { Value = plan };
-            var requestJson = JsonSerializer.Serialize(request);
-            
+            var payload = new ValueRequest<string> { Value = plan };
             Log.Information("? PUT {Endpoint} - Setting schedule plan", AppConstants.SchedulePlanEndpoint);
-            Log.Debug("? Request Body: {RequestBody}", requestJson);
-            
-            var response = await _httpClient.PutAsJsonAsync(AppConstants.SchedulePlanEndpoint, request, cancellationToken);
-            var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-            
+            Log.Debug("? Request Body: {RequestBody}", JsonSerializer.Serialize(payload));
+            using var req = CreateAuthRequest(HttpMethod.Put, AppConstants.SchedulePlanEndpoint);
+            req.Content = JsonContent.Create(payload);
+            var response = await _httpClient.SendAsync(req, cancellationToken);
             Log.Debug("? Schedule Plan Response: {StatusCode}", response.StatusCode);
-            Log.Debug("? Response Body: {ResponseBody}", responseBody);
-            
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)
@@ -421,18 +369,15 @@ public class WafeApiService : IWafeApiService, IDisposable
 
     // ==================== HELPER METHODS ====================
 
-    private void AddAuthHeader()
+    private HttpRequestMessage CreateAuthRequest(HttpMethod method, string url)
     {
-        if (!string.IsNullOrEmpty(_sandcastleKey))
-        {
-            _httpClient.DefaultRequestHeaders.Remove("Sandcastle-Key");
-            _httpClient.DefaultRequestHeaders.Add("Sandcastle-Key", _sandcastleKey);
-            Log.Debug("Added Sandcastle-Key header to request");
-        }
+        var req = new HttpRequestMessage(method, url);
+        var key = _sandcastleKey;
+        if (!string.IsNullOrEmpty(key))
+            req.Headers.Add("Sandcastle-Key", key);
         else
-        {
             Log.Warning("No Sandcastle-Key available for authenticated request");
-        }
+        return req;
     }
 
     public void Dispose()

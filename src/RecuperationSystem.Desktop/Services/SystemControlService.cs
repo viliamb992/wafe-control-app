@@ -118,19 +118,13 @@ public class SystemControlService : ISystemControlService
         return false;
     }
 
-    public async Task<bool> StartSystemAsync(CancellationToken cancellationToken = default)
-    {
-        await ToggleSystemAsync(true, cancellationToken);
-        return true;
-    }
+    public Task<bool> StartSystemAsync(CancellationToken cancellationToken = default)
+        => ToggleSystemAsync(true, cancellationToken);
 
-    public async Task<bool> StopSystemAsync(CancellationToken cancellationToken = default)
-    {
-        await ToggleSystemAsync(false, cancellationToken);
-        return true;
-    }
+    public Task<bool> StopSystemAsync(CancellationToken cancellationToken = default)
+        => ToggleSystemAsync(false, cancellationToken);
 
-    private async Task ToggleSystemAsync(bool start, CancellationToken cancellationToken = default)
+    private async Task<bool> ToggleSystemAsync(bool start, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -142,7 +136,7 @@ public class SystemControlService : ISystemControlService
             await _apiService.SetStopActiveAsync(!start, cancellationToken);
             
             // Poll for system state change using gen-based polling
-            await PollForStateChangeAsync(
+            return await PollForStateChangeAsync(
                 status => status?.StopActive ?? true,
                 !start,
                 "System state change",

@@ -37,7 +37,6 @@ public class AuthenticationService : IAuthenticationService
     }
 
     public string Username => _username;
-    public string Password => _password;
 
     public async Task<bool> AuthenticateAsync(CancellationToken cancellationToken = default)
     {
@@ -80,7 +79,6 @@ public class AuthenticationService : IAuthenticationService
         (_username, _password) = stored.Value;
 
         Log.Information("Auto-login enabled for user: {Username}", _username);
-        await Task.Delay(200, cancellationToken);
         return await AuthenticateAsync(cancellationToken);
     }
 

@@ -40,9 +40,8 @@ public class TrayIconService : ITrayIconService
             
             if (File.Exists(iconPath))
             {
-                // Load icon into memory first, don't dispose the stream
                 var iconBytes = File.ReadAllBytes(iconPath);
-                var iconStream = new MemoryStream(iconBytes);
+                using var iconStream = new MemoryStream(iconBytes);
                 _trayIcon.Icon = new WindowIcon(iconStream);
                 Log.Information("Tray icon loaded successfully from file");
             }
