@@ -1,0 +1,50 @@
+{
+  "gen": 16195,
+  "temperatures": [
+    null,
+    null,
+    null,
+    null
+  ],
+  "humidity": null,
+  "co2": null,
+  "power-min": 0,
+  "power-max": 0,
+  "power-requested": 0,
+  "power-current": 0,
+  "flow-min": 50,
+  "flow-max": 220,
+  "flow-requested": 200,
+  "flow-current": 0,
+  "authority": "schedule",
+  "authority-available": [
+    "intelligent",
+    "manual",
+    "schedule"
+  ],
+  "capabilities": [
+    "boost",
+    "silent",
+    "holiday"
+  ],
+  "fireplace-active": 0,
+  "fireplace-enabled": false,
+  "holiday-active": false,
+  "boost-duration": 900,
+  "boost-remaining": 0,
+  "circulation-active": false,
+  "silent-active": false,
+  "stop-active": false,
+  "stop-progress": 0,
+  "filters": {
+    "fresh": {
+      "health": 100,
+      "status": "good"
+    },
+    "waste": {
+      "health": 100,
+      "status": "good"
+    }
+  },
+  "uptime": 54070
+}

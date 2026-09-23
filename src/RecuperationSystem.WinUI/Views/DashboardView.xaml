@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="RecuperationSystem.WinUI.Views.DashboardView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:helpers="using:RecuperationSystem.WinUI.Helpers"
+    xmlns:loc="using:RecuperationSystem.Core.Localization"
+    xmlns:controls="using:RecuperationSystem.WinUI.Controls"
+    xmlns:toolkit="using:CommunityToolkit.WinUI.Controls">
+
+    <UserControl.Resources>
+        <Style x:Key="TileStyle" TargetType="Border" BasedOn="{StaticResource CardStyle}">
+            <Setter Property="Padding" Value="16,12" />
+        </Style>
+        <Style x:Key="TileValueStyle" TargetType="TextBlock" BasedOn="{StaticResource SubtitleTextBlockStyle}" />
+    </UserControl.Resources>
+
+    <Grid>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <Grid x:Name="CardGrid" MaxWidth="1100" Padding="24,8,24,24" ColumnSpacing="16" RowSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition x:Name="SecondColumn" Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- ── System state + power ─────────────────────────────── -->
+                <Border Grid.ColumnSpan="2" Style="{StaticResource CardStyle}">
+                    <Grid ColumnSpacing="20">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <Grid Width="56" Height="56">
+                            <Ellipse Fill="{x:Bind helpers:Xaml.SystemStateBrush(ViewModel.SystemControl.IsSystemRunning), Mode=OneWay}" />
+                            <FontIcon Glyph="&#xE7E8;" FontSize="24" Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
+                        </Grid>
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                            <StackPanel x:Name="StateHeader" Orientation="Horizontal" Spacing="12">
+                                <TextBlock Style="{StaticResource SubtitleTextBlockStyle}"
+                                           Text="{x:Bind helpers:Xaml.SystemState(ViewModel.SystemControl.IsSystemRunning), Mode=OneWay}" />
+                                <!-- Next start while running on the schedule -->
+                                <Border Padding="8,2" VerticalAlignment="Center" HorizontalAlignment="Left" CornerRadius="{StaticResource ControlCornerRadius}"
+                                        Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                        Visibility="{x:Bind helpers:Xaml.VisibleIfNextStart(Schedule.NextStart, ViewModel.SystemControl.CurrentAuthority, ViewModel.SystemControl.IsSystemRunning), Mode=OneWay}">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <FontIcon Glyph="&#xE823;" FontSize="12" VerticalAlignment="Center" />
+                                        <TextBlock Style="{StaticResource BodyTextBlockStyle}"
+                                                   Text="{x:Bind helpers:Xaml.NextStart(Schedule.NextStart), Mode=OneWay}" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                            <TextBlock Style="{StaticResource SecondaryTextStyle}" TextTrimming="CharacterEllipsis"
+                                       Text="{x:Bind helpers:Xaml.SystemSummary(ViewModel.SystemControl.CurrentAuthority, ViewModel.CurrentFlow, ViewModel.IsSystemOnline), Mode=OneWay}" />
+                            <TextBlock Style="{StaticResource CaptionTextBlockStyle}" TextWrapping="Wrap" Margin="0,2,0,0"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       Text="{x:Bind loc:Strings.SystemNoSensorData}"
+                                       Visibility="{x:Bind helpers:Xaml.CollapsedIf(ViewModel.IsSystemOnline), Mode=OneWay}" />
+                        </StackPanel>
+
+                        <Button Grid.Column="2" MinWidth="140" Height="36" Command="{x:Bind ViewModel.SystemControl.ToggleSystemCommand}">
+                            <Grid>
+                                <StackPanel Orientation="Horizontal" Spacing="8"
+                                            Visibility="{x:Bind helpers:Xaml.CollapsedIf(ViewModel.SystemControl.IsOperationInProgress), Mode=OneWay}">
+                                    <FontIcon Glyph="&#xE7E8;" FontSize="14" />
+                                    <TextBlock Text="{x:Bind ViewModel.SystemControl.SystemToggleButtonText, Mode=OneWay}" />
+                                </StackPanel>
+                                <ProgressRing Width="16" Height="16" IsActive="{x:Bind ViewModel.SystemControl.IsOperationInProgress, Mode=OneWay}" />
+                            </Grid>
+                        </Button>
+                    </Grid>
+                </Border>
+
+                <!-- ── Sensors (humidity only on units that report it) ──────── -->
+                <controls:TilePanel x:Name="SensorTiles" Grid.Row="1" Grid.ColumnSpan="2" MinItemWidth="160" Spacing="12">
+                    <Border Style="{StaticResource TileStyle}">
+                        <StackPanel Spacing="4">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xEC8A;" FontSize="16" Foreground="{ThemeResource SystemFillColorCautionBrush}" />
+                                <TextBlock Text="{x:Bind loc:Strings.SensorOutdoor}" Style="{StaticResource SecondaryTextStyle}" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <TextBlock Style="{StaticResource TileValueStyle}" Text="{x:Bind helpers:Xaml.Temperature(ViewModel.OutsideTemp), Mode=OneWay}" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource TileStyle}">
+                        <StackPanel Spacing="4">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE8BE;" FontSize="16" Foreground="{ThemeResource SystemFillColorSuccessBrush}" />
+                                <TextBlock Text="{x:Bind loc:Strings.SensorSupplyAir}" Style="{StaticResource SecondaryTextStyle}" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <TextBlock Style="{StaticResource TileValueStyle}" Text="{x:Bind helpers:Xaml.Temperature(ViewModel.FreshTemp), Mode=OneWay}" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource TileStyle}">
+                        <StackPanel Spacing="4">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE80F;" FontSize="16" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                                <TextBlock Text="{x:Bind loc:Strings.SensorIndoor}" Style="{StaticResource SecondaryTextStyle}" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <TextBlock Style="{StaticResource TileValueStyle}" Text="{x:Bind helpers:Xaml.Temperature(ViewModel.IndoorTemp), Mode=OneWay}" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource TileStyle}">
+                        <StackPanel Spacing="4">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE898;" FontSize="16" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <TextBlock Text="{x:Bind loc:Strings.SensorExhaustAir}" Style="{StaticResource SecondaryTextStyle}" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <TextBlock Style="{StaticResource TileValueStyle}" Text="{x:Bind helpers:Xaml.Temperature(ViewModel.WasteTemp), Mode=OneWay}" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource TileStyle}">
+                        <StackPanel Spacing="4">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xEA91;" FontSize="16" Foreground="{x:Bind helpers:Xaml.Co2Brush(ViewModel.Co2Level), Mode=OneWay}" />
+                                <TextBlock Text="CO₂" Style="{StaticResource SecondaryTextStyle}" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <TextBlock Style="{StaticResource TileValueStyle}" Text="{x:Bind helpers:Xaml.Co2(ViewModel.Co2Level), Mode=OneWay}" />
+                            <TextBlock Style="{StaticResource CaptionTextBlockStyle}" TextTrimming="CharacterEllipsis"
+                                       Foreground="{x:Bind helpers:Xaml.Co2Brush(ViewModel.Co2Level), Mode=OneWay}"
+                                       Text="{x:Bind helpers:Xaml.Co2Quality(ViewModel.Co2Level), Mode=OneWay}"
+                                       ToolTipService.ToolTip="{x:Bind loc:Strings.Co2Hint}" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource TileStyle}"
+                            Visibility="{x:Bind helpers:Xaml.VisibleIfHasReading(ViewModel.Humidity), Mode=OneWay}">
+                        <StackPanel Spacing="4">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xEB42;" FontSize="16" Foreground="{ThemeResource SystemFillColorAttentionBrush}" />
+                                <TextBlock Text="{x:Bind loc:Strings.SensorHumidity}" Style="{StaticResource SecondaryTextStyle}" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <TextBlock Style="{StaticResource TileValueStyle}" Text="{x:Bind helpers:Xaml.Humidity(ViewModel.Humidity), Mode=OneWay}" />
+                        </StackPanel>
+                    </Border>
+                </controls:TilePanel>
+
+                <!-- ── Ventilation: mode + flow ─────────────────────────── -->
+                <Border x:Name="VentilationCard" Grid.Row="2" Style="{StaticResource CardStyle}">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="{x:Bind loc:Strings.VentilationTitle}" Style="{StaticResource CardTitleStyle}" />
+
+                        <Grid>
+                            <TextBlock Text="{x:Bind loc:Strings.OperatingModeLabel}" Style="{StaticResource SecondaryTextStyle}" VerticalAlignment="Center" />
+                            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                                <ProgressRing Width="14" Height="14" IsActive="{x:Bind ViewModel.OperatingMode.IsModeChanging, Mode=OneWay}" />
+                                <HyperlinkButton Padding="4,2" Command="{x:Bind Schedule.OpenCommand}" AutomationProperties.Name="{x:Bind loc:Strings.ScheduleTitle}">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <FontIcon Glyph="&#xE787;" FontSize="14" />
+                                        <TextBlock Text="{x:Bind loc:Strings.ScheduleTitle}" />
+                                    </StackPanel>
+                                </HyperlinkButton>
+                            </StackPanel>
+                        </Grid>
+                        <toolkit:Segmented x:Name="ModeSelector" HorizontalAlignment="Stretch"
+                                           SelectionChanged="OnModeSelectionChanged"
+                                           IsEnabled="{x:Bind helpers:Xaml.Not(ViewModel.OperatingMode.IsModeChanging), Mode=OneWay}" />
+
+                        <Grid Margin="0,12,0,0">
+                            <TextBlock Text="{x:Bind loc:Strings.FlowRateLabel}" Style="{StaticResource SecondaryTextStyle}" />
+                            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                                <ProgressRing Width="14" Height="14" IsActive="{x:Bind ViewModel.FlowSpeed.IsChanging, Mode=OneWay}" />
+                                <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="{x:Bind ViewModel.FlowSpeed.FlowSpeedText, Mode=OneWay}" />
+                            </StackPanel>
+                        </Grid>
+                        <Slider x:Name="FlowSlider" Minimum="50" Maximum="220" StepFrequency="1" TickFrequency="10" TickPlacement="Outside"
+                                AutomationProperties.Name="{x:Bind loc:Strings.FlowRateLabel}"
+                                ValueChanged="OnFlowSliderValueChanged"
+                                IsEnabled="{x:Bind helpers:Xaml.CanAdjustFlow(ViewModel.IsManualMode, ViewModel.FlowSpeed.IsChanging), Mode=OneWay}" />
+                        <TextBlock Style="{StaticResource SecondaryTextStyle}" TextWrapping="Wrap"
+                                   Text="{x:Bind loc:Strings.FlowManualHint}"
+                                   Visibility="{x:Bind helpers:Xaml.CollapsedIf(ViewModel.IsManualMode), Mode=OneWay}" />
+                    </StackPanel>
+                </Border>
+
+                <!-- ── Boost ────────────────────────────────────────────── -->
+                <Border x:Name="BoostCard" Grid.Row="2" Grid.Column="1" Style="{StaticResource CardStyle}">
+                    <StackPanel Spacing="8">
+                        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,4">
+                            <FontIcon Glyph="&#xE945;" FontSize="16" />
+                            <TextBlock Text="{x:Bind loc:Strings.BoostTitle}" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource SecondaryTextStyle}"
+                                   Text="{x:Bind helpers:Xaml.BoostState(ViewModel.BoostMode.IsBoostActive, ViewModel.BoostMode.BoostRemainingText), Mode=OneWay}" />
+                        <Grid ColumnSpacing="8" Margin="0,4,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition />
+                                <ColumnDefinition />
+                                <ColumnDefinition />
+                            </Grid.ColumnDefinitions>
+                            <Button HorizontalAlignment="Stretch" Content="15 min" Command="{x:Bind ViewModel.BoostMode.SetBoostCommand}" CommandParameter="900" />
+                            <Button Grid.Column="1" HorizontalAlignment="Stretch" Content="30 min" Command="{x:Bind ViewModel.BoostMode.SetBoostCommand}" CommandParameter="1800" />
+                            <Button Grid.Column="2" HorizontalAlignment="Stretch" Content="60 min" Command="{x:Bind ViewModel.BoostMode.SetBoostCommand}" CommandParameter="3600" />
+                        </Grid>
+                        <Button HorizontalAlignment="Stretch" Content="{x:Bind loc:Strings.BoostStop}" Command="{x:Bind ViewModel.BoostMode.SetBoostCommand}" CommandParameter="0"
+                                Visibility="{x:Bind helpers:Xaml.VisibleIf(ViewModel.BoostMode.IsBoostActive), Mode=OneWay}" />
+                    </StackPanel>
+                </Border>
+
+                <!-- ── Special modes ────────────────────────────────────── -->
+                <Border x:Name="ModesCard" Grid.Row="3" Style="{StaticResource CardStyle}">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="{x:Bind loc:Strings.ModesTitle}" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <FontIcon Glyph="&#xE708;" FontSize="16" VerticalAlignment="Center" />
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="{x:Bind loc:Strings.SilentTitle}" Style="{StaticResource BodyTextBlockStyle}" />
+                                <TextBlock Text="{x:Bind loc:Strings.SilentDescription}" Style="{StaticResource SecondaryTextStyle}" />
+                            </StackPanel>
+                            <ToggleSwitch x:Name="SilentToggle" Grid.Column="2" MinWidth="0" OnContent="" OffContent=""
+                                          IsOn="{x:Bind ViewModel.SpecialModes.IsSilentMode, Mode=OneWay}"
+                                          IsEnabled="{x:Bind helpers:Xaml.Not(ViewModel.SpecialModes.IsSilentModeChanging), Mode=OneWay}"
+                                          Toggled="OnSilentToggled" AutomationProperties.Name="{x:Bind loc:Strings.SilentModeName}" />
+                        </Grid>
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <FontIcon Glyph="&#xE709;" FontSize="16" VerticalAlignment="Center" />
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="{x:Bind loc:Strings.HolidayTitle}" Style="{StaticResource BodyTextBlockStyle}" />
+                                <TextBlock Text="{x:Bind loc:Strings.HolidayDescription}" Style="{StaticResource SecondaryTextStyle}" />
+                            </StackPanel>
+                            <ToggleSwitch x:Name="HolidayToggle" Grid.Column="2" MinWidth="0" OnContent="" OffContent=""
+                                          IsOn="{x:Bind ViewModel.SpecialModes.IsHolidayMode, Mode=OneWay}"
+                                          IsEnabled="{x:Bind helpers:Xaml.Not(ViewModel.SpecialModes.IsHolidayModeChanging), Mode=OneWay}"
+                                          Toggled="OnHolidayToggled" AutomationProperties.Name="{x:Bind loc:Strings.HolidayModeName}" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- ── Filters ──────────────────────────────────────────── -->
+                <Border x:Name="FiltersCard" Grid.Row="3" Grid.Column="1" Style="{StaticResource CardStyle}">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="{x:Bind loc:Strings.FiltersTitle}" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                        <StackPanel Spacing="12" Visibility="{x:Bind helpers:Xaml.VisibleIfHasValue(ViewModel.FreshFilterHealth), Mode=OneWay}">
+                            <StackPanel Spacing="4">
+                                <Grid>
+                                    <TextBlock Text="{x:Bind loc:Strings.FilterSupply}" Style="{StaticResource BodyTextBlockStyle}" />
+                                    <TextBlock HorizontalAlignment="Right" Style="{StaticResource SecondaryTextStyle}"
+                                               Text="{x:Bind helpers:Xaml.PercentText(ViewModel.FreshFilterHealth), Mode=OneWay}" />
+                                </Grid>
+                                <ProgressBar Maximum="100" Value="{x:Bind helpers:Xaml.Percent(ViewModel.FreshFilterHealth), Mode=OneWay}" />
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <Grid>
+                                    <TextBlock Text="{x:Bind loc:Strings.FilterExhaust}" Style="{StaticResource BodyTextBlockStyle}" />
+                                    <TextBlock HorizontalAlignment="Right" Style="{StaticResource SecondaryTextStyle}"
+                                               Text="{x:Bind helpers:Xaml.PercentText(ViewModel.WasteFilterHealth), Mode=OneWay}" />
+                                </Grid>
+                                <ProgressBar Maximum="100" Value="{x:Bind helpers:Xaml.Percent(ViewModel.WasteFilterHealth), Mode=OneWay}" />
+                            </StackPanel>
+                        </StackPanel>
+                        <TextBlock Text="{x:Bind loc:Strings.FilterNoData}" Style="{StaticResource SecondaryTextStyle}"
+                                   Visibility="{x:Bind helpers:Xaml.CollapsedIfHasValue(ViewModel.FreshFilterHealth), Mode=OneWay}" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </ScrollViewer>
+
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup>
+                <VisualState x:Name="Wide">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="820" />
+                    </VisualState.StateTriggers>
+                </VisualState>
+                <VisualState x:Name="Narrow">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="SecondColumn.Width" Value="0" />
+                        <Setter Target="StateHeader.Orientation" Value="Vertical" />
+                        <Setter Target="StateHeader.Spacing" Value="4" />
+                        <Setter Target="CardGrid.ColumnSpacing" Value="0" />
+                        <Setter Target="BoostCard.(Grid.Row)" Value="3" />
+                        <Setter Target="BoostCard.(Grid.Column)" Value="0" />
+                        <Setter Target="ModesCard.(Grid.Row)" Value="4" />
+                        <Setter Target="FiltersCard.(Grid.Row)" Value="5" />
+                        <Setter Target="FiltersCard.(Grid.Column)" Value="0" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+    </Grid>
+</UserControl>

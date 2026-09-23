@@ -1,7 +1,8 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using NSubstitute;
-using RecuperationSystem.Desktop.Configuration;
-using RecuperationSystem.Desktop.Services;
+using RecuperationSystem.Core.Configuration;
+using RecuperationSystem.Core.Services;
 using RecuperationSystem.Shared.Models;
 using RecuperationSystem.Shared.Services;
 
@@ -17,6 +18,9 @@ public class SystemControlServiceTests
             StateChangeIntervalMs = 10,
             StateChangeTimeoutSeconds = timeoutSeconds
         });
+
+    private static SystemControlService CreateSut(IWafeApiService api, IAuthenticationService auth, int timeoutSeconds = 2)
+        => new(api, auth, FastConfig(timeoutSeconds), NullLogger<SystemControlService>.Instance);
 
     private static SystemStatus MakeStatus(int gen, bool stopActive = false,
         string authority = "intelligent", bool silentActive = false,
@@ -44,8 +48,8 @@ public class SystemControlServiceTests
         var status = MakeStatus(1);
         api.GetMainStatusAsync(Arg.Any<CancellationToken>()).Returns(status);
 
-        var sut = new SystemControlService(api, auth, FastConfig());
-        var result = await sut.RefreshStatusAsync();
+        var sut = CreateSut(api, auth);
+        var result = await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(status, result);
         Assert.Equal(status, sut.CurrentStatus);
@@ -58,8 +62,8 @@ public class SystemControlServiceTests
         var auth = Substitute.For<IAuthenticationService>();
         auth.IsAuthenticated.Returns(false);
 
-        var sut = new SystemControlService(api, auth, FastConfig());
-        var result = await sut.RefreshStatusAsync();
+        var sut = CreateSut(api, auth);
+        var result = await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
         Assert.Null(result);
         await api.DidNotReceive().GetMainStatusAsync(Arg.Any<CancellationToken>());
@@ -73,11 +77,11 @@ public class SystemControlServiceTests
         auth.IsAuthenticated.Returns(true);
         api.GetMainStatusAsync(Arg.Any<CancellationToken>()).Returns(MakeStatus(1));
 
-        var sut = new SystemControlService(api, auth, FastConfig());
+        var sut = CreateSut(api, auth);
         SystemStatus? raised = null;
         sut.StatusUpdated += (_, s) => raised = s;
 
-        await sut.RefreshStatusAsync();
+        await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
         Assert.NotNull(raised);
     }
@@ -97,10 +101,10 @@ public class SystemControlServiceTests
            .Returns(MakeStatus(gen: 1, flowRequested: 100),
                     MakeStatus(gen: 2, flowRequested: 150));
 
-        var sut = new SystemControlService(api, auth, FastConfig());
-        await sut.RefreshStatusAsync(); // prime with gen=1
+        var sut = CreateSut(api, auth);
+        await sut.RefreshStatusAsync(TestContext.Current.CancellationToken); // prime with gen=1
 
-        var result = await sut.SetFlowSpeedAsync(150);
+        var result = await sut.SetFlowSpeedAsync(150, TestContext.Current.CancellationToken);
 
         Assert.True(result);
     }
@@ -117,10 +121,10 @@ public class SystemControlServiceTests
         api.GetMainStatusAsync(Arg.Any<CancellationToken>())
            .Returns(MakeStatus(gen: 1, flowRequested: 100));
 
-        var sut = new SystemControlService(api, auth, FastConfig(timeoutSeconds: 1));
-        await sut.RefreshStatusAsync();
+        var sut = CreateSut(api, auth, timeoutSeconds: 1);
+        await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
-        var result = await sut.SetFlowSpeedAsync(150);
+        var result = await sut.SetFlowSpeedAsync(150, TestContext.Current.CancellationToken);
 
         Assert.False(result);
     }
@@ -139,10 +143,10 @@ public class SystemControlServiceTests
            .Returns(MakeStatus(gen: 1, authority: "intelligent"),
                     MakeStatus(gen: 2, authority: "manual"));
 
-        var sut = new SystemControlService(api, auth, FastConfig());
-        await sut.RefreshStatusAsync();
+        var sut = CreateSut(api, auth);
+        await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
-        var result = await sut.SetAuthorityModeAsync("manual");
+        var result = await sut.SetAuthorityModeAsync("manual", TestContext.Current.CancellationToken);
 
         Assert.True(result);
     }
@@ -161,10 +165,10 @@ public class SystemControlServiceTests
            .Returns(MakeStatus(gen: 1, silentActive: false),
                     MakeStatus(gen: 2, silentActive: true));
 
-        var sut = new SystemControlService(api, auth, FastConfig());
-        await sut.RefreshStatusAsync();
+        var sut = CreateSut(api, auth);
+        await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
-        var result = await sut.SetSilentModeAsync(true);
+        var result = await sut.SetSilentModeAsync(true, TestContext.Current.CancellationToken);
 
         Assert.True(result);
     }
@@ -183,10 +187,10 @@ public class SystemControlServiceTests
            .Returns(MakeStatus(gen: 1, holidayActive: false),
                     MakeStatus(gen: 2, holidayActive: true));
 
-        var sut = new SystemControlService(api, auth, FastConfig());
-        await sut.RefreshStatusAsync();
+        var sut = CreateSut(api, auth);
+        await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
-        var result = await sut.SetHolidayModeAsync(true);
+        var result = await sut.SetHolidayModeAsync(true, TestContext.Current.CancellationToken);
 
         Assert.True(result);
     }
@@ -205,10 +209,10 @@ public class SystemControlServiceTests
            .Returns(MakeStatus(gen: 1, boostRemaining: 0),
                     MakeStatus(gen: 2, boostRemaining: 900));
 
-        var sut = new SystemControlService(api, auth, FastConfig());
-        await sut.RefreshStatusAsync();
+        var sut = CreateSut(api, auth);
+        await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
-        var result = await sut.SetBoostAsync(900);
+        var result = await sut.SetBoostAsync(900, TestContext.Current.CancellationToken);
 
         Assert.True(result);
     }
@@ -228,10 +232,10 @@ public class SystemControlServiceTests
            .Returns(MakeStatus(gen: 1, stopActive: true),
                     MakeStatus(gen: 2, stopActive: false));
 
-        var sut = new SystemControlService(api, auth, FastConfig());
-        await sut.RefreshStatusAsync();
+        var sut = CreateSut(api, auth);
+        await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
-        var result = await sut.StartSystemAsync();
+        var result = await sut.StartSystemAsync(TestContext.Current.CancellationToken);
 
         Assert.True(result);
     }
@@ -248,10 +252,10 @@ public class SystemControlServiceTests
            .Returns(MakeStatus(gen: 1, stopActive: false),
                     MakeStatus(gen: 2, stopActive: true));
 
-        var sut = new SystemControlService(api, auth, FastConfig());
-        await sut.RefreshStatusAsync();
+        var sut = CreateSut(api, auth);
+        await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
-        var result = await sut.StopSystemAsync();
+        var result = await sut.StopSystemAsync(TestContext.Current.CancellationToken);
 
         Assert.True(result);
     }
@@ -268,10 +272,10 @@ public class SystemControlServiceTests
         api.GetMainStatusAsync(Arg.Any<CancellationToken>())
            .Returns(MakeStatus(gen: 1, stopActive: true));
 
-        var sut = new SystemControlService(api, auth, FastConfig(timeoutSeconds: 1));
-        await sut.RefreshStatusAsync();
+        var sut = CreateSut(api, auth, timeoutSeconds: 1);
+        await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
-        var result = await sut.StartSystemAsync();
+        var result = await sut.StartSystemAsync(TestContext.Current.CancellationToken);
 
         Assert.False(result);
     }
@@ -287,8 +291,8 @@ public class SystemControlServiceTests
         var status = MakeStatus(gen: 1);
         api.GetMainStatusAsync(Arg.Any<CancellationToken>()).Returns(status);
 
-        var sut = new SystemControlService(api, auth, FastConfig());
-        await sut.RefreshStatusAsync();
+        var sut = CreateSut(api, auth);
+        await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
         Assert.True(sut.IsSystemOnline);
     }
@@ -303,9 +307,65 @@ public class SystemControlServiceTests
         status.Temperatures = null;
         api.GetMainStatusAsync(Arg.Any<CancellationToken>()).Returns(status);
 
-        var sut = new SystemControlService(api, auth, FastConfig());
-        await sut.RefreshStatusAsync();
+        var sut = CreateSut(api, auth);
+        await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
         Assert.False(sut.IsSystemOnline);
+    }
+
+    // ── Failure handling ───────────────────────────────────────────────────
+
+    [Fact]
+    public async Task SetFlowSpeedAsync_CommandRejected_ReturnsFalseWithoutPolling()
+    {
+        var api = Substitute.For<IWafeApiService>();
+        var auth = Substitute.For<IAuthenticationService>();
+        auth.IsAuthenticated.Returns(true);
+        api.SetFlowSpeedAsync(150, Arg.Any<CancellationToken>()).Returns(false);
+        api.GetMainStatusAsync(Arg.Any<CancellationToken>()).Returns(MakeStatus(gen: 1));
+
+        var sut = CreateSut(api, auth);
+        await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
+
+        var result = await sut.SetFlowSpeedAsync(150, TestContext.Current.CancellationToken);
+
+        Assert.False(result);
+        await api.Received(1).GetMainStatusAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task RefreshStatusAsync_FetchFails_KeepsLastKnownStatus()
+    {
+        var api = Substitute.For<IWafeApiService>();
+        var auth = Substitute.For<IAuthenticationService>();
+        auth.IsAuthenticated.Returns(true);
+        var status = MakeStatus(gen: 1);
+        api.GetMainStatusAsync(Arg.Any<CancellationToken>()).Returns(status, (SystemStatus?)null);
+
+        var sut = CreateSut(api, auth);
+        await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
+        var result = await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
+
+        Assert.Same(status, result);
+        Assert.Same(status, sut.CurrentStatus);
+        Assert.True(sut.IsSystemOnline);
+    }
+
+    [Fact]
+    public async Task StopSystemAsync_FetchFailsWhilePolling_IsNotConfirmed()
+    {
+        // Regression: a failed fetch used to null the status, and "StopActive ?? true" then read as confirmed.
+        var api = Substitute.For<IWafeApiService>();
+        var auth = Substitute.For<IAuthenticationService>();
+        auth.IsAuthenticated.Returns(true);
+        api.SetStopActiveAsync(true, Arg.Any<CancellationToken>()).Returns(true);
+        api.GetMainStatusAsync(Arg.Any<CancellationToken>()).Returns(MakeStatus(gen: 1, stopActive: false), (SystemStatus?)null);
+
+        var sut = CreateSut(api, auth, timeoutSeconds: 1);
+        await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
+
+        var result = await sut.StopSystemAsync(TestContext.Current.CancellationToken);
+
+        Assert.False(result);
     }
 }

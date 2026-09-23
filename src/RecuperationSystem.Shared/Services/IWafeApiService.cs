@@ -14,4 +14,10 @@ public interface IWafeApiService
     Task<bool> SetHolidayModeAsync(bool enabled, CancellationToken cancellationToken = default);
     Task<bool> SetBoostAsync(int seconds, CancellationToken cancellationToken = default);
     Task<bool> SetStopActiveAsync(bool stopActive, CancellationToken cancellationToken = default);
+    Task<ScheduleResponse?> GetScheduleAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Replaces the whole weekly plan (see <see cref="SchedulePlan"/>).
+    /// </summary>
+    Task<bool> SetSchedulePlanAsync(string plan, CancellationToken cancellationToken = default);
 }

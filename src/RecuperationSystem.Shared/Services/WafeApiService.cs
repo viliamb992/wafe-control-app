@@ -1,18 +1,27 @@
-using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
+using Microsoft.Extensions.Logging;
 using RecuperationSystem.Shared.Models;
-using Serilog;
+using RecuperationSystem.Shared.Serialization;
+using RecuperationSystem.Shared.Services.Http;
 
 namespace RecuperationSystem.Shared.Services;
 
-public class WafeApiService : IWafeApiService, IDisposable
+/// <summary>
+/// Typed client for the Wafe REST API. Stateless: the Sandcastle-Key lives in <see cref="WafeSession"/>
+/// and is attached to requests by <see cref="SandcastleAuthHandler"/>.
+/// </summary>
+public class WafeApiService : IWafeApiService
 {
     private readonly HttpClient _httpClient;
-    private volatile string? _sandcastleKey;
+    private readonly WafeSession _session;
+    private readonly ILogger<WafeApiService> _logger;
 
-    public WafeApiService(HttpClient httpClient)
+    public WafeApiService(HttpClient httpClient, WafeSession session, ILogger<WafeApiService> logger)
     {
         _httpClient = httpClient;
+        _session = session;
+        _logger = logger;
     }
 
     // ==================== AUTHENTICATION ====================
@@ -21,367 +30,120 @@ public class WafeApiService : IWafeApiService, IDisposable
     {
         try
         {
-            var request = new AuthRequest { Username = username, Password = password };
-            var requestJson = JsonSerializer.Serialize(request);
-            
-            Log.Information("? POST {Url}", $"{AppConstants.WafeApiBaseUrl}{AppConstants.AuthContextEndpoint}");
-            Log.Debug("? Request Body: {RequestBody}", requestJson);
-            
-            var response = await _httpClient.PostAsJsonAsync(AppConstants.AuthContextEndpoint, request, cancellationToken);
-            var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-            
-            Log.Debug("? Auth Response Status: {StatusCode}", response.StatusCode);
-            Log.Debug("? Auth Response Body: {ResponseBody}", responseBody);
-            
-            // Auth endpoint returns 201 Created on success
-            if (response.StatusCode == System.Net.HttpStatusCode.Created || response.IsSuccessStatusCode)
+            _logger.LogInformation("POST {Endpoint} for {Username}", AppConstants.AuthContextEndpoint, username);
+
+            using var request = SandcastleAuth.CreateLoginRequest(username, password);
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+
+            if (SandcastleAuth.TryReadKey(response, out var key))
             {
-                // Extract Sandcastle-Key from response headers
-                if (response.Headers.TryGetValues("Sandcastle-Key", out var keys))
-                {
-                    _sandcastleKey = keys.FirstOrDefault();
-                    Log.Information("Sandcastle-Key received and stored");
-                    return true;
-                }
-                else
-                {
-                    Log.Warning("Authentication returned success but no Sandcastle-Key header found");
-                    Log.Debug("Response headers: {Headers}", string.Join(", ", response.Headers.Select(h => $"{h.Key}: {string.Join(", ", h.Value)}")));
-                    
-                    // Try to extract from Set-Cookie as fallback
-                    if (response.Headers.TryGetValues("Set-Cookie", out var cookies))
-                    {
-                        foreach (var cookie in cookies)
-                        {
-                            if (cookie.Contains("Sandcastle-Key="))
-                            {
-                                var keyValue = cookie.Split(';')[0].Split('=')[1];
-                                _sandcastleKey = keyValue;
-                                    Log.Information("Sandcastle-Key extracted from Set-Cookie");
-                                return true;
-                            }
-                        }
-                    }
-                    
-                    return false;
-                }
+                _session.Start(username, password, key);
+                _logger.LogInformation("Sandcastle-Key received and stored");
+                return true;
             }
-            
-            Log.Warning("Authentication failed with status: {StatusCode}", response.StatusCode);
+
+            _logger.LogWarning("Authentication failed with status {StatusCode}", (int)response.StatusCode);
             return false;
         }
-        catch (Exception ex)
+        catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
         {
-            Log.Error(ex, "Auth Exception");
+            _logger.LogError(ex, "Authentication request failed");
             return false;
         }
     }
 
     // ==================== GET ENDPOINTS ====================
 
-    public async Task<SystemStatus?> GetMainStatusAsync(CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            Log.Information("? GET {Endpoint}", AppConstants.MainEndpoint);
-            using var req = CreateAuthRequest(HttpMethod.Get, AppConstants.MainEndpoint);
-            var response = await _httpClient.SendAsync(req, cancellationToken);
-            var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+    public Task<SystemStatus?> GetMainStatusAsync(CancellationToken cancellationToken = default)
+        => GetAsync(AppConstants.MainEndpoint, WafeJsonContext.Default.SystemStatus, cancellationToken);
 
-            Log.Debug("? Status code: {StatusCode}, Response Body: {ResponseBody}", response.StatusCode, responseBody);
+    public Task<HeaderInfo?> GetHeaderInfoAsync(CancellationToken cancellationToken = default)
+        => GetAsync(AppConstants.HeaderEndpoint, WafeJsonContext.Default.HeaderInfo, cancellationToken);
 
-            if (response.IsSuccessStatusCode)
-            {
-                return System.Text.Json.JsonSerializer.Deserialize<SystemStatus>(responseBody);
-            }
+    public Task<SystemInfo?> GetSystemInfoAsync(CancellationToken cancellationToken = default)
+        => GetAsync(AppConstants.InfoEndpoint, WafeJsonContext.Default.SystemInfo, cancellationToken);
 
-            Log.Warning("Failed to get main status: {StatusCode}", response.StatusCode);
-            return null;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Error getting main status");
-            return null;
-        }
-    }
+    public Task<MessagesResponse?> GetMessagesAsync(CancellationToken cancellationToken = default)
+        => GetAsync(AppConstants.MessagesEndpoint, WafeJsonContext.Default.MessagesResponse, cancellationToken);
 
-    public async Task<HeaderInfo?> GetHeaderInfoAsync(CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            Log.Information("? GET {Endpoint}", AppConstants.HeaderEndpoint);
-            using var req = CreateAuthRequest(HttpMethod.Get, AppConstants.HeaderEndpoint);
-            var response = await _httpClient.SendAsync(req, cancellationToken);
-            var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-
-            Log.Debug("? Header Info Response: {StatusCode}", response.StatusCode);
-            Log.Debug("? Response Body: {ResponseBody}", responseBody);
-
-            if (response.IsSuccessStatusCode)
-            {
-                return System.Text.Json.JsonSerializer.Deserialize<HeaderInfo>(responseBody);
-            }
-
-            Log.Warning("Failed to get header info: {StatusCode}", response.StatusCode);
-            return null;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Error getting header info");
-            return null;
-        }
-    }
-
-    public async Task<SystemInfo?> GetSystemInfoAsync(CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            Log.Information("? GET {Endpoint}", AppConstants.InfoEndpoint);
-            using var req = CreateAuthRequest(HttpMethod.Get, AppConstants.InfoEndpoint);
-            var response = await _httpClient.SendAsync(req, cancellationToken);
-            var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-
-            Log.Debug("? System Info Response: {StatusCode}", response.StatusCode);
-            Log.Debug("? Response Body: {ResponseBody}", responseBody);
-
-            if (response.IsSuccessStatusCode)
-            {
-                return System.Text.Json.JsonSerializer.Deserialize<SystemInfo>(responseBody);
-            }
-
-            Log.Warning("Failed to get system info: {StatusCode}", response.StatusCode);
-            return null;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Error getting system info");
-            return null;
-        }
-    }
-
-    public async Task<MessagesResponse?> GetMessagesAsync(CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            Log.Information("? GET {Endpoint}", AppConstants.MessagesEndpoint);
-            using var req = CreateAuthRequest(HttpMethod.Get, AppConstants.MessagesEndpoint);
-            var response = await _httpClient.SendAsync(req, cancellationToken);
-            var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-
-            Log.Debug("? Messages Response: {StatusCode}", response.StatusCode);
-            Log.Debug("? Response Body: {ResponseBody}", responseBody);
-
-            if (response.IsSuccessStatusCode)
-            {
-                return System.Text.Json.JsonSerializer.Deserialize<MessagesResponse>(responseBody);
-            }
-
-            Log.Warning("Failed to get messages: {StatusCode}", response.StatusCode);
-            return null;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Error getting messages");
-            return null;
-        }
-    }
-
-    public async Task<ScheduleResponse?> GetScheduleAsync(CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            Log.Information("? GET {Endpoint}", AppConstants.ScheduleEndpoint);
-            using var req = CreateAuthRequest(HttpMethod.Get, AppConstants.ScheduleEndpoint);
-            var response = await _httpClient.SendAsync(req, cancellationToken);
-            var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-
-            Log.Debug("? Schedule Response: {StatusCode}", response.StatusCode);
-            Log.Debug("? Response Body: {ResponseBody}", responseBody);
-
-            if (response.IsSuccessStatusCode)
-            {
-                return System.Text.Json.JsonSerializer.Deserialize<ScheduleResponse>(responseBody);
-            }
-
-            Log.Warning("Failed to get schedule: {StatusCode}", response.StatusCode);
-            return null;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Error getting schedule");
-            return null;
-        }
-    }
+    public Task<ScheduleResponse?> GetScheduleAsync(CancellationToken cancellationToken = default)
+        => GetAsync(AppConstants.ScheduleEndpoint, WafeJsonContext.Default.ScheduleResponse, cancellationToken);
 
     // ==================== CONTROL ENDPOINTS (PUT) ====================
 
-    public async Task<bool> SetStopActiveAsync(bool stop, CancellationToken cancellationToken = default)
+    public Task<bool> SetStopActiveAsync(bool stopActive, CancellationToken cancellationToken = default)
+        => PutValueAsync(AppConstants.StopActiveEndpoint, stopActive, WafeJsonContext.Default.ValueRequestBoolean, cancellationToken);
+
+    public Task<bool> SetSilentModeAsync(bool enabled, CancellationToken cancellationToken = default)
+        => PutValueAsync(AppConstants.SilentActiveEndpoint, enabled, WafeJsonContext.Default.ValueRequestBoolean, cancellationToken);
+
+    public Task<bool> SetHolidayModeAsync(bool enabled, CancellationToken cancellationToken = default)
+        => PutValueAsync(AppConstants.HolidayActiveEndpoint, enabled, WafeJsonContext.Default.ValueRequestBoolean, cancellationToken);
+
+    public Task<bool> SetBoostAsync(int seconds, CancellationToken cancellationToken = default)
+        => PutValueAsync(AppConstants.BoostRemainingEndpoint, seconds, WafeJsonContext.Default.ValueRequestInt32, cancellationToken);
+
+    public Task<bool> SetAuthorityModeAsync(string mode, CancellationToken cancellationToken = default)
+        => PutValueAsync(AppConstants.AuthorityEndpoint, mode, WafeJsonContext.Default.ValueRequestString, cancellationToken);
+
+    public Task<bool> SetFlowSpeedAsync(int speed, CancellationToken cancellationToken = default)
     {
-        try
+        if (speed is < AppConstants.MinFlowSpeed or > AppConstants.MaxFlowSpeed)
         {
-            var payload = new ValueRequest<bool> { Value = stop };
-            Log.Information("? PUT {Endpoint} - Setting stop-active to {Value} (stop={Stop}, start={Start})",
-                AppConstants.StopActiveEndpoint, stop, stop, !stop);
-            Log.Debug("? Request Body: {RequestBody}", JsonSerializer.Serialize(payload));
-            using var req = CreateAuthRequest(HttpMethod.Put, AppConstants.StopActiveEndpoint);
-            req.Content = JsonContent.Create(payload);
-            var response = await _httpClient.SendAsync(req, cancellationToken);
-            Log.Debug("? Stop-Active Response: {StatusCode}", response.StatusCode);
-            return response.IsSuccessStatusCode;
+            _logger.LogWarning("Flow speed {Speed} out of range ({Min}-{Max})", speed, AppConstants.MinFlowSpeed, AppConstants.MaxFlowSpeed);
+            return Task.FromResult(false);
         }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Error setting stop-active");
-            return false;
-        }
+
+        return PutValueAsync(AppConstants.FlowRequestedEndpoint, speed, WafeJsonContext.Default.ValueRequestInt32, cancellationToken);
     }
 
-    public async Task<bool> SetSilentModeAsync(bool silent, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            var payload = new ValueRequest<bool> { Value = silent };
-            Log.Information("? PUT {Endpoint} - Setting silent mode to {Silent}",
-                AppConstants.SilentActiveEndpoint, silent);
-            Log.Debug("? Request Body: {RequestBody}", JsonSerializer.Serialize(payload));
-            using var req = CreateAuthRequest(HttpMethod.Put, AppConstants.SilentActiveEndpoint);
-            req.Content = JsonContent.Create(payload);
-            var response = await _httpClient.SendAsync(req, cancellationToken);
-            Log.Debug("? Silent Mode Response: {StatusCode}", response.StatusCode);
-            return response.IsSuccessStatusCode;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Error setting silent mode");
-            return false;
-        }
-    }
-
-    public async Task<bool> SetHolidayModeAsync(bool holiday, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            var payload = new ValueRequest<bool> { Value = holiday };
-            Log.Information("? PUT {Endpoint} - Setting holiday mode to {Holiday}",
-                AppConstants.HolidayActiveEndpoint, holiday);
-            Log.Debug("? Request Body: {RequestBody}", JsonSerializer.Serialize(payload));
-            using var req = CreateAuthRequest(HttpMethod.Put, AppConstants.HolidayActiveEndpoint);
-            req.Content = JsonContent.Create(payload);
-            var response = await _httpClient.SendAsync(req, cancellationToken);
-            Log.Debug("? Holiday Mode Response: {StatusCode}", response.StatusCode);
-            return response.IsSuccessStatusCode;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Error setting holiday mode");
-            return false;
-        }
-    }
-
-    public async Task<bool> SetBoostAsync(int seconds, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            var payload = new ValueRequest<int> { Value = seconds };
-            Log.Information("? PUT {Endpoint} - Setting boost to {Seconds} seconds ({Minutes} minutes)",
-                AppConstants.BoostRemainingEndpoint, seconds, seconds / 60);
-            Log.Debug("? Request Body: {RequestBody}", JsonSerializer.Serialize(payload));
-            using var req = CreateAuthRequest(HttpMethod.Put, AppConstants.BoostRemainingEndpoint);
-            req.Content = JsonContent.Create(payload);
-            var response = await _httpClient.SendAsync(req, cancellationToken);
-            Log.Debug("? Boost Response: {StatusCode}", response.StatusCode);
-            return response.IsSuccessStatusCode;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Error setting boost");
-            return false;
-        }
-    }
-
-    public async Task<bool> SetAuthorityModeAsync(string mode, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            var payload = new ValueRequest<string> { Value = mode };
-            Log.Information("? PUT {Endpoint} - Setting authority mode to {Mode}",
-                AppConstants.AuthorityEndpoint, mode);
-            Log.Debug("? Request Body: {RequestBody}", JsonSerializer.Serialize(payload));
-            using var req = CreateAuthRequest(HttpMethod.Put, AppConstants.AuthorityEndpoint);
-            req.Content = JsonContent.Create(payload);
-            var response = await _httpClient.SendAsync(req, cancellationToken);
-            Log.Debug("? Authority Mode Response: {StatusCode}", response.StatusCode);
-            return response.IsSuccessStatusCode;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Error setting authority mode");
-            return false;
-        }
-    }
-
-    public async Task<bool> SetFlowSpeedAsync(int speed, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            if (speed < AppConstants.MinFlowSpeed || speed > AppConstants.MaxFlowSpeed)
-            {
-                Log.Warning("Flow speed {Speed} out of range ({Min}-{Max})", speed, AppConstants.MinFlowSpeed, AppConstants.MaxFlowSpeed);
-                return false;
-            }
-
-            var payload = new ValueRequest<int> { Value = speed };
-            Log.Information("? PUT {Endpoint} - Setting flow speed to {Speed} m³/h",
-                AppConstants.FlowRequestedEndpoint, speed);
-            Log.Debug("? Request Body: {RequestBody}", JsonSerializer.Serialize(payload));
-            using var req = CreateAuthRequest(HttpMethod.Put, AppConstants.FlowRequestedEndpoint);
-            req.Content = JsonContent.Create(payload);
-            var response = await _httpClient.SendAsync(req, cancellationToken);
-            Log.Debug("? Flow Speed Response: {StatusCode}", response.StatusCode);
-            return response.IsSuccessStatusCode;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Error setting flow speed");
-            return false;
-        }
-    }
-
-    public async Task<bool> SetSchedulePlanAsync(string plan, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            var payload = new ValueRequest<string> { Value = plan };
-            Log.Information("? PUT {Endpoint} - Setting schedule plan", AppConstants.SchedulePlanEndpoint);
-            Log.Debug("? Request Body: {RequestBody}", JsonSerializer.Serialize(payload));
-            using var req = CreateAuthRequest(HttpMethod.Put, AppConstants.SchedulePlanEndpoint);
-            req.Content = JsonContent.Create(payload);
-            var response = await _httpClient.SendAsync(req, cancellationToken);
-            Log.Debug("? Schedule Plan Response: {StatusCode}", response.StatusCode);
-            return response.IsSuccessStatusCode;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Error setting schedule plan");
-            return false;
-        }
-    }
+    public Task<bool> SetSchedulePlanAsync(string plan, CancellationToken cancellationToken = default)
+        => PutValueAsync(AppConstants.SchedulePlanEndpoint, plan, WafeJsonContext.Default.ValueRequestString, cancellationToken);
 
     // ==================== HELPER METHODS ====================
 
-    private HttpRequestMessage CreateAuthRequest(HttpMethod method, string url)
+    private async Task<T?> GetAsync<T>(string endpoint, JsonTypeInfo<T> typeInfo, CancellationToken cancellationToken)
+        where T : class
     {
-        var req = new HttpRequestMessage(method, url);
-        var key = _sandcastleKey;
-        if (!string.IsNullOrEmpty(key))
-            req.Headers.Add("Sandcastle-Key", key);
-        else
-            Log.Warning("No Sandcastle-Key available for authenticated request");
-        return req;
+        try
+        {
+            using var response = await _httpClient.GetAsync(endpoint, cancellationToken);
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("GET {Endpoint} failed with status {StatusCode}", endpoint, (int)response.StatusCode);
+                return null;
+            }
+
+            _logger.LogDebug("GET {Endpoint} â†’ {Body}", endpoint, body);
+            return JsonSerializer.Deserialize(body, typeInfo);
+        }
+        catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogError(ex, "GET {Endpoint} failed", endpoint);
+            return null;
+        }
     }
 
-    public void Dispose()
+    private async Task<bool> PutValueAsync<T>(string endpoint, T value, JsonTypeInfo<ValueRequest<T>> typeInfo, CancellationToken cancellationToken)
     {
-        _httpClient?.Dispose();
+        try
+        {
+            _logger.LogInformation("PUT {Endpoint} = {Value}", endpoint, value);
+
+            using var content = JsonBody.Create(new ValueRequest<T> { Value = value }, typeInfo);
+            using var response = await _httpClient.PutAsync(endpoint, content, cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+                _logger.LogWarning("PUT {Endpoint} failed with status {StatusCode}", endpoint, (int)response.StatusCode);
+
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogError(ex, "PUT {Endpoint} failed", endpoint);
+            return false;
+        }
     }
 }

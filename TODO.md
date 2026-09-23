@@ -1,0 +1,95 @@
+# TODO — Wafe Recuperation App
+
+Last update: 2026-09-24 · SDK 10.0.401 · Windows App SDK 2.5.1
+
+**Goal:** a native **WinUI 3** app for Windows and a **.NET MAUI** app for **Android and iOS**, both on the same UI-agnostic core. The old Avalonia desktop app has been removed.
+
+## Where things stand
+
+| Project | State |
+| --- | --- |
+| `RecuperationSystem.Shared` | API client (stateless, source-generated JSON, `Content-Length` bodies), `WafeSession` + `SandcastleAuthHandler` (key attach, re-login on 401). |
+| `RecuperationSystem.Core` | Services + view models on CommunityToolkit.Mvvm, `AddRecuperationCore()`. Trim/AOT-analyzer clean. |
+| `RecuperationSystem.WinUI` | Windows app: login, dashboard, weekly schedule, settings, tray, single instance. Runs against the real API. |
+| `RecuperationSystem.Tests` | 155 tests (Shared + Core) on xUnit.net v3 + Microsoft.Testing.Platform, including fixtures captured from the real API. |
+
+`RecuperationSystem.slnx` builds with 0 errors and all tests pass. CI runs on `windows-latest`.
+
+---
+
+## Phase 1: Shared core
+
+- [ ] **Needs real data:** `HeaderInfo`, `SystemInfo`, `Messages` are still unverified. `/main` and `/schedule` are verified. Capture the others the same way (Debug log → fixture), then fix the models or delete them.
+
+## Phase 2: WinUI 3 Windows app
+
+Unpackaged, self-contained Windows App SDK 2.5 (`dotnet run --project src/RecuperationSystem.WinUI`).
+
+- [ ] **Your test pass:** sign out/in and try every control against the unit, including adding, editing and deleting a schedule action. Only the read paths were verified live: no commands or schedule changes were sent.
+- [ ] Remember window size/position.
+- [ ] Hide controls for features missing from the unit's `capabilities` list (e.g. `["boost","silent","holiday"]`).
+- [ ] Boost countdown that ticks every second between polls.
+- [ ] Decide: pause polling while hidden in the tray (less API traffic) vs. a live tray tooltip.
+- [ ] Toast notifications (`AppNotificationManager`): filter health low, unit offline, boost finished.
+- [ ] More settings: poll interval, theme override, about/version.
+- [ ] Jump list (taskbar right-click): Boost 15/30, Stop boost.
+- [ ] Schedule: keyboard way to add at a chosen slot (today only via the + button), a "now" marker line, copy a day to other days.
+- [ ] Accessibility pass (Narrator, keyboard-only, high contrast).
+- [ ] **Packaging decision:** stay unpackaged (zip) or move to MSIX (Start menu entry, clean updates, `StartupTask`). See Phase 7.
+
+## Phase 4: MAUI mobile app skeleton (Android + iOS)
+
+- [ ] `dotnet new maui -n RecuperationSystem.Mobile` with `TargetFrameworks` = `net10.0-android;net10.0-ios`. Add it to the solution.
+- [ ] Choose the `ApplicationId`/bundle id (it can't change after store release), the display name, and minimum OS versions (suggest Android API 26, iOS 15).
+- [ ] `MauiProgram`: `AddRecuperationCore()`, platform services, pages. Call `AppViewModel.StartAsync()` on startup.
+- [ ] `SecureStorageCredentialStore : ICredentialStore` (Android Keystore / iOS Keychain).
+- [ ] App icon + splash (`MauiIcon`, `MauiSplashScreen`) from `app-icon.svg`. Flatten its blur filter first.
+- [ ] Shell navigation: Login → Dashboard (+ Settings). Compiled bindings (`x:DataType`) everywhere.
+- [ ] Release builds on devices: Android (trimming + R8), iOS.
+- [ ] **iOS build host:** needs a Mac (VS "Pair to Mac" or a macOS CI runner). Hot Restart can deploy from Windows for debugging only. An Apple Developer account is needed for TestFlight.
+
+## Phase 5: Mobile dashboard UI
+
+Same information as the Windows dashboard, phone-first. Single column; tablets get two. Light/dark via `AppThemeBinding`.
+
+- [ ] Sensor tiles, power toggle with confirmation for Stop, segmented mode selector, flow slider (send on drag end, haptic tick), boost chips + countdown, Silent/Holiday switches, filter bars.
+- [ ] Weekly schedule on `ScheduleViewModel` (same logic as Windows): day-by-day list or scrollable grid, tap/long-press to add, same add/edit sheet.
+- [ ] `RefreshView` pull-to-refresh, offline/error banner (`Connectivity`), pending state per control.
+- [ ] Use the Core `Strings` for all text, and a language picker in Settings (`ISettingsStore` on MAUI `Preferences`).
+
+## Phase 6: Mobile platform polish
+
+- [ ] Lifecycle: stop polling when backgrounded, refresh on resume.
+- [ ] App shortcuts via MAUI `AppActions` (Boost 15/30, Stop boost).
+- [ ] Android: edge-to-edge, optional biometric unlock. iOS: safe areas, haptics, optional Face ID.
+
+## Phase 7: CI & release
+
+- [ ] Windows: publish the self-contained WinUI app (zip, or MSIX with a cert in secrets) on tag, attach to a GitHub Release.
+- [ ] Android: keystore in secrets, signed `.aab`/`.apk` on tag (runner with `dotnet workload install maui-android`).
+- [ ] iOS: certificates + provisioning profile in secrets, `.ipa` → TestFlight (macOS runner).
+- [ ] Versioning: display version from the tag, build number from the run number.
+
+## Backlog
+
+- [ ] Background notifications on mobile (Android `WorkManager` ≥ 15 min, iOS `BGAppRefreshTask`).
+- [ ] Android Quick Settings tile and home-screen widget for boost/status.
+- [ ] History chart (temps/CO₂). The API doesn't expose history, so it needs local sampling into SQLite.
+- [ ] Messages screen, once that model is verified.
+
+---
+
+## Decisions
+
+- **Windows: native WinUI 3.** Real Fluent controls, Mica, native title bar, tray, Efficiency Mode, single instance. **Android/iOS: .NET MAUI.** Both apps share `Core`; only views and platform services differ.
+  - *Considered:* MAUI for all three (one view layer, but weaker Windows polish), and Avalonia everywhere (non-native look on mobile).
+- **Core on CommunityToolkit.Mvvm.** ReactiveUI is dropped.
+- **WinUI app ships unpackaged + self-contained for now.** A plain exe, no runtime install. MSIX remains an option (Phase 2/7).
+
+## Open questions
+
+- [ ] Windows packaging: stay unpackaged or move to MSIX?
+- [ ] Distribution for mobile: stores (Play / App Store) or sideload/TestFlight only? This affects bundle ids, signing and the privacy policy.
+- [ ] Is a Mac available for iOS builds, or should that go through CI only?
+- [ ] How long does a `Sandcastle-Key` session live? Re-login on 401 handles it either way.
+- [ ] Any official Wafe API documentation, or are all models reverse-engineered?

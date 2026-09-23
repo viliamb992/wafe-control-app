@@ -1,0 +1,507 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Czech: the app's primary language (NeutralLanguage). Every key here must also exist in Strings.sk.resx and Strings.en.resx. -->
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AppStatusNotConnected" xml:space="preserve">
+    <value>Nepřipojeno</value>
+  </data>
+  <data name="AppStatusConnecting" xml:space="preserve">
+    <value>Připojování k Wafe…</value>
+  </data>
+  <data name="AppStatusSignInPrompt" xml:space="preserve">
+    <value>Přihlaste se.</value>
+  </data>
+  <data name="AppStatusConnectionFailed" xml:space="preserve">
+    <value>Připojení se nezdařilo. Přihlaste se.</value>
+  </data>
+  <data name="AppStatusSigningIn" xml:space="preserve">
+    <value>Přihlašování…</value>
+  </data>
+  <data name="AppStatusConnected" xml:space="preserve">
+    <value>Úspěšně připojeno</value>
+  </data>
+  <data name="AppStatusDisconnected" xml:space="preserve">
+    <value>Odpojeno</value>
+  </data>
+  <data name="AppStatusUnitOnline" xml:space="preserve">
+    <value>Jednotka je online</value>
+  </data>
+  <data name="AppStatusUnitOffline" xml:space="preserve">
+    <value>Jednotka je offline</value>
+  </data>
+  <data name="AppStatusRefreshError" xml:space="preserve">
+    <value>Chyba při obnovení: {0}</value>
+    <comment>{0} = error message</comment>
+  </data>
+  <data name="TitleBarConnection" xml:space="preserve">
+    <value>Připojení rekuperační jednotky</value>
+  </data>
+  <data name="TitleBarOnline" xml:space="preserve">
+    <value>Online</value>
+  </data>
+  <data name="TitleBarOffline" xml:space="preserve">
+    <value>Offline</value>
+  </data>
+  <data name="TitleBarRefresh" xml:space="preserve">
+    <value>Obnovit</value>
+  </data>
+  <data name="TitleBarRefreshTooltip" xml:space="preserve">
+    <value>Obnovit (F5)</value>
+  </data>
+  <data name="TitleBarSettings" xml:space="preserve">
+    <value>Nastavení</value>
+  </data>
+  <data name="TitleBarMore" xml:space="preserve">
+    <value>Další možnosti</value>
+  </data>
+  <data name="MenuOpenLogFolder" xml:space="preserve">
+    <value>Otevřít složku s protokoly</value>
+  </data>
+  <data name="MenuSignOut" xml:space="preserve">
+    <value>Odhlásit se</value>
+  </data>
+  <data name="MenuExit" xml:space="preserve">
+    <value>Ukončit</value>
+  </data>
+  <data name="TrayOpen" xml:space="preserve">
+    <value>Otevřít Wafe Recuperation</value>
+  </data>
+  <data name="TrayBoost15" xml:space="preserve">
+    <value>Boost na 15 minut</value>
+  </data>
+  <data name="TrayBoost30" xml:space="preserve">
+    <value>Boost na 30 minut</value>
+  </data>
+  <data name="TrayMode" xml:space="preserve">
+    <value>Režim: {0}</value>
+    <comment>Tray tooltip; {0} = operating mode name</comment>
+  </data>
+  <data name="TrayReadings" xml:space="preserve">
+    <value>Průtok: {0} · CO₂: {1}</value>
+    <comment>Tray tooltip; {0} = air flow, {1} = CO₂ level</comment>
+  </data>
+  <data name="LoginTitle" xml:space="preserve">
+    <value>Přihlášení</value>
+  </data>
+  <data name="LoginDescription" xml:space="preserve">
+    <value>Použijte svůj účet Wafe (go2my.wafe.eu).</value>
+  </data>
+  <data name="LoginEmail" xml:space="preserve">
+    <value>E-mail</value>
+  </data>
+  <data name="LoginPassword" xml:space="preserve">
+    <value>Heslo</value>
+  </data>
+  <data name="LoginRememberMe" xml:space="preserve">
+    <value>Zůstat přihlášen</value>
+  </data>
+  <data name="LoginSubmit" xml:space="preserve">
+    <value>Přihlásit se</value>
+  </data>
+  <data name="LoginCredentialsRequired" xml:space="preserve">
+    <value>Zadejte e-mail a heslo.</value>
+  </data>
+  <data name="LoginInvalidCredentials" xml:space="preserve">
+    <value>Nesprávný e-mail nebo heslo.</value>
+  </data>
+  <data name="LoginFailed" xml:space="preserve">
+    <value>Přihlášení se nezdařilo.</value>
+  </data>
+  <data name="SystemRunning" xml:space="preserve">
+    <value>V provozu</value>
+  </data>
+  <data name="SystemStopped" xml:space="preserve">
+    <value>Zastaveno</value>
+  </data>
+  <data name="SystemStart" xml:space="preserve">
+    <value>Spustit systém</value>
+  </data>
+  <data name="SystemStop" xml:space="preserve">
+    <value>Zastavit systém</value>
+  </data>
+  <data name="SystemSummary" xml:space="preserve">
+    <value>Režim: {0} · {1}</value>
+    <comment>{0} = operating mode name, {1} = current air flow</comment>
+  </data>
+  <data name="SystemSummaryModeOnly" xml:space="preserve">
+    <value>Režim: {0}</value>
+    <comment>{0} = operating mode name; shown while the unit reports no sensor data</comment>
+  </data>
+  <data name="SystemNoSensorData" xml:space="preserve">
+    <value>Data ze senzorů se objeví při zapnutí jednotky, tj. v inteligentním nebo manuálním režimu. V plánovacím režimu pouze v konkrétním čase.</value>
+  </data>
+  <data name="SystemNextStart" xml:space="preserve">
+    <value>Další spuštění: {0}</value>
+    <comment>{0} = date and time the schedule next starts the unit</comment>
+  </data>
+  <data name="SystemStarting" xml:space="preserve">
+    <value>Spouštění systému…</value>
+  </data>
+  <data name="SystemStartedStatus" xml:space="preserve">
+    <value>Systém spuštěn</value>
+  </data>
+  <data name="SystemStartNotConfirmed" xml:space="preserve">
+    <value>Příkaz ke spuštění odeslán (nepotvrzeno)</value>
+  </data>
+  <data name="SystemStopping" xml:space="preserve">
+    <value>Zastavování systému…</value>
+  </data>
+  <data name="SystemStoppedStatus" xml:space="preserve">
+    <value>Systém zastaven</value>
+  </data>
+  <data name="SystemStopNotConfirmed" xml:space="preserve">
+    <value>Příkaz k zastavení odeslán (nepotvrzeno)</value>
+  </data>
+  <data name="SystemToggleError" xml:space="preserve">
+    <value>Chyba při spuštění nebo zastavení: {0}</value>
+    <comment>{0} = error message</comment>
+  </data>
+  <data name="SensorOutdoor" xml:space="preserve">
+    <value>Venku</value>
+  </data>
+  <data name="SensorSupplyAir" xml:space="preserve">
+    <value>Přiváděný vzduch</value>
+  </data>
+  <data name="SensorIndoor" xml:space="preserve">
+    <value>Uvnitř</value>
+  </data>
+  <data name="SensorExhaustAir" xml:space="preserve">
+    <value>Odpadní vzduch</value>
+  </data>
+  <data name="SensorHumidity" xml:space="preserve">
+    <value>Vlhkost</value>
+  </data>
+  <data name="Co2NoReading" xml:space="preserve">
+    <value>Bez údaje</value>
+  </data>
+  <data name="Co2Good" xml:space="preserve">
+    <value>Dobrá kvalita vzduchu</value>
+  </data>
+  <data name="Co2Fair" xml:space="preserve">
+    <value>Průměrná: brzy vyvětrejte</value>
+  </data>
+  <data name="Co2Poor" xml:space="preserve">
+    <value>Špatná: vyvětrejte hned</value>
+  </data>
+  <data name="Co2Hint" xml:space="preserve">
+    <value>Pod 800 ppm je vzduch dobrý, nad 1200 ppm vyvětrejte.</value>
+  </data>
+  <data name="VentilationTitle" xml:space="preserve">
+    <value>Větrání</value>
+  </data>
+  <data name="OperatingModeLabel" xml:space="preserve">
+    <value>Provozní režim</value>
+  </data>
+  <data name="ModeIntelligent" xml:space="preserve">
+    <value>Inteligentní</value>
+  </data>
+  <data name="ModeManual" xml:space="preserve">
+    <value>Ruční</value>
+  </data>
+  <data name="ModeSchedule" xml:space="preserve">
+    <value>Plán</value>
+  </data>
+  <data name="ModeChanging" xml:space="preserve">
+    <value>Přepínání režimu…</value>
+  </data>
+  <data name="ModeChanged" xml:space="preserve">
+    <value>Režim přepnut: {0}</value>
+    <comment>{0} = operating mode name</comment>
+  </data>
+  <data name="ModeChangeTimedOut" xml:space="preserve">
+    <value>Změna režimu nebyla včas potvrzena. Zkontrolujte stav.</value>
+  </data>
+  <data name="ModeError" xml:space="preserve">
+    <value>Chyba při změně režimu: {0}</value>
+    <comment>{0} = error message</comment>
+  </data>
+  <data name="FlowRateLabel" xml:space="preserve">
+    <value>Průtok vzduchu</value>
+  </data>
+  <data name="FlowManualHint" xml:space="preserve">
+    <value>Průtok lze nastavit v ručním režimu.</value>
+  </data>
+  <data name="FlowManualOnly" xml:space="preserve">
+    <value>Průtok lze měnit jen v ručním režimu</value>
+  </data>
+  <data name="FlowUpdating" xml:space="preserve">
+    <value>Nastavování průtoku…</value>
+  </data>
+  <data name="FlowSet" xml:space="preserve">
+    <value>Průtok nastaven na {0} m³/h</value>
+    <comment>{0} = air flow</comment>
+  </data>
+  <data name="FlowNotConfirmed" xml:space="preserve">
+    <value>Příkaz k nastavení průtoku {0} m³/h odeslán (nepotvrzeno)</value>
+    <comment>{0} = air flow</comment>
+  </data>
+  <data name="FlowError" xml:space="preserve">
+    <value>Chyba při nastavení průtoku: {0}</value>
+    <comment>{0} = error message</comment>
+  </data>
+  <data name="BoostTitle" xml:space="preserve">
+    <value>Boost</value>
+  </data>
+  <data name="BoostOff" xml:space="preserve">
+    <value>Vypnuto</value>
+  </data>
+  <data name="BoostActive" xml:space="preserve">
+    <value>Aktivní · zbývá {0}</value>
+    <comment>{0} = remaining time, mm:ss</comment>
+  </data>
+  <data name="BoostStop" xml:space="preserve">
+    <value>Vypnout boost</value>
+  </data>
+  <data name="BoostInvalidDuration" xml:space="preserve">
+    <value>Neplatná délka boostu</value>
+  </data>
+  <data name="BoostActivating" xml:space="preserve">
+    <value>Zapínání boostu na {0} min…</value>
+    <comment>{0} = minutes</comment>
+  </data>
+  <data name="BoostActivated" xml:space="preserve">
+    <value>Boost zapnut na {0} min</value>
+    <comment>{0} = minutes</comment>
+  </data>
+  <data name="BoostStopping" xml:space="preserve">
+    <value>Vypínání boostu…</value>
+  </data>
+  <data name="BoostStopped" xml:space="preserve">
+    <value>Boost vypnut</value>
+  </data>
+  <data name="BoostNotConfirmed" xml:space="preserve">
+    <value>Příkaz pro boost odeslán (nepotvrzeno)</value>
+  </data>
+  <data name="BoostError" xml:space="preserve">
+    <value>Chyba boostu: {0}</value>
+    <comment>{0} = error message</comment>
+  </data>
+  <data name="ModesTitle" xml:space="preserve">
+    <value>Režimy</value>
+  </data>
+  <data name="SilentTitle" xml:space="preserve">
+    <value>Tichý režim</value>
+  </data>
+  <data name="SilentDescription" xml:space="preserve">
+    <value>Nejnižší hluk, snížený průtok</value>
+  </data>
+  <data name="SilentModeName" xml:space="preserve">
+    <value>Tichý režim</value>
+  </data>
+  <data name="SilentEnabling" xml:space="preserve">
+    <value>Zapínání tichého režimu…</value>
+  </data>
+  <data name="SilentDisabling" xml:space="preserve">
+    <value>Vypínání tichého režimu…</value>
+  </data>
+  <data name="SilentOn" xml:space="preserve">
+    <value>Tichý režim zapnut</value>
+  </data>
+  <data name="SilentOff" xml:space="preserve">
+    <value>Tichý režim vypnut</value>
+  </data>
+  <data name="SilentOnNotConfirmed" xml:space="preserve">
+    <value>Příkaz k zapnutí tichého režimu odeslán (nepotvrzeno)</value>
+  </data>
+  <data name="SilentOffNotConfirmed" xml:space="preserve">
+    <value>Příkaz k vypnutí tichého režimu odeslán (nepotvrzeno)</value>
+  </data>
+  <data name="SilentError" xml:space="preserve">
+    <value>Chyba tichého režimu: {0}</value>
+    <comment>{0} = error message</comment>
+  </data>
+  <data name="HolidayTitle" xml:space="preserve">
+    <value>Dovolená</value>
+  </data>
+  <data name="HolidayDescription" xml:space="preserve">
+    <value>Minimální větrání, když jste pryč</value>
+  </data>
+  <data name="HolidayModeName" xml:space="preserve">
+    <value>Režim dovolené</value>
+  </data>
+  <data name="HolidayEnabling" xml:space="preserve">
+    <value>Zapínání režimu dovolené…</value>
+  </data>
+  <data name="HolidayDisabling" xml:space="preserve">
+    <value>Vypínání režimu dovolené…</value>
+  </data>
+  <data name="HolidayOn" xml:space="preserve">
+    <value>Režim dovolené zapnut</value>
+  </data>
+  <data name="HolidayOff" xml:space="preserve">
+    <value>Režim dovolené vypnut</value>
+  </data>
+  <data name="HolidayOnNotConfirmed" xml:space="preserve">
+    <value>Příkaz k zapnutí režimu dovolené odeslán (nepotvrzeno)</value>
+  </data>
+  <data name="HolidayOffNotConfirmed" xml:space="preserve">
+    <value>Příkaz k vypnutí režimu dovolené odeslán (nepotvrzeno)</value>
+  </data>
+  <data name="HolidayError" xml:space="preserve">
+    <value>Chyba režimu dovolené: {0}</value>
+    <comment>{0} = error message</comment>
+  </data>
+  <data name="FiltersTitle" xml:space="preserve">
+    <value>Filtry</value>
+  </data>
+  <data name="FilterSupply" xml:space="preserve">
+    <value>Přívodní filtr</value>
+  </data>
+  <data name="FilterExhaust" xml:space="preserve">
+    <value>Odtahový filtr</value>
+  </data>
+  <data name="FilterNoData" xml:space="preserve">
+    <value>Jednotka nehlásí stav filtrů.</value>
+  </data>
+  <data name="ScheduleTitle" xml:space="preserve">
+    <value>Týdenní plán</value>
+  </data>
+  <data name="ScheduleHint" xml:space="preserve">
+    <value>Kliknutím nebo tažením v mřížce naplánujete režim jednotky na daný čas, tlačítkem + zadáte přesné časy. Naplánovat lze až 50 akcí.</value>
+  </data>
+  <data name="ScheduleReload" xml:space="preserve">
+    <value>Znovu načíst plán</value>
+  </data>
+  <data name="ScheduleModeOffTitle" xml:space="preserve">
+    <value>Režim Plán není zapnutý</value>
+  </data>
+  <data name="ScheduleModeOffMessage" xml:space="preserve">
+    <value>Jednotka se tímto plánem řídí, jen když je v provozním režimu Plán.</value>
+  </data>
+  <data name="ScheduleUseScheduleMode" xml:space="preserve">
+    <value>Zapnout režim Plán</value>
+  </data>
+  <data name="ScheduleEntryCount" xml:space="preserve">
+    <value>{0} z {1} akcí</value>
+    <comment>{0} = planned actions, {1} = maximum</comment>
+  </data>
+  <data name="ScheduleAddAction" xml:space="preserve">
+    <value>Přidat akci</value>
+  </data>
+  <data name="ScheduleEditAction" xml:space="preserve">
+    <value>Upravit akci</value>
+  </data>
+  <data name="ScheduleFrom" xml:space="preserve">
+    <value>Od</value>
+  </data>
+  <data name="ScheduleFromDay" xml:space="preserve">
+    <value>Den začátku</value>
+  </data>
+  <data name="ScheduleFromTime" xml:space="preserve">
+    <value>Čas začátku</value>
+  </data>
+  <data name="ScheduleTo" xml:space="preserve">
+    <value>Do</value>
+  </data>
+  <data name="ScheduleToDay" xml:space="preserve">
+    <value>Den konce</value>
+  </data>
+  <data name="ScheduleToTime" xml:space="preserve">
+    <value>Čas konce</value>
+  </data>
+  <data name="ScheduleUnitMode" xml:space="preserve">
+    <value>Režim jednotky</value>
+  </data>
+  <data name="ScheduleModeMinimum" xml:space="preserve">
+    <value>Minimální</value>
+  </data>
+  <data name="ScheduleModeNominal" xml:space="preserve">
+    <value>Nominální</value>
+  </data>
+  <data name="ScheduleModeBoost" xml:space="preserve">
+    <value>Boost</value>
+  </data>
+  <data name="ScheduleDayNames" xml:space="preserve">
+    <value>Pondělí,Úterý,Středa,Čtvrtek,Pátek,Sobota,Neděle</value>
+    <comment>Seven comma-separated names, Monday first</comment>
+  </data>
+  <data name="ScheduleShortDayNames" xml:space="preserve">
+    <value>Po,Út,St,Čt,Pá,So,Ne</value>
+    <comment>Seven comma-separated abbreviations, Monday first</comment>
+  </data>
+  <data name="ScheduleLoadFailed" xml:space="preserve">
+    <value>Plán se nepodařilo načíst.</value>
+  </data>
+  <data name="ScheduleReadOnly" xml:space="preserve">
+    <value>Plán obsahuje položky, kterým tato aplikace nerozumí. Zobrazuje se jen pro čtení, aby se neztratily.</value>
+  </data>
+  <data name="ScheduleCannotChange" xml:space="preserve">
+    <value>Plán teď nelze změnit.</value>
+  </data>
+  <data name="ScheduleFull" xml:space="preserve">
+    <value>Plán je plný ({0} akcí).</value>
+    <comment>{0} = maximum number of actions</comment>
+  </data>
+  <data name="ScheduleSaveFailed" xml:space="preserve">
+    <value>Plán se nepodařilo uložit. Zkuste to znovu.</value>
+  </data>
+  <data name="ScheduleChooseMode" xml:space="preserve">
+    <value>Vyberte režim.</value>
+  </data>
+  <data name="ScheduleChooseTimes" xml:space="preserve">
+    <value>Vyberte čas začátku a konce.</value>
+  </data>
+  <data name="ScheduleEndBeforeStart" xml:space="preserve">
+    <value>Konec musí být až po začátku.</value>
+  </data>
+  <data name="ScheduleOverlaps" xml:space="preserve">
+    <value>Překrývá se s akcí {0}.</value>
+    <comment>{0} = the other action, e.g. "Boost · Mon 02:00 – Mon 03:00"</comment>
+  </data>
+  <data name="SettingsTitle" xml:space="preserve">
+    <value>Nastavení</value>
+  </data>
+  <data name="SettingsLanguage" xml:space="preserve">
+    <value>Jazyk</value>
+  </data>
+  <data name="SettingsLanguageDescription" xml:space="preserve">
+    <value>Změna platí hned a použije se při každém spuštění aplikace.</value>
+  </data>
+  <data name="SettingsCloseTitle" xml:space="preserve">
+    <value>Při zavření okna</value>
+  </data>
+  <data name="SettingsCloseDescription" xml:space="preserve">
+    <value>V oznamovací oblasti aplikace dál ukazuje stav jednotky po najetí myší na ikonu.</value>
+  </data>
+  <data name="SettingsMinimizeToTray" xml:space="preserve">
+    <value>Minimalizovat do oznamovací oblasti</value>
+  </data>
+  <data name="SettingsExitApp" xml:space="preserve">
+    <value>Ukončit aplikaci</value>
+  </data>
+  <data name="SettingsRunAtStartup" xml:space="preserve">
+    <value>Spouštět při startu Windows</value>
+  </data>
+  <data name="SettingsRunAtStartupDescription" xml:space="preserve">
+    <value>Aplikace se spustí po přihlášení do Windows.</value>
+  </data>
+  <data name="SettingsStartInTray" xml:space="preserve">
+    <value>Spouštět v oznamovací oblasti</value>
+  </data>
+  <data name="SettingsStartInTrayDescription" xml:space="preserve">
+    <value>Okno zůstane při spuštění skryté, otevřete ho z ikony v oznamovací oblasti. Když je potřeba se přihlásit, otevře se.</value>
+  </data>
+  <data name="ButtonAdd" xml:space="preserve">
+    <value>Přidat</value>
+  </data>
+  <data name="ButtonSave" xml:space="preserve">
+    <value>Uložit</value>
+  </data>
+  <data name="ButtonDelete" xml:space="preserve">
+    <value>Smazat</value>
+  </data>
+  <data name="ButtonCancel" xml:space="preserve">
+    <value>Zrušit</value>
+  </data>
+</root>

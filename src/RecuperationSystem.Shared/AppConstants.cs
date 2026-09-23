@@ -3,6 +3,7 @@ namespace RecuperationSystem.Shared;
 public static class AppConstants
 {
     public const string WafeApiBaseUrl = "https://go2my.wafe.eu/api/";
+    public const string SandcastleKeyHeader = "Sandcastle-Key";
     
     // API Endpoints
     public const string AuthContextEndpoint = "auth/context";
@@ -29,4 +30,10 @@ public static class AppConstants
     public const string ModeIntelligent = "intelligent";
     public const string ModeManual = "manual";
     public const string ModeSchedule = "schedule";
+
+    // Schedule entry modes (GET api/v1/schedule "modes")
+    public const string ScheduleModeMin = "min";
+    public const string ScheduleModeAuto = "auto";
+    public const string ScheduleModeNominal = "nom";
+    public const string ScheduleModeBoost = "boost";
 }

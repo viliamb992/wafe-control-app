@@ -1,103 +1,78 @@
-# Recuperation System Controller
+# Wafe Recuperation Controller
 
-A cross-platform application suite for controlling your Wafe recuperation system via its REST API.
+Unofficial apps for monitoring and controlling a Wafe heat-recovery ventilation unit through the go2my.wafe.eu cloud API.
 
-## Overview
+## Apps
 
-This solution provides both Desktop (Windows/Linux/macOS) and Android applications to monitor and control your recuperation system remotely.
+| Project | Platform | Status |
+| --- | --- | --- |
+| `RecuperationSystem.WinUI` | Windows 10 (2004+) / Windows 11, native WinUI 3 | Main desktop app |
+| Android / iOS | .NET MAUI | Planned, see [TODO.md](TODO.md) |
 
-## Projects
+### Windows app features
 
-### RecuperationSystem.Shared
-- Common library containing API client, models, and business logic
-- Wafe API integration with HttpClient
-- Authentication and session management
+- Sign in with your Wafe account. "Keep me signed in" remembers the login, and the app signs in again automatically when the session expires.
+- Dashboard: running state with Start/Stop, outdoor/supply/indoor/exhaust temperatures, CO₂ with air-quality hint, humidity (only on units with that sensor), operating mode (Intelligent / Manual / Schedule), flow rate (Manual mode), Boost 15/30/60 min, Silent and Holiday modes, filter health.
+- Windows 11 look: Mica, native title bar, light/dark theme, layout adapts to window width.
+- Weekly schedule: a Mon–Sun grid like the Wafe web app. Click or drag to add an action, click a block to edit or delete it (up to 50 actions).
+- Closing the window keeps the app in the tray (in Efficiency Mode), or exits it if you choose that in Settings. Pointing at the tray icon shows whether the unit is running, its mode, air flow and CO₂. The tray menu offers boost shortcuts and Exit. Launching the app again brings the existing window back (single instance).
+- Optional: start with Windows, and start hidden in the tray (the window still opens if you need to sign in).
+- Czech (default), Slovak and English. Switch in Settings (gear in the footer, also on the sign-in screen). The change applies right away and is kept for the next launch.
 
-### RecuperationSystem.Desktop
-- Cross-platform desktop application built with Avalonia UI
-- Supports Windows, Linux, and macOS
-- Modern Fluent design interface
+## Translations
 
-### RecuperationSystem.Android
-- Native Android application for .NET
-- Mobile-friendly interface
-- Same functionality as desktop app
+All app text lives in `src/RecuperationSystem.Core/Localization`: `Strings.resx` (Czech, the primary language), `Strings.sk.resx` and `Strings.en.resx`. The build generates the typed `Strings` class from them, used by view models and in XAML as `{x:Bind loc:Strings.Key}`. Add a key to all three files; a test fails if a translation is missing or its `{0}` placeholders differ.
 
-## Features
+## Solution layout
 
-- **Authentication**: Secure login to Wafe system
-- **System Control**: Start/Stop the recuperation system
-- **Flow Speed**: Adjust flow speed between 50-220
-- **Operating Modes**: Switch between Intelligent, Manual, and Schedule modes
-- **Boost Function**: Quick boost activation (15/30 minutes)
-- **Real-time Status**: Monitor current system state
-
-## Requirements
-
-- .NET 8.0 SDK or later
-- For Desktop: Windows 10+, macOS 10.15+, or Linux
-- For Android: Android 5.0 (API 21) or higher
-
-## Building the Solution
-
-### Desktop Application
-
-```powershell
-cd src/RecuperationSystem.Desktop
-dotnet restore
-dotnet build
-dotnet run
+```text
+src/
+  RecuperationSystem.Shared/    API client, models (source-generated JSON), session + auth handler
+  RecuperationSystem.Core/      Services and view models (CommunityToolkit.Mvvm), shared by every app
+  RecuperationSystem.WinUI/     Windows app (WinUI 3, Windows App SDK, unpackaged)
+  RecuperationSystem.Tests/     Tests for Shared + Core (xUnit.net v3 on Microsoft.Testing.Platform)
 ```
 
-### Android Application
+## Build and run
+
+Requirements: .NET 10 SDK. The WinUI app builds on Windows only. The Windows App SDK is bundled (self-contained), so no runtime installer is needed.
 
 ```powershell
-cd src/RecuperationSystem.Android
-dotnet restore
-dotnet build -f net8.0-android
-# Deploy to connected device or emulator
-dotnet build -f net8.0-android -t:Run
+dotnet build RecuperationSystem.slnx
+dotnet test --solution RecuperationSystem.slnx
+dotnet run --project src/RecuperationSystem.WinUI
 ```
 
-## Configuration
+`global.json` puts `dotnet test` in Microsoft.Testing.Platform mode, so pass the solution with `--solution` (or a project with `--project`). Visual Studio's Test Explorer runs the tests directly.
 
-No configuration files needed. Enter your Wafe credentials directly in the application:
-- Email/Username
-- Password
+## Where data is stored
 
-The app connects to: `https://go2my.wafe.eu/api`
+- **Remembered login:** `%AppData%\RecuperationSystem\credentials.dat`, encrypted with Windows DPAPI for the current user. "Sign out" in the ⋯ menu deletes it.
+- **Settings (WinUI app):** `%AppData%\RecuperationSystem\settings.json` (language, closing and startup behaviour). Start with Windows is the `WafeRecuperation` entry under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` (also listed in Task Manager → Startup apps).
+- **Logs (WinUI app):** `%LocalAppData%\RecuperationSystem\logs`, kept for 7 days. Open them via ⋯ → "Open log folder". Passwords are never logged.
 
-## API Integration
+## Wafe API
 
-The application uses the following Wafe API endpoints:
-- Authentication: `POST /auth/context`
-- System Status: `GET /api/v1/main`
-- Start/Stop: `PUT /api/v1/main/stop-active`
-- Flow Speed: `PUT /api/v1/main/flow-requested`
-- Operating Mode: `PUT /api/v1/main/authority`
-- Boost: `PUT /api/v1/main/boost-remaining`
+Base URL `https://go2my.wafe.eu/api/`.
 
-## Usage
+| Call | Purpose |
+| --- | --- |
+| `POST auth/context` `{"username", "password"}` | Sign in; returns 201 with a `Sandcastle-Key` header |
+| `GET api/v1/main` | Status: temperatures, CO₂, flow, mode, boost, filters, … (kebab-case JSON) |
+| `PUT api/v1/main/stop-active` | Start/stop the unit |
+| `PUT api/v1/main/flow-requested` | Flow rate, 50–220 m³/h (Manual mode) |
+| `PUT api/v1/main/authority` | Operating mode |
+| `PUT api/v1/main/boost-remaining` | Boost duration in seconds (0 stops it) |
+| `PUT api/v1/main/silent-active`, `holiday-active` | Silent / Holiday mode |
+| `GET api/v1/schedule` | Weekly plan: `{"modes": ["min","auto","nom","boost"], "plan": "boost-0:2:0-0:3:0 …"}` |
+| `PUT api/v1/schedule/plan` | Replaces the **whole** plan (always send every entry) |
 
-1. Launch the application (Desktop or Android)
-2. Enter your Wafe credentials
-3. Click "Connect"
-4. Use the control panel to manage your system:
-   - Start/Stop the system
-   - Adjust flow speed with slider
-   - Change operating mode
-   - Activate boost mode
+Plan entries are `mode-D:H:M-D:H:M` with day 0 = Monday, e.g. `boost-6:2:0-6:2:30` = Sunday 02:00–02:30.
 
-## Security Notes
+All PUT bodies are `{"value": …}`. Requests carry the `Sandcastle-Key` header; on 401/403 the app signs in again and retries once.
 
-- Credentials are not stored locally
-- Session managed via HTTP cookies
-- All communication over HTTPS
+Request bodies must be sent with a `Content-Length`: the server answers chunked bodies with 500.
 
 ## License
 
-For personal use only.
-
-## Support
-
-This is a personal project for controlling Wafe recuperation systems. Refer to Wafe's official documentation for API details.
+For personal use only. Not affiliated with Wafe.
