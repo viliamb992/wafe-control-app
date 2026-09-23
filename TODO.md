@@ -32,6 +32,12 @@ Unpackaged, self-contained Windows App SDK 2.5 (`dotnet run --project src/Recupe
 - [ ] Decide: pause polling while hidden in the tray (less API traffic) vs. a live tray tooltip.
 - [ ] Toast notifications (`AppNotificationManager`): filter health low, unit offline, boost finished.
 - [ ] More settings: poll interval, theme override, about/version.
+- [ ] **Auto-updater** (from GitHub Releases, see Phase 7):
+  - Title bar, left of minimize/maximize/close: an "Update available" text button, shown only when a newer release exists. Tooltip with the new version.
+  - Click → small centered dialog (`ContentDialog`) with the new version and download size (the release asset's `size`), buttons Cancel / Update.
+  - Update → download the zip for the current architecture (`win-x64`/`win-arm64`), then replace the app files and restart. The running exe can't overwrite itself, so a small helper (script or second exe) waits for the app to exit, swaps the files and relaunches it.
+  - Bottom-right corner: current version (`AssemblyInformationalVersion`, without the `+commit` suffix).
+  - Check on startup and then every few hours via `GET /repos/viliamb992/wafe-recuperation-app/releases/latest` (skips pre-releases). Compare as SemVer.
 - [ ] Jump list (taskbar right-click): Boost 15/30, Stop boost.
 - [ ] Schedule: keyboard way to add at a chosen slot (today only via the + button), a "now" marker line, copy a day to other days.
 - [ ] Accessibility pass (Narrator, keyboard-only, high contrast).

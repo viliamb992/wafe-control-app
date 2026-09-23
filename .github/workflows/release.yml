@@ -1,0 +1,122 @@
+# Release: publishes the WinUI app (unpackaged, self-contained) for x64 and ARM64 and attaches
+# the zips to a GitHub Release.
+#
+# Trigger by pushing a version tag:   git tag v1.2.0 && git push origin v1.2.0
+#   - Tags with a suffix (v1.2.0-beta.1) become a pre-release.
+#   - Version = the tag without "v"; FileVersion = <major.minor.patch>.<run number>.
+# Running it manually (Actions → Release → Run workflow) builds the zips as workflow artifacts
+# only, without creating a release.
+
+name: Release
+
+on:
+  push:
+    tags: [ "v*" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+    - name: Build
+      run: dotnet build RecuperationSystem.slnx --configuration Release
+    # Microsoft.Testing.Platform mode (global.json): the solution is passed with --solution.
+    - name: Test
+      run: dotnet test --solution RecuperationSystem.slnx --no-build --configuration Release
+
+  publish:
+    needs: test
+    runs-on: windows-latest
+
+    strategy:
+      matrix:
+        include:
+          - platform: x64
+            rid: win-x64
+          - platform: ARM64
+            rid: win-arm64
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+
+    # v1.2.0 → 1.2.0; manual runs without a tag get 0.0.0-dev.
+    - name: Compute version
+      id: version
+      shell: pwsh
+      run: |
+        $version = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME -replace '^v', '' } else { '0.0.0-dev' }
+        if ($version -notmatch '^(\d+)\.(\d+)\.(\d+)(-[0-9A-Za-z.-]+)?$') {
+          throw "Tag '$env:GITHUB_REF_NAME' is not a version like v1.2.0 or v1.2.0-beta.1"
+        }
+        $numeric = "$($Matches[1]).$($Matches[2]).$($Matches[3])"
+        "version=$version" >> $env:GITHUB_OUTPUT
+        "file_version=$numeric.$env:GITHUB_RUN_NUMBER" >> $env:GITHUB_OUTPUT
+        "assembly_version=$numeric.0" >> $env:GITHUB_OUTPUT
+
+    - name: Publish
+      run: >
+        dotnet publish src/RecuperationSystem.WinUI/RecuperationSystem.WinUI.csproj
+        --configuration Release
+        --runtime ${{ matrix.rid }}
+        --self-contained
+        --output publish
+        -p:Platform=${{ matrix.platform }}
+        -p:Version=${{ steps.version.outputs.version }}
+        -p:FileVersion=${{ steps.version.outputs.file_version }}
+        -p:AssemblyVersion=${{ steps.version.outputs.assembly_version }}
+        -p:DebugType=None
+        -p:DebugSymbols=false
+
+    - name: Zip
+      id: zip
+      shell: pwsh
+      run: |
+        $name = "WafeRecuperation-${{ steps.version.outputs.version }}-${{ matrix.rid }}.zip"
+        Compress-Archive -Path publish\* -DestinationPath $name
+        "name=$name" >> $env:GITHUB_OUTPUT
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.rid }}
+        path: ${{ steps.zip.outputs.name }}
+        if-no-files-found: error
+
+  release:
+    needs: publish
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/download-artifact@v4
+      with:
+        path: dist
+        merge-multiple: true
+
+    - name: Create GitHub Release
+      env:
+        GH_TOKEN: ${{ github.token }}
+        TAG: ${{ github.ref_name }}
+      run: |
+        prerelease=""
+        if [[ "$TAG" == *-* ]]; then prerelease="--prerelease"; fi
+        gh release create "$TAG" dist/*.zip \
+          --repo "$GITHUB_REPOSITORY" \
+          --title "$TAG" \
+          --generate-notes \
+          --verify-tag \
+          $prerelease
