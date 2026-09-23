@@ -6,7 +6,7 @@ Unofficial apps for monitoring and controlling a Wafe heat-recovery ventilation 
 
 | Project | Platform | Status |
 | --- | --- | --- |
-| `RecuperationSystem.WinUI` | Windows 10 (2004+) / Windows 11, native WinUI 3 | Main desktop app |
+| `RecuperationSystem.WinUI` | Windows 11, native WinUI 3 | Main desktop app |
 | Android / iOS | .NET MAUI | Planned, see [TODO.md](TODO.md) |
 
 ### Windows app features
@@ -44,6 +44,10 @@ dotnet run --project src/RecuperationSystem.WinUI
 ```
 
 `global.json` puts `dotnet test` in Microsoft.Testing.Platform mode, so pass the solution with `--solution` (or a project with `--project`). Visual Studio's Test Explorer runs the tests directly.
+
+## Release
+
+Push a version tag (`git tag v1.2.0 && git push origin v1.2.0`). `.github/workflows/release.yml` tests, publishes the WinUI app for x64 and ARM64, builds an installer for each with Inno Setup (`installer/WafeRecuperation.iss`) and attaches them to a GitHub Release. Tags with a suffix (`v1.2.0-beta.1`) become pre-releases.
 
 ## Where data is stored
 

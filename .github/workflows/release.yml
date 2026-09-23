@@ -1,10 +1,10 @@
-# Release: publishes the WinUI app (unpackaged, self-contained) for x64 and ARM64 and attaches
-# the zips to a GitHub Release.
+# Release: publishes the WinUI app (unpackaged, self-contained) for x64 and ARM64, builds an installer
+# for each (installer/WafeRecuperation.iss, Inno Setup) and attaches them to a GitHub Release.
 #
 # Trigger by pushing a version tag:   git tag v1.2.0 && git push origin v1.2.0
 #   - Tags with a suffix (v1.2.0-beta.1) become a pre-release.
 #   - Version = the tag without "v"; FileVersion = <major.minor.patch>.<run number>.
-# Running it manually (Actions → Release → Run workflow) builds the zips as workflow artifacts
+# Running it manually (Actions → Release → Run workflow) builds the installers as workflow artifacts
 # only, without creating a release.
 
 name: Release
@@ -42,8 +42,10 @@ jobs:
         include:
           - platform: x64
             rid: win-x64
+            arch: x64
           - platform: ARM64
             rid: win-arm64
+            arch: arm64
 
     steps:
     - uses: actions/checkout@v4
@@ -80,18 +82,34 @@ jobs:
         -p:DebugType=None
         -p:DebugSymbols=false
 
-    - name: Zip
-      id: zip
+    # Pinned and hash-checked; installed portably (no registry, no Program Files).
+    - name: Install Inno Setup
       shell: pwsh
       run: |
-        $name = "WafeRecuperation-${{ steps.version.outputs.version }}-${{ matrix.rid }}.zip"
-        Compress-Archive -Path publish\* -DestinationPath $name
-        "name=$name" >> $env:GITHUB_OUTPUT
+        $url = 'https://github.com/jrsoftware/issrc/releases/download/is-7_1_0/innosetup-7.1.0-x64.exe'
+        $sha256 = '0362A383ED217D4C4239B5933866DD96D3EB2102737DA92F80F6057A4B40DF2F'
+        $setup = "$env:RUNNER_TEMP\innosetup.exe"
+        Invoke-WebRequest $url -OutFile $setup
+        if ((Get-FileHash $setup -Algorithm SHA256).Hash -ne $sha256) { throw 'Inno Setup download hash mismatch' }
+        $dir = "$env:RUNNER_TEMP\inno"
+        $p = Start-Process $setup -ArgumentList '/PORTABLE=1', '/CURRENTUSER', '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-', "/DIR=`"$dir`"" -Wait -PassThru
+        if ($p.ExitCode -ne 0) { throw "Inno Setup install failed ($($p.ExitCode))" }
+        "$dir" >> $env:GITHUB_PATH
+
+    - name: Build installer
+      run: >
+        iscc
+        /DAppVersion=${{ steps.version.outputs.version }}
+        /DFileVersion=${{ steps.version.outputs.file_version }}
+        /DArch=${{ matrix.arch }}
+        /DSourceDir=${{ github.workspace }}\publish
+        /O${{ github.workspace }}\dist
+        installer\WafeRecuperation.iss
 
     - uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.rid }}
-        path: ${{ steps.zip.outputs.name }}
+        path: dist/*.exe
         if-no-files-found: error
 
   release:
@@ -114,7 +132,7 @@ jobs:
       run: |
         prerelease=""
         if [[ "$TAG" == *-* ]]; then prerelease="--prerelease"; fi
-        gh release create "$TAG" dist/*.zip \
+        gh release create "$TAG" dist/*.exe \
           --repo "$GITHUB_REPOSITORY" \
           --title "$TAG" \
           --generate-notes \

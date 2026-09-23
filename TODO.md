@@ -35,13 +35,12 @@ Unpackaged, self-contained Windows App SDK 2.5 (`dotnet run --project src/Recupe
 - [ ] **Auto-updater** (from GitHub Releases, see Phase 7):
   - Title bar, left of minimize/maximize/close: an "Update available" text button, shown only when a newer release exists. Tooltip with the new version.
   - Click → small centered dialog (`ContentDialog`) with the new version and download size (the release asset's `size`), buttons Cancel / Update.
-  - Update → download the zip for the current architecture (`win-x64`/`win-arm64`), then replace the app files and restart. The running exe can't overwrite itself, so a small helper (script or second exe) waits for the app to exit, swaps the files and relaunches it.
+  - Update → download the setup exe for the current architecture (`win-x64`/`win-arm64`) and run it silently (`/VERYSILENT`, plus `/CURRENTUSER` when installed per-user; a Program Files install asks for UAC). Setup closes the running app itself (Restart Manager) and reuses the previous install folder. Relaunch after a silent install: the `[Run]` entry in `installer/WafeRecuperation.iss` is `skipifsilent`, so add a switch for the updater.
   - Bottom-right corner: current version (`AssemblyInformationalVersion`, without the `+commit` suffix).
   - Check on startup and then every few hours via `GET /repos/viliamb992/wafe-recuperation-app/releases/latest` (skips pre-releases). Compare as SemVer.
 - [ ] Jump list (taskbar right-click): Boost 15/30, Stop boost.
 - [ ] Schedule: keyboard way to add at a chosen slot (today only via the + button), a "now" marker line, copy a day to other days.
 - [ ] Accessibility pass (Narrator, keyboard-only, high contrast).
-- [ ] **Packaging decision:** stay unpackaged (zip) or move to MSIX (Start menu entry, clean updates, `StartupTask`). See Phase 7.
 
 ## Phase 4: MAUI mobile app skeleton (Android + iOS)
 
@@ -71,10 +70,10 @@ Same information as the Windows dashboard, phone-first. Single column; tablets g
 
 ## Phase 7: CI & release
 
-- [ ] Windows: publish the self-contained WinUI app (zip, or MSIX with a cert in secrets) on tag, attach to a GitHub Release.
+- [ ] Windows: first real release through `.github/workflows/release.yml` (push a `v*` tag → installer per architecture on a GitHub Release). Built and installed locally, not yet run on GitHub.
+- [ ] Windows code signing: the installer and exe are unsigned, so SmartScreen warns on first run (options: Azure Trusted Signing, a code-signing certificate).
 - [ ] Android: keystore in secrets, signed `.aab`/`.apk` on tag (runner with `dotnet workload install maui-android`).
 - [ ] iOS: certificates + provisioning profile in secrets, `.ipa` → TestFlight (macOS runner).
-- [ ] Versioning: display version from the tag, build number from the run number.
 
 ## Backlog
 
@@ -90,11 +89,11 @@ Same information as the Windows dashboard, phone-first. Single column; tablets g
 - **Windows: native WinUI 3.** Real Fluent controls, Mica, native title bar, tray, Efficiency Mode, single instance. **Android/iOS: .NET MAUI.** Both apps share `Core`; only views and platform services differ.
   - *Considered:* MAUI for all three (one view layer, but weaker Windows polish), and Avalonia everywhere (non-native look on mobile).
 - **Core on CommunityToolkit.Mvvm.** ReactiveUI is dropped.
-- **WinUI app ships unpackaged + self-contained for now.** A plain exe, no runtime install. MSIX remains an option (Phase 2/7).
+- **WinUI app ships unpackaged + self-contained, with an Inno Setup installer** (`installer/WafeRecuperation.iss`): Program Files or a per-user/custom folder, Start menu entry, uninstaller. Only the app's languages (cs, sk, en) are bundled.
+  - *Considered:* MSIX. Cleaner updates and a startup task, but it can't install without a trusted signature (Store or a paid certificate).
 
 ## Open questions
 
-- [ ] Windows packaging: stay unpackaged or move to MSIX?
 - [ ] Distribution for mobile: stores (Play / App Store) or sideload/TestFlight only? This affects bundle ids, signing and the privacy policy.
 - [ ] Is a Mac available for iOS builds, or should that go through CI only?
 - [ ] How long does a `Sandcastle-Key` session live? Re-login on 401 handles it either way.
