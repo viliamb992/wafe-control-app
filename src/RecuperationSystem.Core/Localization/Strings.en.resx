@@ -350,7 +350,7 @@
     <value>Weekly schedule</value>
   </data>
   <data name="ScheduleHint" xml:space="preserve">
-    <value>Click or drag in the grid to plan the unit's mode at that time, or use + to enter exact times. You can plan up to 50 actions.</value>
+    <value>Click or drag in the grid to plan the unit's mode at that time. You can plan up to 50 actions.</value>
   </data>
   <data name="ScheduleReload" xml:space="preserve">
     <value>Reload schedule</value>
@@ -468,6 +468,31 @@
   </data>
   <data name="SettingsStartInTrayDescription" xml:space="preserve">
     <value>The window stays hidden at launch; open it from the tray icon. It still opens when you need to sign in.</value>
+  </data>
+  <data name="SettingsTheme" xml:space="preserve">
+    <value>Appearance</value>
+  </data>
+  <data name="SettingsThemeDescription" xml:space="preserve">
+    <value>Light or dark mode for the app.</value>
+  </data>
+  <data name="SettingsThemeSystem" xml:space="preserve">
+    <value>Use system setting</value>
+  </data>
+  <data name="SettingsThemeLight" xml:space="preserve">
+    <value>Light</value>
+  </data>
+  <data name="SettingsThemeDark" xml:space="preserve">
+    <value>Dark</value>
+  </data>
+  <data name="SettingsAbout" xml:space="preserve">
+    <value>About</value>
+  </data>
+  <data name="SettingsVersion" xml:space="preserve">
+    <value>Version {0}</value>
+    <comment>{0} = e.g. 1.2.0</comment>
+  </data>
+  <data name="SettingsProjectLink" xml:space="preserve">
+    <value>Project on GitHub</value>
   </data>
   <data name="ButtonAdd" xml:space="preserve">
     <value>Add</value>

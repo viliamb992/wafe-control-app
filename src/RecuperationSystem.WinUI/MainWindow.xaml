@@ -27,7 +27,7 @@
             </TitleBar.IconSource>
         </TitleBar>
 
-        <!-- ── Footer: status message left, connection + actions right ─────── -->
+        <!-- ── Footer: status message left, connection + actions + version right ── -->
         <Grid Grid.Row="2" Padding="24,4,16,4" ColumnSpacing="16" BorderThickness="0,1,0,0"
               BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}">
             <Grid.ColumnDefinitions>
@@ -77,6 +77,10 @@
                         </MenuFlyout>
                     </Button.Flyout>
                 </Button>
+                <TextBlock Style="{StaticResource SecondaryTextStyle}" VerticalAlignment="Center" Margin="8,0,0,0"
+                           Text="{x:Bind Settings.Version}"
+                           ToolTipService.ToolTip="{x:Bind helpers:Xaml.VersionText(Settings.Version)}"
+                           AutomationProperties.Name="{x:Bind helpers:Xaml.VersionText(Settings.Version)}" />
             </StackPanel>
         </Grid>
 

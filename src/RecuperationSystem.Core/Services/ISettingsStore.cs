@@ -19,7 +19,32 @@ public sealed record UserSettings
     /// Launch with only the tray icon, without showing the window.
     /// </summary>
     public bool StartInTray { get; init; }
+
+    /// <summary>
+    /// Light or dark appearance, or the one set in the operating system.
+    /// </summary>
+    public AppTheme Theme { get; init; }
+
+    /// <summary>
+    /// Where the main window was when it last closed; null until then. Desktop only.
+    /// </summary>
+    public WindowPlacement? MainWindow { get; init; }
 }
+
+public enum AppTheme
+{
+    /// <summary>
+    /// Follow the operating system's light/dark setting.
+    /// </summary>
+    System,
+    Light,
+    Dark,
+}
+
+/// <summary>
+/// A window's restored (not maximized) bounds in physical pixels, plus whether it was maximized.
+/// </summary>
+public sealed record WindowPlacement(int X, int Y, int Width, int Height, bool IsMaximized);
 
 /// <summary>
 /// Loads and saves <see cref="UserSettings"/> in platform storage. Each app registers its own implementation.

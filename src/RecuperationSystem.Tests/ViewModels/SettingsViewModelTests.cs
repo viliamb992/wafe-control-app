@@ -85,6 +85,53 @@ public class SettingsViewModelTests
     }
 
     [Fact]
+    public void Theme_DefaultsToSystemWithoutSaving()
+    {
+        Assert.Equal(AppTheme.System, _sut.Theme);
+        Assert.Equal(0, _sut.ThemeIndex);
+        Assert.Equal(0, _store.SaveCount);
+    }
+
+    [Fact]
+    public void Theme_LoadsAndSavesKeepingOtherSettings()
+    {
+        _store.Settings = new UserSettings { Language = "sk", Theme = AppTheme.Light };
+        var sut = new SettingsViewModel(_localization, _store, _startup);
+        Assert.Equal(AppTheme.Light, sut.Theme);
+
+        sut.Theme = AppTheme.Dark;
+
+        Assert.Equal(new UserSettings { Language = "sk", Theme = AppTheme.Dark }, _store.Settings);
+        Assert.Equal(1, _store.SaveCount);
+    }
+
+    [Fact]
+    public void ThemeIndex_FollowsListOrderAndIgnoresNoSelection()
+    {
+        var changed = new List<string?>();
+        _sut.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+        _sut.ThemeIndex = 2;
+        _sut.ThemeIndex = -1;
+
+        Assert.Equal(AppTheme.Dark, _sut.Theme);
+        Assert.Equal(2, _sut.ThemeIndex);
+        Assert.Contains(nameof(SettingsViewModel.ThemeIndex), changed);
+    }
+
+    [Fact]
+    public void MainWindowPlacement_IsKeptWhenAnotherSettingChanges()
+    {
+        var placement = new WindowPlacement(10, 20, 1040, 820, IsMaximized: true);
+        _store.Settings = new UserSettings { MainWindow = placement };
+        var sut = new SettingsViewModel(_localization, _store, _startup);
+
+        sut.StartInTray = true;
+
+        Assert.Equal(placement, _store.Settings.MainWindow);
+    }
+
+    [Fact]
     public void RunAtStartup_ReflectsSystemWithoutChangingIt()
     {
         _startup.IsEnabled.Returns(true);

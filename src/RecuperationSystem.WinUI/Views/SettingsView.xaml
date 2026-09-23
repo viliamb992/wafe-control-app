@@ -38,6 +38,32 @@
                 </Grid>
             </Border>
 
+            <!-- ── Appearance ───────────────────────────────────────────── -->
+            <Border Style="{StaticResource CardStyle}" Padding="16">
+                <Grid ColumnSpacing="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <FontIcon Glyph="&#xE790;" FontSize="20" VerticalAlignment="Top" Margin="0,2,0,0" />
+                    <StackPanel Grid.Column="1" Spacing="4">
+                        <TextBlock Text="{x:Bind loc:Strings.SettingsTheme}" Style="{StaticResource BodyTextBlockStyle}" />
+                        <TextBlock Text="{x:Bind loc:Strings.SettingsThemeDescription}" Style="{StaticResource SecondaryTextStyle}"
+                                   TextWrapping="Wrap" />
+                        <!-- In AppTheme order: System, Light, Dark. -->
+                        <StackPanel x:Name="ThemeChoices" Margin="0,4,0,0">
+                            <RadioButton GroupName="Theme" Content="{x:Bind loc:Strings.SettingsThemeSystem}" Checked="OnThemeChecked"
+                                         IsChecked="{x:Bind helpers:Xaml.IsIndex(ViewModel.ThemeIndex, 0), Mode=OneWay}" />
+                            <RadioButton GroupName="Theme" Content="{x:Bind loc:Strings.SettingsThemeLight}" Checked="OnThemeChecked"
+                                         IsChecked="{x:Bind helpers:Xaml.IsIndex(ViewModel.ThemeIndex, 1), Mode=OneWay}" />
+                            <RadioButton GroupName="Theme" Content="{x:Bind loc:Strings.SettingsThemeDark}" Checked="OnThemeChecked"
+                                         IsChecked="{x:Bind helpers:Xaml.IsIndex(ViewModel.ThemeIndex, 2), Mode=OneWay}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
             <!-- ── Startup ──────────────────────────────────────────────── -->
             <Border Style="{StaticResource CardStyle}" Padding="16">
                 <Grid ColumnSpacing="16" RowSpacing="12">
@@ -97,6 +123,26 @@
                                          IsChecked="{x:Bind helpers:Xaml.Not(ViewModel.MinimizeToTray), Mode=OneWay}" />
                         </StackPanel>
                     </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- ── About ────────────────────────────────────────────────── -->
+            <Border Style="{StaticResource CardStyle}" Padding="16">
+                <Grid ColumnSpacing="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <Image Source="ms-appx:///Assets/app-icon.ico" Width="20" Height="20" VerticalAlignment="Center" />
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="{x:Bind loc:Strings.SettingsAbout}" Style="{StaticResource BodyTextBlockStyle}" />
+                        <TextBlock Style="{StaticResource SecondaryTextStyle}" IsTextSelectionEnabled="True"
+                                   Text="{x:Bind helpers:Xaml.AboutText(ViewModel.Version)}" />
+                    </StackPanel>
+                    <HyperlinkButton Grid.Column="2" VerticalAlignment="Center" Content="{x:Bind loc:Strings.SettingsProjectLink}"
+                                     NavigateUri="https://github.com/viliamb992/wafe-recuperation-app" />
                 </Grid>
             </Border>
         </StackPanel>

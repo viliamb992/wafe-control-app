@@ -7,9 +7,11 @@ using H.NotifyIcon;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using RecuperationSystem.Core.Localization;
+using RecuperationSystem.Core.Services;
 using RecuperationSystem.Core.ViewModels;
 using RecuperationSystem.Core.ViewModels.Schedule;
 using RecuperationSystem.WinUI.Helpers;
+using Serilog;
 using Windows.Graphics;
 
 namespace RecuperationSystem.WinUI;
@@ -19,14 +21,31 @@ public sealed partial class MainWindow : Window
     private static readonly string IconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "app-icon.ico");
 
     private readonly ILocalizationService _localization;
+    private readonly ISettingsStore _settingsStore;
     private bool _isExiting;
 
-    public MainWindow(AppViewModel viewModel, ScheduleViewModel schedule, SettingsViewModel settings, ILocalizationService localization)
+    /// <summary>
+    /// The window's last bounds while neither maximized nor minimized, saved on close.
+    /// </summary>
+    private RectInt32 _restoredBounds;
+
+    /// <summary>
+    /// The window was maximized when it last closed; applied the first time it is shown.
+    /// </summary>
+    private bool _maximizeOnShow;
+
+    public MainWindow(
+        AppViewModel viewModel,
+        ScheduleViewModel schedule,
+        SettingsViewModel settings,
+        ILocalizationService localization,
+        ISettingsStore settingsStore)
     {
         ViewModel = viewModel;
         Schedule = schedule;
         Settings = settings;
         _localization = localization;
+        _settingsStore = settingsStore;
         ShowWindowCommand = new RelayCommand(ShowFromTray);
         ExitCommand = new RelayCommand(Exit);
 
@@ -43,10 +62,13 @@ public sealed partial class MainWindow : Window
         SetTitleBar(AppTitleBar);
         AppWindow.SetIcon(IconPath);
         ConfigureSize();
+        ApplyTheme();
 
         TrayIcon.Icon = new System.Drawing.Icon(IconPath);
         AppWindow.Closing += OnClosing;
+        AppWindow.Changed += OnAppWindowChanged;
         ViewModel.PropertyChanged += OnViewModelPropertyChanged;
+        Settings.PropertyChanged += OnSettingsPropertyChanged;
         _localization.LanguageChanged += OnLanguageChanged;
     }
 
@@ -59,6 +81,16 @@ public sealed partial class MainWindow : Window
     public ICommand ShowWindowCommand { get; }
 
     public ICommand ExitCommand { get; }
+
+    /// <summary>
+    /// Launches with the window shown, maximized if it was when it last closed.
+    /// Call instead of <see cref="Window.Activate"/>.
+    /// </summary>
+    public void ShowAtLaunch()
+    {
+        ApplyPendingMaximize();
+        Activate();
+    }
 
     /// <summary>
     /// Launches with only the tray icon: the window is never shown until <see cref="ShowFromTray"/>.
@@ -77,12 +109,17 @@ public sealed partial class MainWindow : Window
     /// </summary>
     public void ShowFromTray()
     {
+        ApplyPendingMaximize();
         WindowExtensions.Show(this, true);
         if (AppWindow.Presenter is OverlappedPresenter { State: OverlappedPresenterState.Minimized } presenter)
             presenter.Restore();
         Activate();
     }
 
+    /// <summary>
+    /// Opens the window where it was when it last closed, or centered on the primary display the first time
+    /// (or when that place is no longer on any display).
+    /// </summary>
     private void ConfigureSize()
     {
         var scale = GetDpiForWindow(WinRT.Interop.WindowNative.GetWindowHandle(this)) / 96.0;
@@ -94,13 +131,101 @@ public sealed partial class MainWindow : Window
             presenter.PreferredMinimumHeight = Scaled(560);
         }
 
-        var workArea = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Primary).WorkArea;
-        var size = new SizeInt32(Math.Min(Scaled(1040), workArea.Width), Math.Min(Scaled(820), workArea.Height));
-        AppWindow.MoveAndResize(new RectInt32(
-            workArea.X + (workArea.Width - size.Width) / 2,
-            workArea.Y + (workArea.Height - size.Height) / 2,
-            size.Width,
-            size.Height));
+        if (_settingsStore.Load().MainWindow is { } saved
+            && DisplayArea.GetFromRect(new RectInt32(saved.X, saved.Y, saved.Width, saved.Height), DisplayAreaFallback.None) is { } display)
+        {
+            // Fit it inside that display, which may have shrunk or moved since.
+            var area = display.WorkArea;
+            var width = Math.Min(saved.Width, area.Width);
+            var height = Math.Min(saved.Height, area.Height);
+            var bounds = new RectInt32(
+                Math.Clamp(saved.X, area.X, area.X + area.Width - width),
+                Math.Clamp(saved.Y, area.Y, area.Y + area.Height - height),
+                width,
+                height);
+
+            // Move first: arriving on a display with another DPI rescales the window, and the saved size
+            // already is in that display's pixels.
+            AppWindow.Move(new PointInt32(bounds.X, bounds.Y));
+            AppWindow.MoveAndResize(bounds);
+            _maximizeOnShow = saved.IsMaximized;
+        }
+        else
+        {
+            var workArea = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Primary).WorkArea;
+            var size = new SizeInt32(Math.Min(Scaled(1040), workArea.Width), Math.Min(Scaled(820), workArea.Height));
+            AppWindow.MoveAndResize(new RectInt32(
+                workArea.X + (workArea.Width - size.Width) / 2,
+                workArea.Y + (workArea.Height - size.Height) / 2,
+                size.Width,
+                size.Height));
+        }
+
+        _restoredBounds = new RectInt32(AppWindow.Position.X, AppWindow.Position.Y, AppWindow.Size.Width, AppWindow.Size.Height);
+    }
+
+    private void ApplyPendingMaximize()
+    {
+        if (!_maximizeOnShow)
+            return;
+
+        _maximizeOnShow = false;
+        if (AppWindow.Presenter is OverlappedPresenter presenter)
+            presenter.Maximize();
+    }
+
+    private void OnAppWindowChanged(AppWindow sender, AppWindowChangedEventArgs args)
+    {
+        if ((args.DidPositionChange || args.DidSizeChange)
+            && sender.Presenter is OverlappedPresenter { State: OverlappedPresenterState.Restored })
+        {
+            _restoredBounds = new RectInt32(sender.Position.X, sender.Position.Y, sender.Size.Width, sender.Size.Height);
+        }
+    }
+
+    /// <summary>
+    /// Remembers where the window is for the next launch.
+    /// </summary>
+    private void SavePlacement()
+    {
+        var isMaximized = _maximizeOnShow
+            || AppWindow.Presenter is OverlappedPresenter { State: OverlappedPresenterState.Maximized };
+        var placement = new WindowPlacement(
+            _restoredBounds.X, _restoredBounds.Y, _restoredBounds.Width, _restoredBounds.Height, isMaximized);
+
+        try
+        {
+            var saved = _settingsStore.Load();
+            if (saved.MainWindow != placement)
+                _settingsStore.Save(saved with { MainWindow = placement });
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Log.Warning(ex, "Could not save the window placement");
+        }
+    }
+
+    /// <summary>
+    /// Light, dark or the system's theme for the window content and its caption buttons.
+    /// </summary>
+    private void ApplyTheme()
+    {
+        var (elementTheme, titleBarTheme) = Settings.Theme switch
+        {
+            AppTheme.Light => (ElementTheme.Light, TitleBarTheme.Light),
+            AppTheme.Dark => (ElementTheme.Dark, TitleBarTheme.Dark),
+            _ => (ElementTheme.Default, TitleBarTheme.UseDefaultAppMode),
+        };
+
+        if (Content is FrameworkElement root)
+            root.RequestedTheme = elementTheme;
+        AppWindow.TitleBar.PreferredTheme = titleBarTheme;
+    }
+
+    private void OnSettingsPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(SettingsViewModel.Theme))
+            ApplyTheme();
     }
 
     /// <summary>
@@ -115,6 +240,7 @@ public sealed partial class MainWindow : Window
         if (Settings.MinimizeToTray)
         {
             args.Cancel = true;
+            SavePlacement();
             WindowExtensions.Hide(this, true);
         }
         else
@@ -132,7 +258,10 @@ public sealed partial class MainWindow : Window
     private void PrepareExit()
     {
         _isExiting = true;
+        SavePlacement();
+        AppWindow.Changed -= OnAppWindowChanged;
         ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
+        Settings.PropertyChanged -= OnSettingsPropertyChanged;
         _localization.LanguageChanged -= OnLanguageChanged;
         TrayIcon.Dispose();
     }

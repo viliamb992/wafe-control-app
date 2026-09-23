@@ -112,8 +112,6 @@ public sealed partial class ScheduleView : UserControl
 
     private async void OnEntryInvoked(object? sender, ScheduleEntry entry) => await ShowEditorAsync(ViewModel.EditEntry(entry));
 
-    private async void OnAddClick(object sender, RoutedEventArgs e) => await ShowEditorAsync(ViewModel.CreateEntry(day: 0, startMinute: 0, endMinute: 30));
-
     private void OnUseScheduleModeClick(object sender, RoutedEventArgs e)
     {
         var operatingMode = Main.OperatingMode;
@@ -129,6 +127,8 @@ public sealed partial class ScheduleView : UserControl
         var dialog = new ContentDialog
         {
             XamlRoot = XamlRoot,
+            // Dialogs open outside the window's content, so they don't inherit a theme chosen in Settings.
+            RequestedTheme = ActualTheme,
             Style = (Style)Application.Current.Resources["DefaultContentDialogStyle"],
             Title = editor.IsNew ? Strings.ScheduleAddAction : Strings.ScheduleEditAction,
             Content = new ScheduleEntryEditor(editor),

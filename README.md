@@ -13,7 +13,7 @@ Unofficial apps for monitoring and controlling a Wafe heat-recovery ventilation 
 
 - Sign in with your Wafe account. "Keep me signed in" remembers the login, and the app signs in again automatically when the session expires.
 - Dashboard: running state with Start/Stop, outdoor/supply/indoor/exhaust temperatures, CO₂ with air-quality hint, humidity (only on units with that sensor), operating mode (Intelligent / Manual / Schedule), flow rate (Manual mode), Boost 15/30/60 min, Silent and Holiday modes, filter health.
-- Windows 11 look: Mica, native title bar, light/dark theme, layout adapts to window width.
+- Windows 11 look: Mica, native title bar, light/dark theme (follows Windows or set in Settings), layout adapts to window width. The window reopens where you left it; the version is shown in the footer and in Settings → About.
 - Weekly schedule: a Mon–Sun grid like the Wafe web app. Click or drag to add an action, click a block to edit or delete it (up to 50 actions).
 - Closing the window keeps the app in the tray (in Efficiency Mode), or exits it if you choose that in Settings. Pointing at the tray icon shows whether the unit is running, its mode, air flow and CO₂. The tray menu offers boost shortcuts and Exit. Launching the app again brings the existing window back (single instance).
 - Optional: start with Windows, and start hidden in the tray (the window still opens if you need to sign in).
@@ -52,7 +52,7 @@ Push a version tag (`git tag v1.2.0 && git push origin v1.2.0`). `.github/workfl
 ## Where data is stored
 
 - **Remembered login:** `%AppData%\RecuperationSystem\credentials.dat`, encrypted with Windows DPAPI for the current user. "Sign out" in the ⋯ menu deletes it.
-- **Settings (WinUI app):** `%AppData%\RecuperationSystem\settings.json` (language, closing and startup behaviour). Start with Windows is the `WafeRecuperation` entry under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` (also listed in Task Manager → Startup apps).
+- **Settings (WinUI app):** `%AppData%\RecuperationSystem\settings.json` (language, theme, closing and startup behaviour, window position). Start with Windows is the `WafeRecuperation` entry under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` (also listed in Task Manager → Startup apps).
 - **Logs (WinUI app):** `%LocalAppData%\RecuperationSystem\logs`, kept for 7 days. Open them via ⋯ → "Open log folder". Passwords are never logged.
 
 ## Wafe API

@@ -10,8 +10,8 @@ Last update: 2026-09-24 · SDK 10.0.401 · Windows App SDK 2.5.1
 | --- | --- |
 | `RecuperationSystem.Shared` | API client (stateless, source-generated JSON, `Content-Length` bodies), `WafeSession` + `SandcastleAuthHandler` (key attach, re-login on 401). |
 | `RecuperationSystem.Core` | Services + view models on CommunityToolkit.Mvvm, `AddRecuperationCore()`. Trim/AOT-analyzer clean. |
-| `RecuperationSystem.WinUI` | Windows app: login, dashboard, weekly schedule, settings, tray, single instance. Runs against the real API. |
-| `RecuperationSystem.Tests` | 155 tests (Shared + Core) on xUnit.net v3 + Microsoft.Testing.Platform, including fixtures captured from the real API. |
+| `RecuperationSystem.WinUI` | Windows app: login, dashboard, weekly schedule, settings (language, theme, startup, about), tray with live status tooltip, single instance, remembered window placement. Runs against the real API. |
+| `RecuperationSystem.Tests` | 165 tests (Shared + Core) on xUnit.net v3 + Microsoft.Testing.Platform, including fixtures captured from the real API. |
 
 `RecuperationSystem.slnx` builds with 0 errors and all tests pass. CI runs on `windows-latest`.
 
@@ -26,20 +26,17 @@ Last update: 2026-09-24 · SDK 10.0.401 · Windows App SDK 2.5.1
 Unpackaged, self-contained Windows App SDK 2.5 (`dotnet run --project src/RecuperationSystem.WinUI`).
 
 - [ ] **Your test pass:** sign out/in and try every control against the unit, including adding, editing and deleting a schedule action. Only the read paths were verified live: no commands or schedule changes were sent.
-- [ ] Remember window size/position.
 - [ ] Hide controls for features missing from the unit's `capabilities` list (e.g. `["boost","silent","holiday"]`).
 - [ ] Boost countdown that ticks every second between polls.
-- [ ] Decide: pause polling while hidden in the tray (less API traffic) vs. a live tray tooltip.
 - [ ] Toast notifications (`AppNotificationManager`): filter health low, unit offline, boost finished.
-- [ ] More settings: poll interval, theme override, about/version.
+- [ ] More settings: poll interval.
 - [ ] **Auto-updater** (from GitHub Releases, see Phase 7):
   - Title bar, left of minimize/maximize/close: an "Update available" text button, shown only when a newer release exists. Tooltip with the new version.
   - Click → small centered dialog (`ContentDialog`) with the new version and download size (the release asset's `size`), buttons Cancel / Update.
   - Update → download the setup exe for the current architecture (`win-x64`/`win-arm64`) and run it silently (`/VERYSILENT`, plus `/CURRENTUSER` when installed per-user; a Program Files install asks for UAC). Setup closes the running app itself (Restart Manager) and reuses the previous install folder. Relaunch after a silent install: the `[Run]` entry in `installer/WafeRecuperation.iss` is `skipifsilent`, so add a switch for the updater.
-  - Bottom-right corner: current version (`AssemblyInformationalVersion`, without the `+commit` suffix).
   - Check on startup and then every few hours via `GET /repos/viliamb992/wafe-recuperation-app/releases/latest` (skips pre-releases). Compare as SemVer.
 - [ ] Jump list (taskbar right-click): Boost 15/30, Stop boost.
-- [ ] Schedule: keyboard way to add at a chosen slot (today only via the + button), a "now" marker line, copy a day to other days.
+- [ ] Schedule: a "now" marker line, copy a day to other days. Actions are added only by selecting in the grid with the mouse (the + button is gone), so keyboard-only users can't add one yet; see the accessibility pass.
 - [ ] Accessibility pass (Narrator, keyboard-only, high contrast).
 
 ## Phase 4: MAUI mobile app skeleton (Android + iOS)
@@ -91,6 +88,8 @@ Same information as the Windows dashboard, phone-first. Single column; tablets g
 - **Core on CommunityToolkit.Mvvm.** ReactiveUI is dropped.
 - **WinUI app ships unpackaged + self-contained, with an Inno Setup installer** (`installer/WafeRecuperation.iss`): Program Files or a per-user/custom folder, Start menu entry, uninstaller. Only the app's languages (cs, sk, en) are bundled.
   - *Considered:* MSIX. Cleaner updates and a startup task, but it can't install without a trusted signature (Store or a paid certificate).
+- **Windows: polling keeps running while the app is hidden in the tray**, so the tray tooltip always shows the unit's current state.
+  - *Considered:* pausing polling while hidden (less API traffic), which would leave the tooltip stale.
 
 ## Open questions
 

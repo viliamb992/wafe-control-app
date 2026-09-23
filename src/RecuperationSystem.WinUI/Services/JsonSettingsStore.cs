@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using RecuperationSystem.Core.Services;
 
 namespace RecuperationSystem.WinUI.Services;
@@ -13,7 +14,11 @@ public sealed class JsonSettingsStore : ISettingsStore
         "RecuperationSystem",
         "settings.json");
 
-    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        WriteIndented = true,
+        Converters = { new JsonStringEnumConverter() },
+    };
 
     public UserSettings Load()
     {

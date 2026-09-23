@@ -27,6 +27,8 @@ public static class Xaml
 
     public static bool Not(bool value) => !value;
 
+    public static bool IsIndex(int value, int index) => value == index;
+
     public static bool HasText(string? value) => !string.IsNullOrEmpty(value);
 
     public static bool CanAdjustFlow(bool isManualMode, bool isChanging) => isManualMode && !isChanging;
@@ -112,6 +114,10 @@ public static class Xaml
         [AppConstants.ScheduleModeBoost] = new SolidColorBrush(ColorHelper.FromArgb(0xFF, 0xBC, 0x3F, 0x3A)),
         [""] = new SolidColorBrush(ColorHelper.FromArgb(0xFF, 0x6B, 0x72, 0x80)),
     };
+
+    public static string VersionText(string version) => string.Format(Strings.SettingsVersion, version);
+
+    public static string AboutText(string version) => $"Wafe Recuperation · {VersionText(version)}";
 
     private static T Resource<T>(string key) => (T)Application.Current.Resources[key];
 }

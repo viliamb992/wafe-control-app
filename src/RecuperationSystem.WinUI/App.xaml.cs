@@ -34,7 +34,7 @@ public partial class App : Application
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
         Log.Logger = CreateLogger();
-        Log.Information("Starting Wafe Recuperation (WinUI) {Version}", typeof(App).Assembly.GetName().Version);
+        Log.Information("Starting Wafe Recuperation (WinUI) {Version}", AppVersion.Current);
 
         _services = ConfigureServices();
 
@@ -47,14 +47,19 @@ public partial class App : Application
         var viewModel = _services.GetRequiredService<AppViewModel>();
         var settings = _services.GetRequiredService<SettingsViewModel>();
 
-        _window = new MainWindow(viewModel, _services.GetRequiredService<ScheduleViewModel>(), settings, localization);
+        _window = new MainWindow(
+            viewModel,
+            _services.GetRequiredService<ScheduleViewModel>(),
+            settings,
+            localization,
+            _services.GetRequiredService<ISettingsStore>());
         _window.Closed += OnMainWindowClosed;
 
         var startInTray = settings.StartInTray;
         if (startInTray)
             _window.StartInTray();
         else
-            _window.Activate();
+            _window.ShowAtLaunch();
 
         await viewModel.StartAsync();
 

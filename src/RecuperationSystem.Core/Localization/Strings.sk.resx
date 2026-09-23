@@ -350,7 +350,7 @@
     <value>Týždenný plán</value>
   </data>
   <data name="ScheduleHint" xml:space="preserve">
-    <value>Kliknutím alebo ťahaním v mriežke naplánujete režim jednotky na daný čas, tlačidlom + zadáte presné časy. Naplánovať možno až 50 akcií.</value>
+    <value>Kliknutím alebo ťahaním v mriežke naplánujete režim jednotky na daný čas. Naplánovať možno až 50 akcií.</value>
   </data>
   <data name="ScheduleReload" xml:space="preserve">
     <value>Znova načítať plán</value>
@@ -468,6 +468,31 @@
   </data>
   <data name="SettingsStartInTrayDescription" xml:space="preserve">
     <value>Okno zostane pri spustení skryté, otvoríte ho z ikony v oblasti oznámení. Keď sa treba prihlásiť, otvorí sa.</value>
+  </data>
+  <data name="SettingsTheme" xml:space="preserve">
+    <value>Vzhľad</value>
+  </data>
+  <data name="SettingsThemeDescription" xml:space="preserve">
+    <value>Svetlý alebo tmavý režim aplikácie.</value>
+  </data>
+  <data name="SettingsThemeSystem" xml:space="preserve">
+    <value>Podľa systému</value>
+  </data>
+  <data name="SettingsThemeLight" xml:space="preserve">
+    <value>Svetlý</value>
+  </data>
+  <data name="SettingsThemeDark" xml:space="preserve">
+    <value>Tmavý</value>
+  </data>
+  <data name="SettingsAbout" xml:space="preserve">
+    <value>O aplikácii</value>
+  </data>
+  <data name="SettingsVersion" xml:space="preserve">
+    <value>Verzia {0}</value>
+    <comment>{0} = e.g. 1.2.0</comment>
+  </data>
+  <data name="SettingsProjectLink" xml:space="preserve">
+    <value>Projekt na GitHube</value>
   </data>
   <data name="ButtonAdd" xml:space="preserve">
     <value>Pridať</value>

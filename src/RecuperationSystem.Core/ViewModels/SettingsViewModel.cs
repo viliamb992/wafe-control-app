@@ -24,6 +24,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         SelectedLanguage = localization.Current;
         MinimizeToTray = saved.MinimizeToTray;
         StartInTray = saved.StartInTray;
+        Theme = saved.Theme;
         RunAtStartup = startup.IsEnabled;
     }
 
@@ -56,6 +57,29 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     public partial bool StartInTray { get; set; }
 
+    /// <summary>
+    /// Light, dark, or the system's appearance. The app applies it when it changes.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ThemeIndex))]
+    public partial AppTheme Theme { get; set; }
+
+    /// <summary>
+    /// <see cref="Theme"/> as a list position (System, Light, Dark), for a list of choices.
+    /// A list briefly reporting no selection (-1) is ignored.
+    /// </summary>
+    public int ThemeIndex
+    {
+        get => (int)Theme;
+        set
+        {
+            if (Enum.IsDefined((AppTheme)value))
+                Theme = (AppTheme)value;
+        }
+    }
+
+    public string Version => AppVersion.Current;
+
     partial void OnSelectedLanguageChanged(AppLanguage value)
     {
         // A list control briefly reports no selection while its items are rebuilt;
@@ -77,6 +101,13 @@ public sealed partial class SettingsViewModel : ObservableObject
         var saved = _settings.Load();
         if (saved.StartInTray != value)
             _settings.Save(saved with { StartInTray = value });
+    }
+
+    partial void OnThemeChanged(AppTheme value)
+    {
+        var saved = _settings.Load();
+        if (saved.Theme != value)
+            _settings.Save(saved with { Theme = value });
     }
 
     partial void OnRunAtStartupChanged(bool value)
