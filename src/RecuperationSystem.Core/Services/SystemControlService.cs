@@ -13,6 +13,7 @@ public sealed class SystemControlService : ISystemControlService
     private readonly PollingConfiguration _pollingConfig;
     private readonly ILogger<SystemControlService> _logger;
     private SystemStatus? _currentStatus;
+    private HeaderInfo? _currentHeader;
 
     public event EventHandler<SystemStatus>? StatusUpdated;
     public event EventHandler<bool>? OperationInProgress;
@@ -30,13 +31,36 @@ public sealed class SystemControlService : ISystemControlService
     }
 
     public SystemStatus? CurrentStatus => _currentStatus;
+    public HeaderInfo? CurrentHeader => _currentHeader;
     public bool IsSystemRunning => _currentStatus?.IsSystemRunning ?? false;
     public bool IsSystemStopped => _currentStatus?.StopActive ?? true;
 
-    // Check if system is online based on temperature sensor data
-    public bool IsSystemOnline => _currentStatus?.Temperatures?.Any(t => t.HasValue) ?? false;
+    // The unit's own flag from /header; until that arrives, sensor data is the best guess.
+    public bool IsSystemOnline => _currentHeader?.Online ?? HasSensorData;
 
-    public async Task<SystemStatus?> RefreshStatusAsync(CancellationToken cancellationToken = default)
+    public bool HasSensorData => _currentStatus?.Temperatures?.Any(t => t.HasValue) ?? false;
+
+    public Task<SystemStatus?> RefreshStatusAsync(CancellationToken cancellationToken = default)
+        => RefreshAsync(includeHeader: true, cancellationToken);
+
+    public Task<SystemInfo?> GetSystemInfoAsync(CancellationToken cancellationToken = default)
+        => _authService.IsAuthenticated ? _apiService.GetSystemInfoAsync(cancellationToken) : Task.FromResult<SystemInfo?>(null);
+
+    public async Task<bool> SetUnitNameAsync(string name, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Unit rename to {Name} requested", name);
+
+        if (!await _apiService.SetUnitNameAsync(name, cancellationToken))
+        {
+            _logger.LogWarning("Unit rename rejected by the API");
+            return false;
+        }
+
+        await RefreshStatusAsync(cancellationToken);
+        return true;
+    }
+
+    private async Task<SystemStatus?> RefreshAsync(bool includeHeader, CancellationToken cancellationToken)
     {
         if (!_authService.IsAuthenticated)
         {
@@ -44,19 +68,29 @@ public sealed class SystemControlService : ISystemControlService
             return _currentStatus;
         }
 
+        var headerTask = includeHeader ? _apiService.GetHeaderInfoAsync(cancellationToken) : Task.FromResult<HeaderInfo?>(null);
         var status = await _apiService.GetMainStatusAsync(cancellationToken);
+        var header = await headerTask;
+
+        if (header is not null)
+            _currentHeader = header;
+
         if (status is null)
         {
             // Keep the last known status: a transient failure must not look like a state change.
             _logger.LogDebug("Status refresh returned no data; keeping last known status");
+
+            // A new header alone (e.g. the unit went offline) still needs to reach the UI.
+            if (header is not null && _currentStatus is not null)
+                StatusUpdated?.Invoke(this, _currentStatus);
             return _currentStatus;
         }
 
         _currentStatus = status;
         StatusUpdated?.Invoke(this, status);
 
-        _logger.LogDebug("Status refreshed - gen: {Gen}, Flow: {Flow}, Mode: {Mode}",
-            status.Gen, status.FlowActual, status.Authority);
+        _logger.LogDebug("Status refreshed - gen: {Gen}, Flow: {Flow}, Mode: {Mode}, Online: {Online}",
+            status.Gen, status.FlowActual, status.Authority, IsSystemOnline);
 
         return status;
     }
@@ -166,7 +200,8 @@ public sealed class SystemControlService : ISystemControlService
         {
             await Task.Delay(_pollingConfig.StateChangeIntervalMs, cancellationToken);
 
-            var status = await RefreshStatusAsync(cancellationToken);
+            // Only /main carries the changed value; skip the header while polling fast.
+            var status = await RefreshAsync(includeHeader: false, cancellationToken);
             pollCount++;
 
             // Only a new gen carries new data.

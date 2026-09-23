@@ -20,7 +20,7 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <TitleBar x:Name="AppTitleBar" Title="Wafe Recuperation" IsPaneToggleButtonVisible="False"
+        <TitleBar x:Name="AppTitleBar" Title="Wafe Recuperation" Subtitle="{x:Bind ViewModel.UnitName, Mode=OneWay}" IsPaneToggleButtonVisible="False"
                   IsBackButtonVisible="{x:Bind helpers:Xaml.Either(Schedule.IsOpen, Settings.IsOpen), Mode=OneWay}" BackRequested="OnTitleBarBackRequested">
             <TitleBar.IconSource>
                 <ImageIconSource ImageSource="ms-appx:///Assets/app-icon.ico" />
@@ -41,7 +41,7 @@
 
             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
                 <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="0,0,8,0"
-                            ToolTipService.ToolTip="{x:Bind loc:Strings.TitleBarConnection}"
+                            ToolTipService.ToolTip="{x:Bind helpers:Xaml.ConnectionToolTip(ViewModel.LastUpdate), Mode=OneWay}"
                             Visibility="{x:Bind helpers:Xaml.VisibleIf(ViewModel.IsAuthenticated), Mode=OneWay}">
                     <Ellipse Width="8" Height="8" Fill="{x:Bind helpers:Xaml.OnlineBrush(ViewModel.IsSystemOnline), Mode=OneWay}" />
                     <TextBlock Style="{StaticResource CaptionTextBlockStyle}" VerticalAlignment="Center"

@@ -38,8 +38,12 @@ public class ServiceRegistrationTests
 
         Assert.NotNull(status);
         Assert.Equal("manual", status.Authority);
-        var statusRequest = Assert.Single(stub.Requests, r => !StubHttpHandler.IsLogin(r));
-        Assert.Equal("k1", statusRequest.SandcastleKey);
+        // A refresh reads /main and /header; both carry the key.
+        var statusRequests = stub.Requests.Where(r => !StubHttpHandler.IsLogin(r)).ToList();
+        Assert.Equal(2, statusRequests.Count);
+        Assert.Contains(statusRequests, r => r.Path.EndsWith("/v1/main"));
+        Assert.Contains(statusRequests, r => r.Path.EndsWith("/v1/header"));
+        Assert.All(statusRequests, r => Assert.Equal("k1", r.SandcastleKey));
     }
 
     [Fact]

@@ -21,7 +21,11 @@ public static class AppConstants
     public const string AuthorityEndpoint = "api/v1/main/authority";
     public const string FlowRequestedEndpoint = "api/v1/main/flow-requested";
     public const string SchedulePlanEndpoint = "api/v1/schedule/plan";
-    
+    public const string HeaderNameEndpoint = "api/v1/header/name";
+
+    // The API's own limit for the unit name is unknown; stay well within typical ones.
+    public const int MaxUnitNameLength = 28;
+
     // Flow Speed Constraints
     public const int MinFlowSpeed = 50;
     public const int MaxFlowSpeed = 220;

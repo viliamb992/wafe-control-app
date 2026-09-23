@@ -23,10 +23,13 @@ internal sealed class FakeSystemControlService : ISystemControlService
 #pragma warning restore CS0067
 
     public SystemStatus? CurrentStatus { get; private set; }
+    public HeaderInfo? CurrentHeader { get; set; }
+    public SystemInfo? SystemInfo { get; set; }
     public List<string> Commands { get; } = [];
     public bool IsSystemRunning => CurrentStatus?.IsSystemRunning ?? false;
     public bool IsSystemStopped => CurrentStatus?.StopActive ?? true;
-    public bool IsSystemOnline => CurrentStatus?.Temperatures?.Any(t => t.HasValue) ?? false;
+    public bool IsSystemOnline => CurrentHeader?.Online ?? HasSensorData;
+    public bool HasSensorData => CurrentStatus?.Temperatures?.Any(t => t.HasValue) ?? false;
 
     public void TriggerStatusUpdated(SystemStatus status)
     {
@@ -35,6 +38,7 @@ internal sealed class FakeSystemControlService : ISystemControlService
     }
 
     public Task<SystemStatus?> RefreshStatusAsync(CancellationToken ct = default) => Task.FromResult<SystemStatus?>(null);
+    public Task<SystemInfo?> GetSystemInfoAsync(CancellationToken ct = default) => Task.FromResult(SystemInfo);
     public Task<bool> SetFlowSpeedAsync(int speed, CancellationToken ct = default) => Record($"flow:{speed}");
     public Task<bool> SetAuthorityModeAsync(string mode, CancellationToken ct = default) => Record($"mode:{mode}");
     public Task<bool> SetSilentModeAsync(bool enabled, CancellationToken ct = default) => Record($"silent:{enabled}");
@@ -42,6 +46,12 @@ internal sealed class FakeSystemControlService : ISystemControlService
     public Task<bool> SetBoostAsync(int seconds, CancellationToken ct = default) => Record($"boost:{seconds}");
     public Task<bool> StartSystemAsync(CancellationToken ct = default) => Record("start");
     public Task<bool> StopSystemAsync(CancellationToken ct = default) => Record("stop");
+    public bool AcceptUnitName { get; set; } = true;
+    public Task<bool> SetUnitNameAsync(string name, CancellationToken ct = default)
+    {
+        Commands.Add($"name:{name}");
+        return Task.FromResult(AcceptUnitName);
+    }
 
     private Task<bool> Record(string command)
     {
@@ -80,10 +90,22 @@ public abstract class CardViewModelTestBase : IDisposable
     protected void RaiseStatusUpdated(SystemStatus status) =>
         _systemControl.TriggerStatusUpdated(status);
 
+    protected void SetHeader(HeaderInfo header) => _systemControl.CurrentHeader = header;
+
+    protected void SetSystemInfo(SystemInfo info) => _systemControl.SystemInfo = info;
+
+    protected void RejectUnitNames() => _systemControl.AcceptUnitName = false;
+
     protected void SignIn()
     {
         _authService.IsAuthenticated.Returns(true);
         _authService.AuthenticationChanged += Raise.Event<EventHandler<bool>>(_authService, true);
+    }
+
+    protected void SignOut()
+    {
+        _authService.IsAuthenticated.Returns(false);
+        _authService.AuthenticationChanged += Raise.Event<EventHandler<bool>>(_authService, false);
     }
 
     public void Dispose() => App.Dispose();
@@ -421,5 +443,123 @@ public class AppViewModelLifecycleTests : CardViewModelTestBase
         Assert.Equal(45.5, App.Humidity);
         Assert.Equal(82, App.FreshFilterHealth);
         Assert.Equal(71, App.WasteFilterHealth);
+    }
+}
+
+// ─── AppViewModel unit header + info ───────────────────────────────────────────
+
+public class AppViewModelUnitTests : CardViewModelTestBase
+{
+    [Fact]
+    public void UnitName_IsPortalNameWithoutSerialNumber()
+    {
+        SignIn();
+        SetHeader(new HeaderInfo { Name = "byt 1.001, sn 1234567", Online = true });
+
+        RaiseStatusUpdated(new SystemStatus());
+
+        Assert.Equal("byt 1.001", App.UnitName);
+    }
+
+    [Fact]
+    public void UnitName_EmptyAfterSignOut()
+    {
+        SignIn();
+        SetHeader(new HeaderInfo { Name = "byt 1.001", Timestamp = 1790184364.6 });
+        RaiseStatusUpdated(new SystemStatus());
+
+        SignOut();
+
+        Assert.Equal(string.Empty, App.UnitName);
+        Assert.Null(App.LastUpdate);
+    }
+
+    [Fact]
+    public void OnlineWithoutSensorData_IsOnline()
+    {
+        SignIn();
+        SetHeader(new HeaderInfo { Online = true });
+
+        RaiseStatusUpdated(new SystemStatus { Temperatures = [null, null, null, null] });
+
+        Assert.True(App.IsSystemOnline);
+        Assert.False(App.HasSensorData);
+        Assert.Equal("System online", App.StatusMessage);
+    }
+
+    [Fact]
+    public void HeaderOffline_IsOfflineDespiteSensorData()
+    {
+        SignIn();
+        SetHeader(new HeaderInfo { Online = false });
+
+        RaiseStatusUpdated(new SystemStatus { Temperatures = [20.0] });
+
+        Assert.False(App.IsSystemOnline);
+        Assert.True(App.HasSensorData);
+    }
+
+    [Fact]
+    public void Unit_LoadedOnStatusUpdate_ClearedOnSignOut()
+    {
+        var info = new SystemInfo { Unit = new UnitInfo { Type = "W201 E" } };
+        SetSystemInfo(info);
+        SignIn();
+
+        RaiseStatusUpdated(new SystemStatus());
+        Assert.Same(info, App.Unit);
+
+        SignOut();
+        Assert.Null(App.Unit);
+    }
+
+    [Fact]
+    public void EditUnitName_StartsFromPortalNameWithSerialNumber()
+    {
+        SignIn();
+        SetHeader(new HeaderInfo { Name = "byt 1.001, sn 1234567" });
+
+        var editor = App.EditUnitName();
+
+        Assert.Equal("byt 1.001, sn 1234567", editor.Name);
+        Assert.False(editor.CanSave);
+    }
+
+    [Fact]
+    public async Task SaveUnitNameAsync_SendsTrimmedName()
+    {
+        SignIn();
+        var editor = App.EditUnitName();
+        editor.Name = "  Chata  ";
+
+        Assert.True(await App.SaveUnitNameAsync(editor));
+
+        Assert.Equal(["name:Chata"], SentCommands);
+        Assert.Null(editor.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task SaveUnitNameAsync_Rejected_ShowsErrorInEditor()
+    {
+        SignIn();
+        RejectUnitNames();
+        var editor = App.EditUnitName();
+        editor.Name = "Chata";
+
+        Assert.False(await App.SaveUnitNameAsync(editor));
+
+        Assert.Equal("The name couldn't be saved. Please try again.", editor.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task SaveUnitNameAsync_InvalidName_SendsNothing()
+    {
+        SignIn();
+        var editor = App.EditUnitName();
+        editor.Name = new string('x', 29);
+
+        Assert.False(await App.SaveUnitNameAsync(editor));
+
+        Assert.Empty(SentCommands);
     }
 }

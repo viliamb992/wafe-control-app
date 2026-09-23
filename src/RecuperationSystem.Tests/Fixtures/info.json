@@ -1,0 +1,14 @@
+{
+    "contacts": {
+        "service": {
+            "mail": "servis@wafe.cz",
+            "name": "WAFE s.r.o.",
+            "web": "https://wafe.eu/"
+        }
+    },
+    "unit": {
+        "model": "W0201CEdEUBQ210",
+        "sn": "1234567000000",
+        "type": "W201 E"
+    }
+}

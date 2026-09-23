@@ -11,7 +11,6 @@ namespace RecuperationSystem.Shared.Serialization;
 [JsonSerializable(typeof(SystemStatus))]
 [JsonSerializable(typeof(HeaderInfo))]
 [JsonSerializable(typeof(SystemInfo))]
-[JsonSerializable(typeof(MessagesResponse))]
 [JsonSerializable(typeof(ScheduleResponse))]
 [JsonSerializable(typeof(ValueRequest<bool>))]
 [JsonSerializable(typeof(ValueRequest<int>))]

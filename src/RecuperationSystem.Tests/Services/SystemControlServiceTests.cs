@@ -313,6 +313,110 @@ public class SystemControlServiceTests
         Assert.False(sut.IsSystemOnline);
     }
 
+    [Theory]
+    [InlineData(true, null, true)]      // online, but stopped or between scheduled runs
+    [InlineData(false, 20.0, false)]    // the header's flag wins over stale readings
+    public async Task IsSystemOnline_FollowsHeader(bool headerOnline, double? temperature, bool expected)
+    {
+        var api = Substitute.For<IWafeApiService>();
+        var auth = Substitute.For<IAuthenticationService>();
+        auth.IsAuthenticated.Returns(true);
+        var status = MakeStatus(gen: 1);
+        status.Temperatures = [temperature];
+        api.GetMainStatusAsync(Arg.Any<CancellationToken>()).Returns(status);
+        api.GetHeaderInfoAsync(Arg.Any<CancellationToken>()).Returns(new HeaderInfo { Online = headerOnline });
+
+        var sut = CreateSut(api, auth);
+        await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(expected, sut.IsSystemOnline);
+        Assert.Equal(temperature.HasValue, sut.HasSensorData);
+    }
+
+    [Fact]
+    public async Task RefreshStatusAsync_OnlyHeaderArrives_RaisesStatusUpdatedWithLastStatus()
+    {
+        var api = Substitute.For<IWafeApiService>();
+        var auth = Substitute.For<IAuthenticationService>();
+        auth.IsAuthenticated.Returns(true);
+        var status = MakeStatus(gen: 1);
+        api.GetMainStatusAsync(Arg.Any<CancellationToken>()).Returns(status, (SystemStatus?)null);
+        api.GetHeaderInfoAsync(Arg.Any<CancellationToken>()).Returns(new HeaderInfo { Online = true }, new HeaderInfo { Online = false });
+
+        var sut = CreateSut(api, auth);
+        await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
+        SystemStatus? raised = null;
+        sut.StatusUpdated += (_, s) => raised = s;
+
+        await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
+
+        Assert.Same(status, raised);
+        Assert.False(sut.IsSystemOnline);
+    }
+
+    [Fact]
+    public async Task SetFlowSpeedAsync_WhilePolling_DoesNotFetchHeader()
+    {
+        var api = Substitute.For<IWafeApiService>();
+        var auth = Substitute.For<IAuthenticationService>();
+        auth.IsAuthenticated.Returns(true);
+        api.SetFlowSpeedAsync(150, Arg.Any<CancellationToken>()).Returns(true);
+        api.GetMainStatusAsync(Arg.Any<CancellationToken>())
+           .Returns(MakeStatus(gen: 1, flowRequested: 100),
+                    MakeStatus(gen: 1, flowRequested: 100),
+                    MakeStatus(gen: 2, flowRequested: 150));
+
+        var sut = CreateSut(api, auth);
+        await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
+
+        Assert.True(await sut.SetFlowSpeedAsync(150, TestContext.Current.CancellationToken));
+        await api.Received(3).GetMainStatusAsync(Arg.Any<CancellationToken>());
+        await api.Received(1).GetHeaderInfoAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task SetUnitNameAsync_Accepted_RefreshesHeader()
+    {
+        var api = Substitute.For<IWafeApiService>();
+        var auth = Substitute.For<IAuthenticationService>();
+        auth.IsAuthenticated.Returns(true);
+        api.SetUnitNameAsync("Chata", Arg.Any<CancellationToken>()).Returns(true);
+        api.GetMainStatusAsync(Arg.Any<CancellationToken>()).Returns(MakeStatus(gen: 1));
+        api.GetHeaderInfoAsync(Arg.Any<CancellationToken>()).Returns(new HeaderInfo { Name = "Chata" });
+
+        var sut = CreateSut(api, auth);
+
+        Assert.True(await sut.SetUnitNameAsync("Chata", TestContext.Current.CancellationToken));
+        Assert.Equal("Chata", sut.CurrentHeader?.Name);
+    }
+
+    [Fact]
+    public async Task SetUnitNameAsync_Rejected_ReturnsFalseWithoutRefresh()
+    {
+        var api = Substitute.For<IWafeApiService>();
+        var auth = Substitute.For<IAuthenticationService>();
+        auth.IsAuthenticated.Returns(true);
+        api.SetUnitNameAsync("Chata", Arg.Any<CancellationToken>()).Returns(false);
+
+        var sut = CreateSut(api, auth);
+
+        Assert.False(await sut.SetUnitNameAsync("Chata", TestContext.Current.CancellationToken));
+        await api.DidNotReceive().GetHeaderInfoAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task GetSystemInfoAsync_WhenNotAuthenticated_SkipsApi()
+    {
+        var api = Substitute.For<IWafeApiService>();
+        var auth = Substitute.For<IAuthenticationService>();
+        auth.IsAuthenticated.Returns(false);
+
+        var result = await CreateSut(api, auth).GetSystemInfoAsync(TestContext.Current.CancellationToken);
+
+        Assert.Null(result);
+        await api.DidNotReceive().GetSystemInfoAsync(Arg.Any<CancellationToken>());
+    }
+
     // ── Failure handling ───────────────────────────────────────────────────
 
     [Fact]

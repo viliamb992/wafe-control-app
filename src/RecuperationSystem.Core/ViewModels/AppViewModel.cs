@@ -23,6 +23,7 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
     private readonly ILogger<AppViewModel> _logger;
     private readonly SynchronizationContext? _uiContext;
     private CancellationTokenSource? _autoRefreshCts;
+    private bool _isLoadingUnit;
     private bool _disposed;
 
     public AppViewModel(
@@ -97,6 +98,29 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
     // Expose properties from card VMs for convenience and bindings
     public bool IsManualMode => OperatingMode.IsManualMode;
     public bool IsSystemOnline => _systemControl.IsSystemOnline;
+    public bool HasSensorData => _systemControl.HasSensorData;
+
+    /// <summary>
+    /// The unit's name from the Wafe portal without its serial number, e.g. "byt 1.001"; empty when unknown.
+    /// </summary>
+    public string UnitName => UnitNames.WithoutSerialNumber(PortalUnitName);
+
+    /// <summary>
+    /// The unit's name as stored in the Wafe portal, serial number included; empty when unknown.
+    /// </summary>
+    public string PortalUnitName => IsAuthenticated ? _systemControl.CurrentHeader?.Name ?? string.Empty : string.Empty;
+
+    /// <summary>
+    /// Time of the unit's latest data (local); null until the first header arrives.
+    /// </summary>
+    public DateTimeOffset? LastUpdate =>
+        IsAuthenticated && _systemControl.CurrentHeader is { Timestamp: > 0 } header ? header.Time.ToLocalTime() : null;
+
+    /// <summary>
+    /// Model, serial number and service contact. Loaded once per sign-in; null until then.
+    /// </summary>
+    [ObservableProperty]
+    public partial SystemInfo? Unit { get; private set; }
 
     // Temperatures in °C; null when the unit doesn't report them (e.g. while it is offline).
     public double? OutsideTemp => GetTemperature(0);
@@ -218,6 +242,37 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
 
     private bool CanCancelLogin() => !IsLoggingIn;
 
+    /// <summary>
+    /// A rename dialog starting from the current portal name.
+    /// </summary>
+    public UnitNameEditorViewModel EditUnitName() => new(PortalUnitName);
+
+    /// <summary>
+    /// Sends the new name; on failure the editor shows why, so the dialog can stay open.
+    /// </summary>
+    public async Task<bool> SaveUnitNameAsync(UnitNameEditorViewModel editor)
+    {
+        if (!IsAuthenticated || !editor.CanSave)
+            return false;
+
+        editor.ErrorMessage = null;
+        bool saved;
+        try
+        {
+            saved = await _systemControl.SetUnitNameAsync(editor.NewName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unit rename failed");
+            saved = false;
+        }
+
+        if (!saved)
+            editor.ErrorMessage = Strings.UnitNameSaveFailed;
+
+        return saved;
+    }
+
     #endregion
 
     #region Event Handlers
@@ -227,6 +282,9 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
         {
             OnPropertyChanged(nameof(IsAuthenticated));
             OnPropertyChanged(nameof(IsLoginRequired));
+            OnPropertyChanged(nameof(UnitName));
+            OnPropertyChanged(nameof(PortalUnitName));
+            OnPropertyChanged(nameof(LastUpdate));
             RefreshStatusCommand.NotifyCanExecuteChanged();
             SubmitLoginCommand.NotifyCanExecuteChanged();
             SignOutCommand.NotifyCanExecuteChanged();
@@ -240,6 +298,7 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
             else
             {
                 StopAutoRefresh();
+                Unit = null;
                 StatusMessage = Strings.AppStatusDisconnected;
             }
         });
@@ -255,11 +314,40 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
         OnPropertyChanged(nameof(Humidity));
         OnPropertyChanged(nameof(FreshFilterHealth));
         OnPropertyChanged(nameof(WasteFilterHealth));
+        OnPropertyChanged(nameof(HasSensorData));
+        OnPropertyChanged(nameof(UnitName));
+        OnPropertyChanged(nameof(PortalUnitName));
+        OnPropertyChanged(nameof(LastUpdate));
         OnPropertyChanged(nameof(IsSystemOnline));
 
         StatusMessage = _systemControl.IsSystemOnline
             ? Strings.AppStatusUnitOnline
             : Strings.AppStatusUnitOffline;
+
+        // Also retries after a failed load, on the next status update.
+        if (Unit is null)
+            _ = LoadUnitAsync();
+    }
+
+    private async Task LoadUnitAsync()
+    {
+        if (_isLoadingUnit) return;
+
+        _isLoadingUnit = true;
+        try
+        {
+            var unit = await _systemControl.GetSystemInfoAsync();
+            if (IsAuthenticated)
+                Unit = unit;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Loading unit info failed");
+        }
+        finally
+        {
+            _isLoadingUnit = false;
+        }
     }
 
     private void OnOperatingModePropertyChanged(object? sender, PropertyChangedEventArgs e)

@@ -63,9 +63,6 @@ public class WafeApiService : IWafeApiService
     public Task<SystemInfo?> GetSystemInfoAsync(CancellationToken cancellationToken = default)
         => GetAsync(AppConstants.InfoEndpoint, WafeJsonContext.Default.SystemInfo, cancellationToken);
 
-    public Task<MessagesResponse?> GetMessagesAsync(CancellationToken cancellationToken = default)
-        => GetAsync(AppConstants.MessagesEndpoint, WafeJsonContext.Default.MessagesResponse, cancellationToken);
-
     public Task<ScheduleResponse?> GetScheduleAsync(CancellationToken cancellationToken = default)
         => GetAsync(AppConstants.ScheduleEndpoint, WafeJsonContext.Default.ScheduleResponse, cancellationToken);
 
@@ -99,6 +96,17 @@ public class WafeApiService : IWafeApiService
 
     public Task<bool> SetSchedulePlanAsync(string plan, CancellationToken cancellationToken = default)
         => PutValueAsync(AppConstants.SchedulePlanEndpoint, plan, WafeJsonContext.Default.ValueRequestString, cancellationToken);
+
+    public Task<bool> SetUnitNameAsync(string name, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(name) || name.Length > AppConstants.MaxUnitNameLength)
+        {
+            _logger.LogWarning("Unit name must be 1-{Max} characters, got {Length}", AppConstants.MaxUnitNameLength, name?.Length ?? 0);
+            return Task.FromResult(false);
+        }
+
+        return PutValueAsync(AppConstants.HeaderNameEndpoint, name, WafeJsonContext.Default.ValueRequestString, cancellationToken);
+    }
 
     // ==================== HELPER METHODS ====================
 

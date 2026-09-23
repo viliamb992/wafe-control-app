@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="RecuperationSystem.WinUI.Views.UnitNameEditor"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:helpers="using:RecuperationSystem.WinUI.Helpers"
+    xmlns:loc="using:RecuperationSystem.Core.Localization">
+
+    <StackPanel Spacing="8" MinWidth="360">
+        <TextBox x:Name="NameBox" AutomationProperties.Name="{x:Bind loc:Strings.UnitNameTitle}"
+                 MaxLength="{x:Bind ViewModel.MaxLength}"
+                 Text="{x:Bind ViewModel.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+        <TextBlock Text="{x:Bind ViewModel.Hint}" Style="{StaticResource CaptionTextBlockStyle}" TextWrapping="Wrap"
+                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+
+        <InfoBar Severity="Error" IsClosable="False" Margin="0,8,0,0"
+                 IsOpen="{x:Bind helpers:Xaml.HasText(ViewModel.ErrorMessage), Mode=OneWay}"
+                 Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}" />
+    </StackPanel>
+</UserControl>

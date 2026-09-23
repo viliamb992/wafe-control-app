@@ -8,6 +8,8 @@ public interface IWafeApiService
 {
     Task<bool> AuthenticateAsync(string username, string password, CancellationToken cancellationToken = default);
     Task<SystemStatus?> GetMainStatusAsync(CancellationToken cancellationToken = default);
+    Task<HeaderInfo?> GetHeaderInfoAsync(CancellationToken cancellationToken = default);
+    Task<SystemInfo?> GetSystemInfoAsync(CancellationToken cancellationToken = default);
     Task<bool> SetFlowSpeedAsync(int speed, CancellationToken cancellationToken = default);
     Task<bool> SetAuthorityModeAsync(string mode, CancellationToken cancellationToken = default);
     Task<bool> SetSilentModeAsync(bool enabled, CancellationToken cancellationToken = default);
@@ -20,4 +22,9 @@ public interface IWafeApiService
     /// Replaces the whole weekly plan (see <see cref="SchedulePlan"/>).
     /// </summary>
     Task<bool> SetSchedulePlanAsync(string plan, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Renames the unit in the Wafe portal. Refuses empty names and names over <see cref="AppConstants.MaxUnitNameLength"/> characters.
+    /// </summary>
+    Task<bool> SetUnitNameAsync(string name, CancellationToken cancellationToken = default);
 }

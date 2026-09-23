@@ -57,6 +57,7 @@ public sealed partial class MainWindow : Window
         ScheduleView.ViewModel = schedule;
         ScheduleView.Main = viewModel;
         SettingsView.ViewModel = settings;
+        SettingsView.Main = viewModel;
 
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
@@ -304,22 +305,28 @@ public sealed partial class MainWindow : Window
     /// <summary>
     /// Hovering the tray icon shows the unit at a glance:
     /// <code>
-    /// Wafe Recuperation
+    /// Wafe Recuperation · byt 1.001
     /// Running · Mode: Schedule
     /// Flow: 120 m³/h · CO₂: 650 ppm
     /// </code>
+    /// The last line says "offline" when the unit is, and is left out while it's online without sensor data.
     /// </summary>
     private void UpdateTrayToolTip()
     {
         var text = "Wafe Recuperation";
         if (ViewModel.IsAuthenticated)
         {
+            if (ViewModel.UnitName.Length > 0)
+                text = $"{text} · {ViewModel.UnitName}";
+
             var state = Xaml.SystemState(ViewModel.SystemControl.IsSystemRunning);
             var mode = string.Format(Strings.TrayMode, Xaml.ModeName(ViewModel.SystemControl.CurrentAuthority));
-            var readings = ViewModel.IsSystemOnline
-                ? string.Format(Strings.TrayReadings, Xaml.Flow(ViewModel.CurrentFlow), Xaml.Co2(ViewModel.Co2Level))
-                : Strings.AppStatusUnitOffline;
-            text = $"{text}\n{state} · {mode}\n{readings}";
+            text = $"{text}\n{state} · {mode}";
+
+            if (ViewModel.HasSensorData)
+                text += "\n" + string.Format(Strings.TrayReadings, Xaml.Flow(ViewModel.CurrentFlow), Xaml.Co2(ViewModel.Co2Level));
+            else if (!ViewModel.IsSystemOnline)
+                text += "\n" + Strings.AppStatusUnitOffline;
         }
 
         if (TrayIcon.ToolTipText != text)

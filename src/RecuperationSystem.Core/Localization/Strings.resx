@@ -53,6 +53,10 @@
   <data name="TitleBarOffline" xml:space="preserve">
     <value>Offline</value>
   </data>
+  <data name="TitleBarLastUpdate" xml:space="preserve">
+    <value>Poslední aktualizace: {0}</value>
+    <comment>Connection tooltip; {0} = time of the unit's latest data</comment>
+  </data>
   <data name="TitleBarRefresh" xml:space="preserve">
     <value>Obnovit</value>
   </data>
@@ -516,6 +520,32 @@
   </data>
   <data name="SettingsProjectLink" xml:space="preserve">
     <value>Projekt na GitHubu</value>
+  </data>
+  <data name="SettingsUnit" xml:space="preserve">
+    <value>Jednotka</value>
+  </data>
+  <data name="SettingsUnitDetails" xml:space="preserve">
+    <value>{0} · model {1} · v. č. {2}</value>
+    <comment>{0} = unit type, {1} = model code, {2} = serial number</comment>
+  </data>
+  <data name="SettingsService" xml:space="preserve">
+    <value>Servis</value>
+  </data>
+  <data name="UnitNameLabel" xml:space="preserve">
+    <value>Název</value>
+  </data>
+  <data name="UnitRename" xml:space="preserve">
+    <value>Přejmenovat</value>
+  </data>
+  <data name="UnitNameTitle" xml:space="preserve">
+    <value>Název jednotky</value>
+  </data>
+  <data name="UnitNameHint" xml:space="preserve">
+    <value>Nejvýše {0} znaků. Název se změní i na portálu Wafe.</value>
+    <comment>{0} = maximum number of characters</comment>
+  </data>
+  <data name="UnitNameSaveFailed" xml:space="preserve">
+    <value>Název se nepodařilo uložit. Zkuste to znovu.</value>
   </data>
   <data name="ButtonAdd" xml:space="preserve">
     <value>Přidat</value>

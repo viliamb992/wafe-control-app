@@ -221,6 +221,31 @@ public class WafeApiServiceTests
     }
 
     [Fact]
+    public async Task SetUnitNameAsync_PutsNameAsValue()
+    {
+        var stub = Ok();
+
+        Assert.True(await CreateSut(stub).SetUnitNameAsync("Chata", TestContext.Current.CancellationToken));
+
+        var put = Assert.Single(stub.Requests);
+        Assert.Equal(HttpMethod.Put, put.Method);
+        Assert.Equal("/api/api/v1/header/name", put.Path);
+        Assert.Equal("""{"value":"Chata"}""", put.Body);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("12345678901234567890123456789")]  // 29 characters
+    public async Task SetUnitNameAsync_EmptyOrTooLong_ReturnsFalseWithoutRequest(string name)
+    {
+        var stub = Ok();
+
+        Assert.False(await CreateSut(stub).SetUnitNameAsync(name, TestContext.Current.CancellationToken));
+        Assert.Empty(stub.Requests);
+    }
+
+    [Fact]
     public async Task PutEndpoint_Rejected_ReturnsFalse()
     {
         var stub = new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.BadRequest));

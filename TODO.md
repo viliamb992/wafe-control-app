@@ -10,8 +10,8 @@ Last update: 2026-09-24 · SDK 10.0.401 · Windows App SDK 2.5.1
 | --- | --- |
 | `RecuperationSystem.Shared` | API client (stateless, source-generated JSON, `Content-Length` bodies), `WafeSession` + `SandcastleAuthHandler` (key attach, re-login on 401). |
 | `RecuperationSystem.Core` | Services + view models on CommunityToolkit.Mvvm, `AddRecuperationCore()`. Trim/AOT-analyzer clean. |
-| `RecuperationSystem.WinUI` | Windows app: login, dashboard, weekly schedule, settings (language, theme, startup, about), tray with live status tooltip, single instance, remembered window placement. Runs against the real API. |
-| `RecuperationSystem.Tests` | 165 tests (Shared + Core) on xUnit.net v3 + Microsoft.Testing.Platform, including fixtures captured from the real API. |
+| `RecuperationSystem.WinUI` | Windows app: login, dashboard, weekly schedule, settings (language, theme, startup, unit name/rename + service contact, about), unit name in the title bar, tray with live status tooltip, single instance, remembered window placement. Runs against the real API. |
+| `RecuperationSystem.Tests` | 207 tests (Shared + Core) on xUnit.net v3 + Microsoft.Testing.Platform, including fixtures captured from the real API. |
 
 `RecuperationSystem.slnx` builds with 0 errors and all tests pass. CI runs on `windows-latest`.
 
@@ -19,13 +19,13 @@ Last update: 2026-09-24 · SDK 10.0.401 · Windows App SDK 2.5.1
 
 ## Phase 1: Shared core
 
-- [ ] **Needs real data:** `HeaderInfo`, `SystemInfo`, `Messages` are still unverified. `/main` and `/schedule` are verified. Capture the others the same way (Debug log → fixture), then fix the models or delete them.
+- [ ] **Needs real data:** `/messages`. `/main`, `/schedule`, `/header` and `/info` are verified. No message has shown up yet, so the guessed model was removed; when one does, capture it (Debug log → fixture) and add the model. The header's `message` field (always `null` so far) may be related, and its `pm` flag is still unexplained.
 
 ## Phase 2: WinUI 3 Windows app
 
 Unpackaged, self-contained Windows App SDK 2.5 (`dotnet run --project src/RecuperationSystem.WinUI`).
 
-- [ ] **Your test pass:** sign out/in and try every control against the unit, including adding, editing and deleting a schedule action. Only the read paths were verified live: no commands or schedule changes were sent.
+- [ ] **Your test pass:** sign out/in and try every control against the unit, including adding, editing and deleting a schedule action, and renaming the unit (Settings → Unit). Only the read paths were verified live: no commands or schedule changes were sent.
 - [ ] Hide controls for features missing from the unit's `capabilities` list (e.g. `["boost","silent","holiday"]`).
 - [ ] Boost countdown that ticks every second between polls.
 - [ ] Toast notifications (`AppNotificationManager`): filter health low, unit offline, boost finished.
@@ -58,6 +58,7 @@ Same information as the Windows dashboard, phone-first. Single column; tablets g
 - [ ] Weekly schedule on `ScheduleViewModel` (same logic as Windows): day-by-day list or scrollable grid, tap/long-press to add, same add/edit sheet.
 - [ ] `RefreshView` pull-to-refresh, offline/error banner (`Connectivity`), pending state per control.
 - [ ] Use the Core `Strings` for all text, and a language picker in Settings (`ISettingsStore` on MAUI `Preferences`).
+- [ ] `AppViewModel.UnitName` as the dashboard title; a Unit section in Settings from `AppViewModel.Unit` (model, serial number, service mail/web) with rename (`EditUnitName`/`SaveUnitNameAsync`), like Windows.
 
 ## Phase 6: Mobile platform polish
 
@@ -77,7 +78,7 @@ Same information as the Windows dashboard, phone-first. Single column; tablets g
 - [ ] Background notifications on mobile (Android `WorkManager` ≥ 15 min, iOS `BGAppRefreshTask`).
 - [ ] Android Quick Settings tile and home-screen widget for boost/status.
 - [ ] History chart (temps/CO₂). The API doesn't expose history, so it needs local sampling into SQLite.
-- [ ] Messages screen, once that model is verified.
+- [ ] Messages screen, once a real `/messages` response has been captured.
 
 ---
 

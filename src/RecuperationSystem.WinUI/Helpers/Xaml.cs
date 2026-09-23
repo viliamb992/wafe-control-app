@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml.Media;
 using RecuperationSystem.Core.Localization;
 using RecuperationSystem.Core.ViewModels.Schedule;
 using RecuperationSystem.Shared;
+using RecuperationSystem.Shared.Models;
 
 namespace RecuperationSystem.WinUI.Helpers;
 
@@ -24,6 +25,8 @@ public static class Xaml
     public static Visibility CollapsedIfHasValue(int? value) => CollapsedIf(value.HasValue);
 
     public static Visibility VisibleIfHasReading(double? value) => VisibleIf(value.HasValue);
+
+    public static Visibility VisibleIfNotNull(object? value) => VisibleIf(value is not null);
 
     public static bool Not(bool value) => !value;
 
@@ -67,8 +70,8 @@ public static class Xaml
     public static Brush SystemStateBrush(bool isRunning) =>
         Resource<Brush>(isRunning ? "SystemFillColorSuccessBrush" : "ControlStrongFillColorDefaultBrush");
 
-    public static string SystemSummary(string authority, int currentFlow, bool isOnline) =>
-        isOnline
+    public static string SystemSummary(string authority, int currentFlow, bool hasSensorData) =>
+        hasSensorData
             ? string.Format(Strings.SystemSummary, ModeName(authority), Flow(currentFlow))
             : string.Format(Strings.SystemSummaryModeOnly, ModeName(authority));
 
@@ -80,6 +83,19 @@ public static class Xaml
     /// </summary>
     public static Visibility VisibleIfNextStart(DateTime? nextStart, string authority, bool isRunning) =>
         VisibleIf(nextStart.HasValue && isRunning && authority == AppConstants.ModeSchedule);
+
+    /// <summary>
+    /// "Recuperation unit connection", plus "Last update: 14:32:05" once the unit's data time is known.
+    /// </summary>
+    public static string ConnectionToolTip(DateTimeOffset? lastUpdate)
+    {
+        if (lastUpdate is not { } time)
+            return Strings.TitleBarConnection;
+
+        var local = time.LocalDateTime;
+        var text = local.Date == DateTime.Today ? local.ToString("HH:mm:ss", CultureInfo.CurrentCulture) : ScheduleFormat.DateAndTime(local);
+        return $"{Strings.TitleBarConnection}\n{string.Format(Strings.TitleBarLastUpdate, text)}";
+    }
 
     public static string OnlineText(bool isOnline) => isOnline ? Strings.TitleBarOnline : Strings.TitleBarOffline;
 
@@ -116,6 +132,29 @@ public static class Xaml
     };
 
     public static string VersionText(string version) => string.Format(Strings.SettingsVersion, version);
+
+    public static string UnitDetails(SystemInfo? info) =>
+        string.Format(Strings.SettingsUnitDetails, info?.Unit?.Type ?? NoValue, info?.Unit?.Model ?? NoValue, info?.Unit?.SerialNumber ?? NoValue);
+
+    public static string ServiceName(SystemInfo? info) => info?.Contacts?.Service?.Name ?? NoValue;
+
+    public static string ServiceMail(SystemInfo? info) => info?.Contacts?.Service?.Mail ?? string.Empty;
+
+    public static Uri? ServiceMailUri(SystemInfo? info) =>
+        ServiceMail(info) is { Length: > 0 } mail && Uri.TryCreate($"mailto:{mail}", UriKind.Absolute, out var uri) ? uri : null;
+
+    public static Visibility VisibleIfServiceMail(SystemInfo? info) => VisibleIf(ServiceMailUri(info) is not null);
+
+    public static Uri? ServiceWebUri(SystemInfo? info) =>
+        Uri.TryCreate(info?.Contacts?.Service?.Web, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https" ? uri : null;
+
+    /// <summary>
+    /// "wafe.eu" for "https://wafe.eu/".
+    /// </summary>
+    public static string ServiceWebText(SystemInfo? info) =>
+        ServiceWebUri(info) is { } uri ? $"{uri.Host}{uri.PathAndQuery.TrimEnd('/')}" : string.Empty;
+
+    public static Visibility VisibleIfServiceWeb(SystemInfo? info) => VisibleIf(ServiceWebUri(info) is not null);
 
     public static string AboutText(string version) => $"Wafe Recuperation · {VersionText(version)}";
 

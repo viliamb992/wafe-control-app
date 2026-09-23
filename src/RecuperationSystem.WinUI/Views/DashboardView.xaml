@@ -61,11 +61,11 @@
                                 </Border>
                             </StackPanel>
                             <TextBlock Style="{StaticResource SecondaryTextStyle}" TextTrimming="CharacterEllipsis"
-                                       Text="{x:Bind helpers:Xaml.SystemSummary(ViewModel.SystemControl.CurrentAuthority, ViewModel.CurrentFlow, ViewModel.IsSystemOnline), Mode=OneWay}" />
+                                       Text="{x:Bind helpers:Xaml.SystemSummary(ViewModel.SystemControl.CurrentAuthority, ViewModel.CurrentFlow, ViewModel.HasSensorData), Mode=OneWay}" />
                             <TextBlock Style="{StaticResource CaptionTextBlockStyle}" TextWrapping="Wrap" Margin="0,2,0,0"
                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                        Text="{x:Bind loc:Strings.SystemNoSensorData}"
-                                       Visibility="{x:Bind helpers:Xaml.CollapsedIf(ViewModel.IsSystemOnline), Mode=OneWay}" />
+                                       Visibility="{x:Bind helpers:Xaml.VisibleIfAndNot(ViewModel.IsSystemOnline, ViewModel.HasSensorData), Mode=OneWay}" />
                         </StackPanel>
 
                         <Button Grid.Column="2" MinWidth="140" Height="36" Command="{x:Bind ViewModel.SystemControl.ToggleSystemCommand}">

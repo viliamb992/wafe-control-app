@@ -126,6 +126,60 @@
                 </Grid>
             </Border>
 
+            <!-- ── Unit: name, model, serial number, service contact (after sign-in) ── -->
+            <Border Style="{StaticResource CardStyle}" Padding="16"
+                    Visibility="{x:Bind helpers:Xaml.VisibleIfNotNull(Main.Unit), Mode=OneWay}">
+                <Grid ColumnSpacing="16" RowSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
+
+                    <FontIcon Glyph="&#xE8AC;" FontSize="20" VerticalAlignment="Center" />
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="{x:Bind loc:Strings.UnitNameLabel}" Style="{StaticResource BodyTextBlockStyle}" />
+                        <TextBlock Style="{StaticResource SecondaryTextStyle}" TextTrimming="CharacterEllipsis"
+                                   Text="{x:Bind Main.PortalUnitName, Mode=OneWay}" />
+                    </StackPanel>
+                    <Button Grid.Column="2" VerticalAlignment="Center" Content="{x:Bind loc:Strings.UnitRename}" Click="OnRenameUnitClick" />
+
+                    <Border Grid.Row="1" Grid.ColumnSpan="3" Height="1" Background="{ThemeResource DividerStrokeColorDefaultBrush}" />
+
+                    <FontIcon Grid.Row="2" Glyph="&#xE772;" FontSize="20" VerticalAlignment="Center" />
+                    <StackPanel Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" VerticalAlignment="Center">
+                        <TextBlock Text="{x:Bind loc:Strings.SettingsUnit}" Style="{StaticResource BodyTextBlockStyle}" />
+                        <!-- Selectable: the service company asks for the model and serial number. -->
+                        <TextBlock Style="{StaticResource SecondaryTextStyle}" IsTextSelectionEnabled="True" TextWrapping="Wrap"
+                                   Text="{x:Bind helpers:Xaml.UnitDetails(Main.Unit), Mode=OneWay}" />
+                    </StackPanel>
+
+                    <Border Grid.Row="3" Grid.ColumnSpan="3" Height="1" Background="{ThemeResource DividerStrokeColorDefaultBrush}" />
+
+                    <FontIcon Grid.Row="4" Glyph="&#xE779;" FontSize="20" VerticalAlignment="Center" />
+                    <StackPanel Grid.Row="4" Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="{x:Bind loc:Strings.SettingsService}" Style="{StaticResource BodyTextBlockStyle}" />
+                        <TextBlock Style="{StaticResource SecondaryTextStyle}" IsTextSelectionEnabled="True"
+                                   Text="{x:Bind helpers:Xaml.ServiceName(Main.Unit), Mode=OneWay}" />
+                    </StackPanel>
+                    <StackPanel Grid.Row="4" Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                        <HyperlinkButton Content="{x:Bind helpers:Xaml.ServiceMail(Main.Unit), Mode=OneWay}"
+                                         NavigateUri="{x:Bind helpers:Xaml.ServiceMailUri(Main.Unit), Mode=OneWay}"
+                                         Visibility="{x:Bind helpers:Xaml.VisibleIfServiceMail(Main.Unit), Mode=OneWay}" />
+                        <HyperlinkButton Content="{x:Bind helpers:Xaml.ServiceWebText(Main.Unit), Mode=OneWay}"
+                                         NavigateUri="{x:Bind helpers:Xaml.ServiceWebUri(Main.Unit), Mode=OneWay}"
+                                         Visibility="{x:Bind helpers:Xaml.VisibleIfServiceWeb(Main.Unit), Mode=OneWay}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
             <!-- ── About ────────────────────────────────────────────────── -->
             <Border Style="{StaticResource CardStyle}" Padding="16">
                 <Grid ColumnSpacing="16">
