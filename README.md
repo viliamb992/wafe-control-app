@@ -1,6 +1,6 @@
 # WAFE Control
 
-Unofficial apps for monitoring and controlling a Wafe heat-recovery ventilation unit through the go2my.wafe.eu cloud API.
+Unofficial apps for monitoring and controlling a Wafe heat-recovery ventilation unit through the go2my.wafe.eu cloud API. Not affiliated with WAFE s.r.o. (see [License](#license)). The unit's manual is on WAFE's site: [W0201 manual (Czech, PDF)](https://go2my.wafe.eu/resources/manual-w0201-cz.pdf).
 
 Vibe coded with [Claude Code](https://claude.com/claude-code): the code, tests and docs were written by Claude from prompts, then reviewed and tested by hand.
 
@@ -211,4 +211,10 @@ Request bodies must be sent with a `Content-Length`: the server answers chunked 
 
 ## License
 
-For personal use only. Not affiliated with Wafe.
+The code is licensed under the [MIT License](LICENSE).
+
+**Not affiliated with WAFE.** WAFE is a trademark of WAFE s.r.o. This is an unofficial project: it is not made, endorsed or supported by WAFE s.r.o. The WAFE name and wordmark (app icon, sign-in screen) only identify the units the apps work with; they belong to WAFE s.r.o. and are not covered by the MIT License. The same goes for the unit manual, which is linked rather than included.
+
+The apps use the undocumented go2my.wafe.eu API that the Wafe web app uses, so they can stop working whenever it changes. They send real commands to your unit (start/stop, modes, schedule); use them at your own risk.
+
+Third-party: the mobile app's icon font is a subset of [Fluent System Icons](https://github.com/microsoft/fluentui-system-icons), MIT License, © Microsoft Corporation ([license](src/WafeControl.Mobile/Resources/Fonts/FluentIcons-LICENSE.txt)).

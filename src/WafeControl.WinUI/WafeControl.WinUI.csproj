@@ -34,7 +34,7 @@
     <AssemblyTitle>WAFE Control</AssemblyTitle>
     <Product>WAFE Control</Product>
     <Description>Smart Ventilation Control System</Description>
-    <Copyright>Copyright © 2026</Copyright>
+    <Copyright>Copyright © 2026 Viliam Birmon</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
