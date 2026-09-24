@@ -1,5 +1,5 @@
 # Release: publishes the WinUI app (unpackaged, self-contained) for x64 and ARM64, builds an installer
-# for each (installer/WafeRecuperation.iss, Inno Setup) and attaches them to a GitHub Release.
+# for each (installer/WafeControl.iss, Inno Setup) and attaches them to a GitHub Release.
 #
 # Trigger by pushing a version tag:   git tag v1.2.0 && git push origin v1.2.0
 #   - Tags with a suffix (v1.2.0-beta.1) become a pre-release.
@@ -28,10 +28,10 @@ jobs:
       with:
         dotnet-version: 10.0.x
     - name: Build
-      run: dotnet build RecuperationSystem.slnx --configuration Release
+      run: dotnet build WafeControl.slnx --configuration Release
     # Microsoft.Testing.Platform mode (global.json): the solution is passed with --solution.
     - name: Test
-      run: dotnet test --solution RecuperationSystem.slnx --no-build --configuration Release
+      run: dotnet test --solution WafeControl.slnx --no-build --configuration Release
 
   publish:
     needs: test
@@ -70,7 +70,7 @@ jobs:
 
     - name: Publish
       run: >
-        dotnet publish src/RecuperationSystem.WinUI/RecuperationSystem.WinUI.csproj
+        dotnet publish src/WafeControl.WinUI/WafeControl.WinUI.csproj
         --configuration Release
         --runtime ${{ matrix.rid }}
         --self-contained
@@ -104,7 +104,7 @@ jobs:
         /DArch=${{ matrix.arch }}
         /DSourceDir=${{ github.workspace }}\publish
         /O${{ github.workspace }}\dist
-        installer\WafeRecuperation.iss
+        installer\WafeControl.iss
 
     - uses: actions/upload-artifact@v4
       with:

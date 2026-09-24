@@ -1,0 +1,29 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="ARM64" />
+  </Configurations>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path="Directory.Packages.props" />
+    <File Path="global.json" />
+    <File Path="installer/WafeControl.iss" />
+    <File Path="nuget.config" />
+    <File Path="README.md" />
+    <File Path="TODO.md" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/WafeControl.Core/WafeControl.Core.csproj" />
+    <Project Path="src/WafeControl.Shared/WafeControl.Shared.csproj" />
+    <!-- WinUI builds per architecture only: "Any CPU" maps to x64. -->
+    <Project Path="src/WafeControl.WinUI/WafeControl.WinUI.csproj">
+      <Platform Solution="*|Any CPU" Project="x64" />
+      <Platform Solution="*|x64" Project="x64" />
+      <Platform Solution="*|ARM64" Project="ARM64" />
+    </Project>
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="src/WafeControl.Tests/WafeControl.Tests.csproj" />
+  </Folder>
+</Solution>

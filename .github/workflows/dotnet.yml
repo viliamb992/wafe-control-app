@@ -20,9 +20,9 @@ jobs:
       with:
         dotnet-version: 10.0.x
     - name: Restore dependencies
-      run: dotnet restore RecuperationSystem.slnx
+      run: dotnet restore WafeControl.slnx
     - name: Build
-      run: dotnet build RecuperationSystem.slnx --no-restore --configuration Release
+      run: dotnet build WafeControl.slnx --no-restore --configuration Release
     # Microsoft.Testing.Platform mode (global.json): the solution is passed with --solution.
     - name: Test
-      run: dotnet test --solution RecuperationSystem.slnx --no-build --configuration Release
+      run: dotnet test --solution WafeControl.slnx --no-build --configuration Release

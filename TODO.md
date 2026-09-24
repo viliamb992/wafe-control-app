@@ -1,4 +1,4 @@
-# TODO — Wafe Recuperation App
+# TODO — WAFE Control
 
 Last update: 2026-09-24 · SDK 10.0.401 · Windows App SDK 2.5.1
 
@@ -8,12 +8,12 @@ Last update: 2026-09-24 · SDK 10.0.401 · Windows App SDK 2.5.1
 
 | Project | State |
 | --- | --- |
-| `RecuperationSystem.Shared` | API client (stateless, source-generated JSON, `Content-Length` bodies), `WafeSession` + `SandcastleAuthHandler` (key attach, re-login on 401). |
-| `RecuperationSystem.Core` | Services + view models on CommunityToolkit.Mvvm, `AddRecuperationCore()`. Trim/AOT-analyzer clean. |
-| `RecuperationSystem.WinUI` | Windows app: login, dashboard, weekly schedule, settings (language, theme, startup, unit name/rename + service contact, about), unit name in the title bar, tray with live status tooltip, single instance, remembered window placement. Runs against the real API. |
-| `RecuperationSystem.Tests` | 207 tests (Shared + Core) on xUnit.net v3 + Microsoft.Testing.Platform, including fixtures captured from the real API. |
+| `WafeControl.Shared` | API client (stateless, source-generated JSON, `Content-Length` bodies), `WafeSession` + `SandcastleAuthHandler` (key attach, re-login on 401). |
+| `WafeControl.Core` | Services + view models on CommunityToolkit.Mvvm, `AddWafeControlCore()`. Trim/AOT-analyzer clean. |
+| `WafeControl.WinUI` | Windows app: login, dashboard, weekly schedule, settings (language, theme, startup, unit name/rename + service contact, about), unit name in the title bar, tray with live status tooltip, single instance, remembered window placement. Runs against the real API. |
+| `WafeControl.Tests` | 207 tests (Shared + Core) on xUnit.net v3 + Microsoft.Testing.Platform, including fixtures captured from the real API. |
 
-`RecuperationSystem.slnx` builds with 0 errors and all tests pass. CI runs on `windows-latest`.
+`WafeControl.slnx` builds with 0 errors and all tests pass. CI runs on `windows-latest`.
 
 ---
 
@@ -23,7 +23,7 @@ Last update: 2026-09-24 · SDK 10.0.401 · Windows App SDK 2.5.1
 
 ## Phase 2: WinUI 3 Windows app
 
-Unpackaged, self-contained Windows App SDK 2.5 (`dotnet run --project src/RecuperationSystem.WinUI`).
+Unpackaged, self-contained Windows App SDK 2.5 (`dotnet run --project src/WafeControl.WinUI`).
 
 - [ ] **Your test pass:** sign out/in and try every control against the unit, including adding, editing and deleting a schedule action, and renaming the unit (Settings → Unit). Only the read paths were verified live: no commands or schedule changes were sent.
 - [ ] Hide controls for features missing from the unit's `capabilities` list (e.g. `["boost","silent","holiday"]`).
@@ -33,7 +33,7 @@ Unpackaged, self-contained Windows App SDK 2.5 (`dotnet run --project src/Recupe
 - [ ] **Auto-updater** (from GitHub Releases, see Phase 7):
   - Title bar, left of minimize/maximize/close: an "Update available" text button, shown only when a newer release exists. Tooltip with the new version.
   - Click → small centered dialog (`ContentDialog`) with the new version and download size (the release asset's `size`), buttons Cancel / Update.
-  - Update → download the setup exe for the current architecture (`win-x64`/`win-arm64`) and run it silently (`/VERYSILENT`, plus `/CURRENTUSER` when installed per-user; a Program Files install asks for UAC). Setup closes the running app itself (Restart Manager) and reuses the previous install folder. Relaunch after a silent install: the `[Run]` entry in `installer/WafeRecuperation.iss` is `skipifsilent`, so add a switch for the updater.
+  - Update → download the setup exe for the current architecture (`win-x64`/`win-arm64`) and run it silently (`/VERYSILENT`, plus `/CURRENTUSER` when installed per-user; a Program Files install asks for UAC). Setup closes the running app itself (Restart Manager) and reuses the previous install folder. Relaunch after a silent install: the `[Run]` entry in `installer/WafeControl.iss` is `skipifsilent`, so add a switch for the updater.
   - Check on startup and then every few hours via `GET /repos/viliamb992/wafe-recuperation-app/releases/latest` (skips pre-releases). Compare as SemVer.
 - [ ] Jump list (taskbar right-click): Boost 15/30, Stop boost.
 - [ ] Schedule: a "now" marker line, copy a day to other days. Actions are added only by selecting in the grid with the mouse (the + button is gone), so keyboard-only users can't add one yet; see the accessibility pass.
@@ -41,9 +41,9 @@ Unpackaged, self-contained Windows App SDK 2.5 (`dotnet run --project src/Recupe
 
 ## Phase 4: MAUI mobile app skeleton (Android + iOS)
 
-- [ ] `dotnet new maui -n RecuperationSystem.Mobile` with `TargetFrameworks` = `net10.0-android;net10.0-ios`. Add it to the solution.
+- [ ] `dotnet new maui -n WafeControl.Mobile` with `TargetFrameworks` = `net10.0-android;net10.0-ios`. Add it to the solution.
 - [ ] Choose the `ApplicationId`/bundle id (it can't change after store release), the display name, and minimum OS versions (suggest Android API 26, iOS 15).
-- [ ] `MauiProgram`: `AddRecuperationCore()`, platform services, pages. Call `AppViewModel.StartAsync()` on startup.
+- [ ] `MauiProgram`: `AddWafeControlCore()`, platform services, pages. Call `AppViewModel.StartAsync()` on startup.
 - [ ] `SecureStorageCredentialStore : ICredentialStore` (Android Keystore / iOS Keychain).
 - [ ] App icon + splash (`MauiIcon`, `MauiSplashScreen`) from `app-icon.svg`. Flatten its blur filter first.
 - [ ] Shell navigation: Login → Dashboard (+ Settings). Compiled bindings (`x:DataType`) everywhere.
@@ -87,7 +87,7 @@ Same information as the Windows dashboard, phone-first. Single column; tablets g
 - **Windows: native WinUI 3.** Real Fluent controls, Mica, native title bar, tray, Efficiency Mode, single instance. **Android/iOS: .NET MAUI.** Both apps share `Core`; only views and platform services differ.
   - *Considered:* MAUI for all three (one view layer, but weaker Windows polish), and Avalonia everywhere (non-native look on mobile).
 - **Core on CommunityToolkit.Mvvm.** ReactiveUI is dropped.
-- **WinUI app ships unpackaged + self-contained, with an Inno Setup installer** (`installer/WafeRecuperation.iss`): Program Files or a per-user/custom folder, Start menu entry, uninstaller. Only the app's languages (cs, sk, en) are bundled.
+- **WinUI app ships unpackaged + self-contained, with an Inno Setup installer** (`installer/WafeControl.iss`): Program Files or a per-user/custom folder, Start menu entry, uninstaller. Only the app's languages (cs, sk, en) are bundled.
   - *Considered:* MSIX. Cleaner updates and a startup task, but it can't install without a trusted signature (Store or a paid certificate).
 - **Windows: polling keeps running while the app is hidden in the tray**, so the tray tooltip always shows the unit's current state.
   - *Considered:* pausing polling while hidden (less API traffic), which would leave the tooltip stale.

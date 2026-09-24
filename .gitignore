@@ -362,5 +362,5 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
-# Inno Setup output (installer/WafeRecuperation.iss)
+# Inno Setup output (installer/WafeControl.iss)
 installer/Output/

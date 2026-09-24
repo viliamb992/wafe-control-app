@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="WafeControl.WinUI.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:helpers="using:WafeControl.WinUI.Helpers"
+    xmlns:loc="using:WafeControl.Core.Localization"
+    xmlns:views="using:WafeControl.WinUI.Views"
+    xmlns:tb="using:H.NotifyIcon"
+    Title="WAFE Control">
+
+    <Window.SystemBackdrop>
+        <MicaBackdrop />
+    </Window.SystemBackdrop>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TitleBar x:Name="AppTitleBar" Title="WAFE Control" Subtitle="{x:Bind ViewModel.UnitName, Mode=OneWay}" IsPaneToggleButtonVisible="False"
+                  IsBackButtonVisible="{x:Bind helpers:Xaml.Either(Schedule.IsOpen, Settings.IsOpen), Mode=OneWay}" BackRequested="OnTitleBarBackRequested">
+            <TitleBar.IconSource>
+                <ImageIconSource ImageSource="ms-appx:///Assets/app-icon.ico" />
+            </TitleBar.IconSource>
+        </TitleBar>
+
+        <!-- ── Footer: status message left, connection + actions + version right ── -->
+        <Grid Grid.Row="2" Padding="24,4,16,4" ColumnSpacing="16" BorderThickness="0,1,0,0"
+              BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Style="{StaticResource SecondaryTextStyle}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
+                       Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}"
+                       Visibility="{x:Bind helpers:Xaml.VisibleIf(ViewModel.IsAuthenticated), Mode=OneWay}" />
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="0,0,8,0"
+                            ToolTipService.ToolTip="{x:Bind helpers:Xaml.ConnectionToolTip(ViewModel.LastUpdate), Mode=OneWay}"
+                            Visibility="{x:Bind helpers:Xaml.VisibleIf(ViewModel.IsAuthenticated), Mode=OneWay}">
+                    <Ellipse Width="8" Height="8" Fill="{x:Bind helpers:Xaml.OnlineBrush(ViewModel.IsSystemOnline), Mode=OneWay}" />
+                    <TextBlock Style="{StaticResource CaptionTextBlockStyle}" VerticalAlignment="Center"
+                               Text="{x:Bind helpers:Xaml.OnlineText(ViewModel.IsSystemOnline), Mode=OneWay}" />
+                </StackPanel>
+                <Button Style="{StaticResource TitleBarButtonStyle}" Command="{x:Bind ViewModel.RefreshStatusCommand}"
+                        ToolTipService.ToolTip="{x:Bind loc:Strings.TitleBarRefreshTooltip}" AutomationProperties.Name="{x:Bind loc:Strings.TitleBarRefresh}"
+                        Visibility="{x:Bind helpers:Xaml.VisibleIf(ViewModel.IsAuthenticated), Mode=OneWay}">
+                    <Button.KeyboardAccelerators>
+                        <KeyboardAccelerator Key="F5" />
+                    </Button.KeyboardAccelerators>
+                    <FontIcon Glyph="&#xE72C;" FontSize="14" />
+                </Button>
+                <!-- Always available, so the language can be changed before signing in. -->
+                <Button Style="{StaticResource TitleBarButtonStyle}" Command="{x:Bind Settings.OpenCommand}"
+                        ToolTipService.ToolTip="{x:Bind loc:Strings.TitleBarSettings}" AutomationProperties.Name="{x:Bind loc:Strings.TitleBarSettings}">
+                    <FontIcon Glyph="&#xE713;" FontSize="14" />
+                </Button>
+                <Button Style="{StaticResource TitleBarButtonStyle}"
+                        ToolTipService.ToolTip="{x:Bind loc:Strings.TitleBarMore}" AutomationProperties.Name="{x:Bind loc:Strings.TitleBarMore}"
+                        Visibility="{x:Bind helpers:Xaml.VisibleIf(ViewModel.IsAuthenticated), Mode=OneWay}">
+                    <FontIcon Glyph="&#xE712;" FontSize="14" />
+                    <Button.Flyout>
+                        <MenuFlyout Placement="TopEdgeAlignedRight">
+                            <MenuFlyoutItem Text="{x:Bind loc:Strings.MenuOpenLogFolder}" Click="OnOpenLogFolderClick">
+                                <MenuFlyoutItem.Icon>
+                                    <FontIcon Glyph="&#xE838;" />
+                                </MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                            <MenuFlyoutItem Text="{x:Bind loc:Strings.MenuSignOut}" Command="{x:Bind ViewModel.SignOutCommand}" />
+                            <MenuFlyoutSeparator />
+                            <MenuFlyoutItem Text="{x:Bind loc:Strings.MenuExit}" Command="{x:Bind ExitCommand}" />
+                        </MenuFlyout>
+                    </Button.Flyout>
+                </Button>
+                <TextBlock Style="{StaticResource SecondaryTextStyle}" VerticalAlignment="Center" Margin="8,0,0,0"
+                           Text="{x:Bind Settings.Version}"
+                           ToolTipService.ToolTip="{x:Bind helpers:Xaml.VersionText(Settings.Version)}"
+                           AutomationProperties.Name="{x:Bind helpers:Xaml.VersionText(Settings.Version)}" />
+            </StackPanel>
+        </Grid>
+
+        <!-- Connecting: auto-login with the remembered credentials -->
+        <StackPanel Grid.Row="1" Spacing="16" HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Visibility="{x:Bind helpers:Xaml.VisibleIfAndNot(ViewModel.IsStarting, Settings.IsOpen), Mode=OneWay}">
+            <ProgressRing IsActive="{x:Bind ViewModel.IsStarting, Mode=OneWay}" Width="48" Height="48" />
+            <TextBlock Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}" Style="{StaticResource BodyTextBlockStyle}"
+                       HorizontalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+        </StackPanel>
+
+        <views:LoginView x:Name="LoginView" Grid.Row="1"
+                         Visibility="{x:Bind helpers:Xaml.VisibleIfAndNot(ViewModel.IsLoginRequired, Settings.IsOpen), Mode=OneWay}" />
+
+        <views:DashboardView x:Name="DashboardView" Grid.Row="1"
+                             Visibility="{x:Bind helpers:Xaml.VisibleIfAndNeither(ViewModel.IsAuthenticated, Schedule.IsOpen, Settings.IsOpen), Mode=OneWay}" />
+
+        <views:ScheduleView x:Name="ScheduleView" Grid.Row="1"
+                            Visibility="{x:Bind helpers:Xaml.VisibleIfBothAndNot(ViewModel.IsAuthenticated, Schedule.IsOpen, Settings.IsOpen), Mode=OneWay}" />
+
+        <!-- Settings cover whichever screen was open; Back returns to it. -->
+        <views:SettingsView x:Name="SettingsView" Grid.Row="1"
+                            Visibility="{x:Bind helpers:Xaml.VisibleIf(Settings.IsOpen), Mode=OneWay}" />
+
+        <!-- Tray icon: closing the window hides it here; left click brings it back. -->
+        <tb:TaskbarIcon x:Name="TrayIcon" Grid.Row="1"
+                        ToolTipText="WAFE Control"
+                        NoLeftClickDelay="True"
+                        LeftClickCommand="{x:Bind ShowWindowCommand}"
+                        ContextMenuMode="PopupMenu">
+            <tb:TaskbarIcon.ContextFlyout>
+                <MenuFlyout AreOpenCloseAnimationsEnabled="False">
+                    <MenuFlyoutItem Text="{x:Bind loc:Strings.TrayOpen}" Command="{x:Bind ShowWindowCommand}" />
+                    <MenuFlyoutSeparator />
+                    <MenuFlyoutItem Text="{x:Bind loc:Strings.TrayBoost15}" Command="{x:Bind ViewModel.BoostMode.SetBoostCommand}" CommandParameter="900" />
+                    <MenuFlyoutItem Text="{x:Bind loc:Strings.TrayBoost30}" Command="{x:Bind ViewModel.BoostMode.SetBoostCommand}" CommandParameter="1800" />
+                    <MenuFlyoutItem Text="{x:Bind loc:Strings.BoostStop}" Command="{x:Bind ViewModel.BoostMode.SetBoostCommand}" CommandParameter="0" />
+                    <MenuFlyoutSeparator />
+                    <MenuFlyoutItem Text="{x:Bind loc:Strings.MenuExit}" Command="{x:Bind ExitCommand}" />
+                </MenuFlyout>
+            </tb:TaskbarIcon.ContextFlyout>
+        </tb:TaskbarIcon>
+    </Grid>
+</Window>
