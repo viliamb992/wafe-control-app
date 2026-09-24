@@ -137,7 +137,7 @@ jobs:
         if [[ "$TAG" == *-* ]]; then prerelease="--prerelease"; fi
         gh release create "$TAG" dist/*.exe \
           --repo "$GITHUB_REPOSITORY" \
-          --title "$TAG" \
+          --title "$TAG (Windows 11)" \
           --generate-notes \
           --verify-tag \
           $prerelease

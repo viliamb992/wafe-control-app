@@ -124,7 +124,7 @@ jobs:
         if [[ "$TAG" == *-*-* ]]; then prerelease="--prerelease"; fi
         gh release create "$TAG" dist/*.apk \
           --repo "$GITHUB_REPOSITORY" \
-          --title "WAFE Control for Android ${TAG#android-v}" \
+          --title "v${TAG#android-v} (Android)" \
           --notes "Android app for sideloading: download the APK on your phone and open it. Updates install over the previous version." \
           --latest=false \
           --verify-tag \
