@@ -364,3 +364,6 @@ FodyWeavers.xsd
 
 # Inno Setup output (installer/WafeControl.iss)
 installer/Output/
+# Android signing keys (README → Android signing); never commit them.
+*.keystore
+*.jks

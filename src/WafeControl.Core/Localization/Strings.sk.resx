@@ -533,4 +533,37 @@
   <data name="ButtonCancel" xml:space="preserve">
     <value>Zrušiť</value>
   </data>
+  <data name="NavDashboard" xml:space="preserve">
+    <value>Prehľad</value>
+    <comment>Mobile tab</comment>
+  </data>
+  <data name="NavSchedule" xml:space="preserve">
+    <value>Plán</value>
+    <comment>Mobile tab</comment>
+  </data>
+  <data name="SystemStopConfirmTitle" xml:space="preserve">
+    <value>Zastaviť jednotku?</value>
+  </data>
+  <data name="SystemStopConfirmMessage" xml:space="preserve">
+    <value>Vetranie sa zastaví, kým ho znova nespustíte.</value>
+  </data>
+  <data name="SystemStopConfirm" xml:space="preserve">
+    <value>Zastaviť</value>
+    <comment>Confirmation button</comment>
+  </data>
+  <data name="BannerNoInternetTitle" xml:space="preserve">
+    <value>Žiadne pripojenie k internetu</value>
+  </data>
+  <data name="BannerNoInternetMessage" xml:space="preserve">
+    <value>Hodnoty nemusia byť aktuálne. Aplikácia sa pripojí sama.</value>
+  </data>
+  <data name="BannerUnitOfflineMessage" xml:space="preserve">
+    <value>Jednotka nie je pripojená k portálu Wafe. Skontrolujte jej napájanie a sieť.</value>
+  </data>
+  <data name="ScheduleTouchHint" xml:space="preserve">
+    <value>Ťuknutím na voľný čas naplánujete režim jednotky, ťuknutím na akciu ju zmeníte. Naplánovať možno až 50 akcií.</value>
+  </data>
+  <data name="SettingsAccount" xml:space="preserve">
+    <value>Účet</value>
+  </data>
 </root>

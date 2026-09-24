@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="WafeControl.Mobile.Views.UnitNamePage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:controls="clr-namespace:WafeControl.Mobile.Controls"
+    xmlns:ios="clr-namespace:Microsoft.Maui.Controls.PlatformConfiguration.iOSSpecific;assembly=Microsoft.Maui.Controls"
+    xmlns:loc="clr-namespace:WafeControl.Core.Localization;assembly=WafeControl.Core"
+    xmlns:vm="clr-namespace:WafeControl.Core.ViewModels;assembly=WafeControl.Core"
+    x:DataType="vm:UnitNameEditorViewModel"
+    ios:Page.ModalPresentationStyle="PageSheet">
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- ── Sheet header: Cancel · title · Save ───────────────────── -->
+        <Grid ColumnDefinitions="*,Auto,*" Padding="4,8">
+            <Button Style="{StaticResource SubtleButton}" Text="{x:Static loc:Strings.ButtonCancel}" HorizontalOptions="Start" Clicked="OnCancelClicked" />
+            <Label Grid.Column="1" Text="{x:Static loc:Strings.UnitNameTitle}" Style="{StaticResource BodyStrong}" FontSize="18" VerticalOptions="Center"
+                   SemanticProperties.HeadingLevel="Level1" />
+            <Grid Grid.Column="2" HorizontalOptions="End">
+                <Button x:Name="SaveButton" Style="{StaticResource AccentTextButton}" Text="{x:Static loc:Strings.ButtonSave}"
+                        IsEnabled="{Binding CanSave}" Clicked="OnSaveClicked" />
+                <ActivityIndicator x:Name="Busy" Style="{StaticResource SmallSpinner}" IsVisible="False" HorizontalOptions="Center" />
+            </Grid>
+        </Grid>
+
+        <VerticalStackLayout Grid.Row="1" Padding="16,8,16,24" Spacing="8" MaximumWidthRequest="560">
+            <Border Style="{StaticResource InputBox}">
+                <Entry x:Name="NameEntry" MaxLength="{Binding MaxLength}" ReturnType="Done" Completed="OnSaveClicked"
+                       SemanticProperties.Description="{x:Static loc:Strings.UnitNameTitle}"
+                       Text="{Binding Name}" />
+            </Border>
+            <Label Text="{Binding Hint}" Style="{StaticResource SecondaryCaption}" Margin="4,0,0,8" />
+            <controls:InfoBanner Severity="Error" Message="{Binding ErrorMessage}" />
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>

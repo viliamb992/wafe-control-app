@@ -1,6 +1,6 @@
 # TODO — WAFE Control
 
-Last update: 2026-09-24 · SDK 10.0.401 · Windows App SDK 2.5.1
+Last update: 2026-09-24 · SDK 10.0.401 · Windows App SDK 2.5.1 · MAUI 10.0.110
 
 **Goal:** a native **WinUI 3** app for Windows and a **.NET MAUI** app for **Android and iOS**, both on the same UI-agnostic core. The old Avalonia desktop app has been removed.
 
@@ -9,11 +9,12 @@ Last update: 2026-09-24 · SDK 10.0.401 · Windows App SDK 2.5.1
 | Project | State |
 | --- | --- |
 | `WafeControl.Shared` | API client (stateless, source-generated JSON, `Content-Length` bodies), `WafeSession` + `SandcastleAuthHandler` (key attach, re-login on 401). |
-| `WafeControl.Core` | Services + view models on CommunityToolkit.Mvvm, `AddWafeControlCore()`. Trim/AOT-analyzer clean. |
+| `WafeControl.Core` | Services + view models on CommunityToolkit.Mvvm, `AddWafeControlCore()`, display text shared by both apps (`DisplayFormat`). Trim/AOT-analyzer clean. |
 | `WafeControl.WinUI` | Windows app: login, dashboard, weekly schedule, settings (language, theme, startup, unit name/rename + service contact, about), unit name in the title bar, tray with live status tooltip, single instance, remembered window placement. Runs against the real API. |
-| `WafeControl.Tests` | 207 tests (Shared + Core) on xUnit.net v3 + Microsoft.Testing.Platform, including fixtures captured from the real API. |
+| `WafeControl.Mobile` | Android + iOS app (MAUI): sign-in, Overview/Schedule/Settings tabs, same features as Windows minus the desktop-only ones. Design from [DESIGN.md](DESIGN.md). Android verified on an emulator (API 36) in Debug and Release (full trimming + R8), light and dark, language switch; sign-in reaches the real API. Not yet signed in with a real account. |
+| `WafeControl.Tests` | 228 tests (Shared + Core) on xUnit.net v3 + Microsoft.Testing.Platform, including fixtures captured from the real API. |
 
-`WafeControl.slnx` builds with 0 errors and all tests pass. CI runs on `windows-latest`.
+`WafeControl.slnx` builds with 0 errors and all tests pass. CI runs on `windows-latest` (with the `maui-android` workload).
 
 ---
 
@@ -30,48 +31,42 @@ Unpackaged, self-contained Windows App SDK 2.5 (`dotnet run --project src/WafeCo
 - [ ] Boost countdown that ticks every second between polls.
 - [ ] Toast notifications (`AppNotificationManager`): filter health low, unit offline, boost finished.
 - [ ] More settings: poll interval.
-- [ ] **Auto-updater** (from GitHub Releases, see Phase 7):
+- [ ] **Auto-updater** (from GitHub Releases, see Phase 6):
   - Title bar, left of minimize/maximize/close: an "Update available" text button, shown only when a newer release exists. Tooltip with the new version.
   - Click → small centered dialog (`ContentDialog`) with the new version and download size (the release asset's `size`), buttons Cancel / Update.
   - Update → download the setup exe for the current architecture (`win-x64`/`win-arm64`) and run it silently (`/VERYSILENT`, plus `/CURRENTUSER` when installed per-user; a Program Files install asks for UAC). Setup closes the running app itself (Restart Manager) and reuses the previous install folder. Relaunch after a silent install: the `[Run]` entry in `installer/WafeControl.iss` is `skipifsilent`, so add a switch for the updater.
   - Check on startup and then every few hours via `GET /repos/viliamb992/wafe-recuperation-app/releases/latest` (skips pre-releases). Compare as SemVer.
 - [ ] Jump list (taskbar right-click): Boost 15/30, Stop boost.
 - [ ] Schedule: a "now" marker line, copy a day to other days. Actions are added only by selecting in the grid with the mouse (the + button is gone), so keyboard-only users can't add one yet; see the accessibility pass.
-- [ ] Accessibility pass (Narrator, keyboard-only, high contrast).
 
-## Phase 4: MAUI mobile app skeleton (Android + iOS)
+## Phase 3: MAUI mobile app skeleton (Android + iOS)
 
-- [ ] `dotnet new maui -n WafeControl.Mobile` with `TargetFrameworks` = `net10.0-android;net10.0-ios`. Add it to the solution.
-- [ ] Choose the `ApplicationId`/bundle id (it can't change after store release), the display name, and minimum OS versions (suggest Android API 26, iOS 15).
-- [ ] `MauiProgram`: `AddWafeControlCore()`, platform services, pages. Call `AppViewModel.StartAsync()` on startup.
-- [ ] `SecureStorageCredentialStore : ICredentialStore` (Android Keystore / iOS Keychain).
-- [ ] App icon + splash (`MauiIcon`, `MauiSplashScreen`) from `app-icon.svg`. Flatten its blur filter first.
-- [ ] Shell navigation: Login → Dashboard (+ Settings). Compiled bindings (`x:DataType`) everywhere.
-- [ ] Release builds on devices: Android (trimming + R8), iOS.
-- [ ] **iOS build host:** needs a Mac (VS "Pair to Mac" or a macOS CI runner). Hot Restart can deploy from Windows for debugging only. An Apple Developer account is needed for TestFlight.
+Done: `src/WafeControl.Mobile` (`com.wafecontrol.app`, "WAFE Control", Android 8.0 / API 26+, iOS 15+), secure-storage login, icon + splash from the WAFE wordmark, Shell (sign-in → tabs), compiled bindings enforced by the build (XC0022/XC0023/XC0025 are errors), Release build trimmed with R8.
 
-## Phase 5: Mobile dashboard UI
+- [ ] **Your test pass on a phone:** sign in with your account, then every control, the schedule (add, edit, delete) and renaming the unit. Only the sign-in failure path reached the real API from the emulator.
+- [ ] **iOS:** build, run and check on a Mac (VS "Pair to Mac" or a macOS runner). The `net10.0-ios` target compiles on Windows (`-p:EnableIosBuild=true`) but was never run: check the page-sheet editors, safe areas, the tab bar icons and the input borders. Sideloading on iOS needs a provisioning profile: a free Apple ID (the app expires after 7 days) or a paid developer account (ad hoc, 1 year).
+- [ ] Android signing key: create it and add the four `ANDROID_*` secrets (README → Android signing). Keep the keystore: sideloaded updates install only over an APK signed with the same key.
 
-Same information as the Windows dashboard, phone-first. Single column; tablets get two. Light/dark via `AppThemeBinding`.
+## Phase 4: Mobile dashboard UI
 
-- [ ] Sensor tiles, power toggle with confirmation for Stop, segmented mode selector, flow slider (send on drag end, haptic tick), boost chips + countdown, Silent/Holiday switches, filter bars.
-- [ ] Weekly schedule on `ScheduleViewModel` (same logic as Windows): day-by-day list or scrollable grid, tap/long-press to add, same add/edit sheet.
-- [ ] `RefreshView` pull-to-refresh, offline/error banner (`Connectivity`), pending state per control.
-- [ ] Use the Core `Strings` for all text, and a language picker in Settings (`ISettingsStore` on MAUI `Preferences`).
-- [ ] `AppViewModel.UnitName` as the dashboard title; a Unit section in Settings from `AppViewModel.Unit` (model, serial number, service mail/web) with rename (`EditUnitName`/`SaveUnitNameAsync`), like Windows.
+Done: sensor tiles, Start/Stop with confirmation for Stop, segmented mode selector, flow slider (sends on release, haptic tick per 10 m³/h), boost chips with a per-second countdown, Silent/Holiday switches, filter bars, pull-to-refresh, no-internet and unit-offline banners, spinner per pending control, status toast for command results, day-by-day schedule timeline (tap to add/edit, "now" line, add button), add/edit sheet, Settings (language, theme, unit + rename, account, about). Two columns from ~700 dp.
 
-## Phase 6: Mobile platform polish
+- [ ] Schedule: long-press to copy a day; swipe between days.
+- [ ] Screen reader pass (TalkBack, VoiceOver): the timeline's blocks are drawn, so editing an action by screen reader goes through the tap position; consider a list view of the day's actions.
+- [ ] Tablet/landscape check on a real tablet.
+
+## Phase 5: Mobile platform polish
 
 - [ ] Lifecycle: stop polling when backgrounded, refresh on resume.
 - [ ] App shortcuts via MAUI `AppActions` (Boost 15/30, Stop boost).
 - [ ] Android: edge-to-edge, optional biometric unlock. iOS: safe areas, haptics, optional Face ID.
 
-## Phase 7: CI & release
+## Phase 6: CI & release
 
 - [ ] Windows: first real release through `.github/workflows/release.yml` (push a `v*` tag → installer per architecture on a GitHub Release). Built and installed locally, not yet run on GitHub.
 - [ ] Windows code signing: the installer and exe are unsigned, so SmartScreen warns on first run (options: Azure Trusted Signing, a code-signing certificate).
-- [ ] Android: keystore in secrets, signed `.aab`/`.apk` on tag (runner with `dotnet workload install maui-android`).
-- [ ] iOS: certificates + provisioning profile in secrets, `.ipa` → TestFlight (macOS runner).
+- [ ] Android: first real release through `.github/workflows/release-android.yml` (push an `android-v*` tag → signed APK on its own GitHub Release, not marked latest). The publish and signing command was tested locally with a throwaway key; the workflow hasn't run on GitHub yet.
+- [ ] iOS: certificate + ad hoc provisioning profile in secrets, `.ipa` for sideloading (macOS runner).
 
 ## Backlog
 
@@ -91,10 +86,14 @@ Same information as the Windows dashboard, phone-first. Single column; tablets g
   - *Considered:* MSIX. Cleaner updates and a startup task, but it can't install without a trusted signature (Store or a paid certificate).
 - **Windows: polling keeps running while the app is hidden in the tray**, so the tray tooltip always shows the unit's current state.
   - *Considered:* pausing polling while hidden (less API traffic), which would leave the tooltip stale.
+- **One design manual for both apps: [DESIGN.md](DESIGN.md).** The mobile app re-creates the WinUI (Fluent 2) look with the same tokens, a brand-blue accent instead of the Windows accent color, slightly larger radii for touch, and Fluent System Icons (a 38-glyph subset font, `tools/subset-icons.py`).
+  - *Considered:* Material on Android and native iOS styling (more "native" per platform, but three looks for one product), and CommunityToolkit.Maui (not needed for what the app uses).
+- **Mobile apps are sideloaded, not published to Play or the App Store.** App id `com.wafecontrol.app`; no store listing, review or privacy policy needed.
+  - *Considered:* store releases (automatic updates, but developer accounts, review and a privacy policy for a personal tool).
+- **Mobile navigation: bottom tabs** (Overview, Schedule, Settings) instead of Windows' single window with Back.
 
 ## Open questions
 
-- [ ] Distribution for mobile: stores (Play / App Store) or sideload/TestFlight only? This affects bundle ids, signing and the privacy policy.
 - [ ] Is a Mac available for iOS builds, or should that go through CI only?
 - [ ] How long does a `Sandcastle-Key` session live? Re-login on 401 handles it either way.
 - [ ] Any official Wafe API documentation, or are all models reverse-engineered?

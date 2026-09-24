@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="WafeControl.Mobile.Views.LoginPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:controls="clr-namespace:WafeControl.Mobile.Controls"
+    xmlns:helpers="clr-namespace:WafeControl.Mobile.Helpers"
+    xmlns:loc="clr-namespace:WafeControl.Core.Localization;assembly=WafeControl.Core"
+    xmlns:vm="clr-namespace:WafeControl.Core.ViewModels;assembly=WafeControl.Core"
+    x:DataType="vm:AppViewModel"
+    Shell.NavBarIsVisible="False">
+
+    <Grid>
+        <!-- Connecting: signing in with the remembered login -->
+        <VerticalStackLayout Spacing="16" VerticalOptions="Center" HorizontalOptions="Center"
+                             IsVisible="{Binding IsStarting}">
+            <Image Source="wafe_logo.png" WidthRequest="56" HeightRequest="56" />
+            <ActivityIndicator IsRunning="{Binding IsStarting}" WidthRequest="32" HeightRequest="32" />
+            <Label Text="{Binding StatusMessage}" Style="{StaticResource SecondaryBody}" HorizontalTextAlignment="Center" />
+        </VerticalStackLayout>
+
+        <ScrollView IsVisible="{Binding IsLoginRequired}">
+            <VerticalStackLayout Padding="16,32,16,24" Spacing="24" MaximumWidthRequest="440">
+                <Grid ColumnDefinitions="*,Auto">
+                    <Image Source="wafe_logo.png" WidthRequest="56" HeightRequest="56" HorizontalOptions="Start" />
+                    <!-- Language and appearance can be changed before signing in -->
+                    <Button Grid.Column="1" Style="{StaticResource IconButton}" Text="{x:Static helpers:FluentIcons.Settings}"
+                            VerticalOptions="Start" Clicked="OnSettingsClicked"
+                            SemanticProperties.Description="{x:Static loc:Strings.TitleBarSettings}" />
+                </Grid>
+
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="{x:Static loc:Strings.LoginTitle}" Style="{StaticResource Title}" LineBreakMode="WordWrap"
+                           SemanticProperties.HeadingLevel="Level1" />
+                    <Label Text="{x:Static loc:Strings.LoginDescription}" Style="{StaticResource SecondaryBody}" />
+                </VerticalStackLayout>
+
+                <Border Style="{StaticResource Card}">
+                    <VerticalStackLayout Spacing="16">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="{x:Static loc:Strings.LoginEmail}" Style="{StaticResource SecondaryCaption}" />
+                            <Border Style="{StaticResource InputBox}">
+                                <Entry x:Name="UsernameEntry" Keyboard="Email" ReturnType="Next" IsSpellCheckEnabled="False"
+                                       IsTextPredictionEnabled="False" Completed="OnUsernameCompleted"
+                                       SemanticProperties.Description="{x:Static loc:Strings.LoginEmail}"
+                                       Text="{Binding Login.Username}" />
+                            </Border>
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="{x:Static loc:Strings.LoginPassword}" Style="{StaticResource SecondaryCaption}" />
+                            <Border Style="{StaticResource InputBox}">
+                                <Entry x:Name="PasswordEntry" IsPassword="True" ReturnType="Go"
+                                       ReturnCommand="{Binding SubmitLoginCommand}"
+                                       SemanticProperties.Description="{x:Static loc:Strings.LoginPassword}"
+                                       Text="{Binding Login.Password}" />
+                            </Border>
+                        </VerticalStackLayout>
+
+                        <HorizontalStackLayout Spacing="4" Margin="-8,0,0,0">
+                            <CheckBox x:Name="RememberBox" IsChecked="{Binding Login.RememberMe}" VerticalOptions="Center" />
+                            <Label Text="{x:Static loc:Strings.LoginRememberMe}" VerticalOptions="Center">
+                                <Label.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnRememberTapped" />
+                                </Label.GestureRecognizers>
+                            </Label>
+                        </HorizontalStackLayout>
+
+                        <controls:InfoBanner Severity="Error" Message="{Binding Login.ErrorMessage}" />
+
+                        <Grid>
+                            <Button Style="{StaticResource AccentButton}" Text="{x:Static loc:Strings.LoginSubmit}"
+                                    Command="{Binding SubmitLoginCommand}">
+                                <Button.Triggers>
+                                    <DataTrigger TargetType="Button" Binding="{Binding IsLoggingIn}" Value="True">
+                                        <Setter Property="Text" Value="" />
+                                    </DataTrigger>
+                                </Button.Triggers>
+                            </Button>
+                            <ActivityIndicator IsRunning="{Binding IsLoggingIn}" IsVisible="{Binding IsLoggingIn}" InputTransparent="True"
+                                               WidthRequest="20" HeightRequest="20"
+                                               Color="{AppThemeBinding Light={StaticResource TextOnAccentLight}, Dark={StaticResource TextOnAccentDark}}" />
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>

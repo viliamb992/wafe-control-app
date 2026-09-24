@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="WafeControl.Mobile.Views.DashboardPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:controls="clr-namespace:WafeControl.Mobile.Controls"
+    xmlns:helpers="clr-namespace:WafeControl.Mobile.Helpers"
+    xmlns:loc="clr-namespace:WafeControl.Core.Localization;assembly=WafeControl.Core"
+    xmlns:vm="clr-namespace:WafeControl.Core.ViewModels;assembly=WafeControl.Core"
+    x:DataType="vm:AppViewModel"
+    Shell.NavBarIsVisible="False">
+
+    <Grid>
+        <RefreshView x:Name="Refresh" Refreshing="OnRefreshing">
+            <ScrollView>
+                <VerticalStackLayout Padding="16,16,16,24" Spacing="12" MaximumWidthRequest="1100">
+
+                    <!-- ── Header: unit name, connection ──────────────────── -->
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Padding="0,8,0,4">
+                        <VerticalStackLayout Spacing="0">
+                            <!-- The app name above the unit's; the title shows the app name until the unit's is known -->
+                            <Label Text="WAFE Control" Style="{StaticResource SecondaryCaption}"
+                                   IsVisible="{Binding UnitName, Converter={x:Static helpers:Converters.HasText}}" />
+                            <Label Text="{Binding UnitName, Converter={x:Static helpers:Converters.UnitTitle}}" Style="{StaticResource Title}"
+                                   SemanticProperties.HeadingLevel="Level1" />
+                            <Label Text="{Binding LastUpdate, Converter={x:Static helpers:Converters.LastUpdate}}" Style="{StaticResource SecondaryCaption}" />
+                        </VerticalStackLayout>
+                        <Border Grid.Column="1" Style="{StaticResource Pill}" VerticalOptions="Start" Margin="0,4,0,0">
+                            <HorizontalStackLayout Spacing="6">
+                                <Ellipse WidthRequest="8" HeightRequest="8" VerticalOptions="Center"
+                                         Fill="{AppThemeBinding Light={StaticResource CriticalLight}, Dark={StaticResource CriticalDark}}">
+                                    <Ellipse.Triggers>
+                                        <DataTrigger TargetType="Ellipse" Binding="{Binding IsSystemOnline}" Value="True">
+                                            <Setter Property="Fill" Value="{AppThemeBinding Light={StaticResource SuccessLight}, Dark={StaticResource SuccessDark}}" />
+                                        </DataTrigger>
+                                    </Ellipse.Triggers>
+                                </Ellipse>
+                                <Label Text="{Binding IsSystemOnline, Converter={x:Static helpers:Converters.Online}}" Style="{StaticResource Caption}"
+                                       VerticalOptions="Center" />
+                            </HorizontalStackLayout>
+                        </Border>
+                    </Grid>
+
+                    <!-- ── Banners ─────────────────────────────────────────── -->
+                    <controls:InfoBanner x:Name="NoInternetBanner" Severity="Warning" Icon="{x:Static helpers:FluentIcons.WifiOff}" IsShown="False"
+                                         Title="{x:Static loc:Strings.BannerNoInternetTitle}" Message="{x:Static loc:Strings.BannerNoInternetMessage}" />
+                    <controls:InfoBanner Severity="Error" Icon="{x:Static helpers:FluentIcons.CloudOff}"
+                                         Title="{x:Static loc:Strings.AppStatusUnitOffline}" Message="{x:Static loc:Strings.BannerUnitOfflineMessage}">
+                        <controls:InfoBanner.IsShown>
+                            <MultiBinding Converter="{x:Static helpers:Converters.AllTrue}">
+                                <Binding Path="LastUpdate" Converter="{x:Static helpers:Converters.IsNotNull}" />
+                                <Binding Path="IsSystemOnline" Converter="{x:Static helpers:Converters.Not}" />
+                            </MultiBinding>
+                        </controls:InfoBanner.IsShown>
+                    </controls:InfoBanner>
+
+                    <!-- ── System state + power ────────────────────────────── -->
+                    <Border Style="{StaticResource Card}">
+                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="16">
+                            <Grid WidthRequest="56" HeightRequest="56" VerticalOptions="Start">
+                                <Ellipse Fill="{AppThemeBinding Light={StaticResource ControlStrongLight}, Dark={StaticResource ControlStrongDark}}">
+                                    <Ellipse.Triggers>
+                                        <DataTrigger TargetType="Ellipse" Binding="{Binding SystemControl.IsSystemRunning}" Value="True">
+                                            <Setter Property="Fill" Value="{AppThemeBinding Light={StaticResource SuccessLight}, Dark={StaticResource SuccessDark}}" />
+                                        </DataTrigger>
+                                    </Ellipse.Triggers>
+                                </Ellipse>
+                                <Label Text="{x:Static helpers:FluentIcons.Power}" Style="{StaticResource Icon24}" HorizontalOptions="Center"
+                                       TextColor="{AppThemeBinding Light={StaticResource TextOnAccentLight}, Dark={StaticResource TextOnAccentDark}}" />
+                            </Grid>
+
+                            <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                <Label Text="{Binding SystemControl.IsSystemRunning, Converter={x:Static helpers:Converters.SystemState}}"
+                                       Style="{StaticResource Subtitle}" />
+                                <Label Style="{StaticResource SecondaryCaption}">
+                                    <Label.Text>
+                                        <MultiBinding Converter="{x:Static helpers:Converters.SystemSummary}">
+                                            <Binding Path="SystemControl.CurrentAuthority" />
+                                            <Binding Path="CurrentFlow" />
+                                            <Binding Path="HasSensorData" />
+                                        </MultiBinding>
+                                    </Label.Text>
+                                </Label>
+                                <!-- Next start while running on the schedule -->
+                                <Border x:Name="NextStartPill" Style="{StaticResource Pill}" HorizontalOptions="Start" Margin="0,6,0,0" IsVisible="False">
+                                    <HorizontalStackLayout Spacing="6">
+                                        <Label Text="{x:Static helpers:FluentIcons.Clock}" Style="{StaticResource Icon16}" />
+                                        <Label x:Name="NextStartText" Style="{StaticResource Caption}" VerticalOptions="Center" />
+                                    </HorizontalStackLayout>
+                                </Border>
+                            </VerticalStackLayout>
+
+                            <Label Grid.Row="1" Grid.ColumnSpan="2" Margin="0,12,0,0" Style="{StaticResource SecondaryCaption}"
+                                   Text="{x:Static loc:Strings.SystemNoSensorData}">
+                                <Label.IsVisible>
+                                    <MultiBinding Converter="{x:Static helpers:Converters.AllTrue}">
+                                        <Binding Path="IsSystemOnline" />
+                                        <Binding Path="HasSensorData" Converter="{x:Static helpers:Converters.Not}" />
+                                    </MultiBinding>
+                                </Label.IsVisible>
+                            </Label>
+
+                            <Grid Grid.Row="2" Grid.ColumnSpan="2" Margin="0,16,0,0">
+                                <Button x:Name="PowerButton" Text="{Binding SystemControl.SystemToggleButtonText}" Clicked="OnPowerClicked"
+                                        IsEnabled="{Binding SystemControl.IsOperationInProgress, Converter={x:Static helpers:Converters.Not}}">
+                                    <Button.Triggers>
+                                        <DataTrigger TargetType="Button" Binding="{Binding SystemControl.IsOperationInProgress}" Value="True">
+                                            <Setter Property="Text" Value="" />
+                                        </DataTrigger>
+                                    </Button.Triggers>
+                                </Button>
+                                <ActivityIndicator IsRunning="{Binding SystemControl.IsOperationInProgress}" IsVisible="{Binding SystemControl.IsOperationInProgress}"
+                                                   InputTransparent="True" WidthRequest="20" HeightRequest="20" />
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                    <!-- ── Sensors (humidity only on units that report it) ── -->
+                    <controls:TileLayout MinItemWidth="150" MaxColumns="3" Spacing="12">
+                        <Border Style="{StaticResource Tile}">
+                            <VerticalStackLayout Spacing="4">
+                                <HorizontalStackLayout Spacing="8">
+                                    <Label Text="{x:Static helpers:FluentIcons.WeatherSunny}" Style="{StaticResource Icon16}"
+                                           TextColor="{AppThemeBinding Light={StaticResource CautionLight}, Dark={StaticResource CautionDark}}" />
+                                    <Label Text="{x:Static loc:Strings.SensorOutdoor}" Style="{StaticResource SecondaryCaption}" VerticalOptions="Center" />
+                                </HorizontalStackLayout>
+                                <Label Text="{Binding OutsideTemp, Converter={x:Static helpers:Converters.Temperature}}" Style="{StaticResource Metric}" />
+                            </VerticalStackLayout>
+                        </Border>
+                        <Border Style="{StaticResource Tile}">
+                            <VerticalStackLayout Spacing="4">
+                                <HorizontalStackLayout Spacing="8">
+                                    <Label Text="{x:Static helpers:FluentIcons.ArrowImport}" Style="{StaticResource Icon16}"
+                                           TextColor="{AppThemeBinding Light={StaticResource SuccessLight}, Dark={StaticResource SuccessDark}}" />
+                                    <Label Text="{x:Static loc:Strings.SensorSupplyAir}" Style="{StaticResource SecondaryCaption}" VerticalOptions="Center" />
+                                </HorizontalStackLayout>
+                                <Label Text="{Binding FreshTemp, Converter={x:Static helpers:Converters.Temperature}}" Style="{StaticResource Metric}" />
+                            </VerticalStackLayout>
+                        </Border>
+                        <Border Style="{StaticResource Tile}">
+                            <VerticalStackLayout Spacing="4">
+                                <HorizontalStackLayout Spacing="8">
+                                    <Label Text="{x:Static helpers:FluentIcons.Home}" Style="{StaticResource Icon16}"
+                                           TextColor="{AppThemeBinding Light={StaticResource AccentTextLight}, Dark={StaticResource AccentTextDark}}" />
+                                    <Label Text="{x:Static loc:Strings.SensorIndoor}" Style="{StaticResource SecondaryCaption}" VerticalOptions="Center" />
+                                </HorizontalStackLayout>
+                                <Label Text="{Binding IndoorTemp, Converter={x:Static helpers:Converters.Temperature}}" Style="{StaticResource Metric}" />
+                            </VerticalStackLayout>
+                        </Border>
+                        <Border Style="{StaticResource Tile}">
+                            <VerticalStackLayout Spacing="4">
+                                <HorizontalStackLayout Spacing="8">
+                                    <Label Text="{x:Static helpers:FluentIcons.ArrowExportLtr}" Style="{StaticResource Icon16}"
+                                           TextColor="{AppThemeBinding Light={StaticResource TextSecondaryLight}, Dark={StaticResource TextSecondaryDark}}" />
+                                    <Label Text="{x:Static loc:Strings.SensorExhaustAir}" Style="{StaticResource SecondaryCaption}" VerticalOptions="Center" />
+                                </HorizontalStackLayout>
+                                <Label Text="{Binding WasteTemp, Converter={x:Static helpers:Converters.Temperature}}" Style="{StaticResource Metric}" />
+                            </VerticalStackLayout>
+                        </Border>
+                        <Border Style="{StaticResource Tile}">
+                            <VerticalStackLayout Spacing="4">
+                                <HorizontalStackLayout Spacing="8">
+                                    <Label Text="{x:Static helpers:FluentIcons.Molecule}" Style="{StaticResource Icon16}"
+                                           TextColor="{AppThemeBinding Light={StaticResource TextSecondaryLight}, Dark={StaticResource TextSecondaryDark}}">
+                                        <Label.Triggers>
+                                            <DataTrigger TargetType="Label" Binding="{Binding Co2Level, Converter={x:Static helpers:Converters.Co2Rating}}" Value="{x:Static loc:Co2Rating.Good}">
+                                                <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource SuccessLight}, Dark={StaticResource SuccessDark}}" />
+                                            </DataTrigger>
+                                            <DataTrigger TargetType="Label" Binding="{Binding Co2Level, Converter={x:Static helpers:Converters.Co2Rating}}" Value="{x:Static loc:Co2Rating.Fair}">
+                                                <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource CautionLight}, Dark={StaticResource CautionDark}}" />
+                                            </DataTrigger>
+                                            <DataTrigger TargetType="Label" Binding="{Binding Co2Level, Converter={x:Static helpers:Converters.Co2Rating}}" Value="{x:Static loc:Co2Rating.Poor}">
+                                                <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource CriticalLight}, Dark={StaticResource CriticalDark}}" />
+                                            </DataTrigger>
+                                        </Label.Triggers>
+                                    </Label>
+                                    <Label Text="CO₂" Style="{StaticResource SecondaryCaption}" VerticalOptions="Center" />
+                                </HorizontalStackLayout>
+                                <Label Text="{Binding Co2Level, Converter={x:Static helpers:Converters.Co2}}" Style="{StaticResource Metric}" />
+                                <Label Text="{Binding Co2Level, Converter={x:Static helpers:Converters.Co2Quality}}" Style="{StaticResource SecondaryCaption}"
+                                       SemanticProperties.Hint="{x:Static loc:Strings.Co2Hint}">
+                                    <Label.Triggers>
+                                        <DataTrigger TargetType="Label" Binding="{Binding Co2Level, Converter={x:Static helpers:Converters.Co2Rating}}" Value="{x:Static loc:Co2Rating.Good}">
+                                            <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource SuccessLight}, Dark={StaticResource SuccessDark}}" />
+                                        </DataTrigger>
+                                        <DataTrigger TargetType="Label" Binding="{Binding Co2Level, Converter={x:Static helpers:Converters.Co2Rating}}" Value="{x:Static loc:Co2Rating.Fair}">
+                                            <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource CautionLight}, Dark={StaticResource CautionDark}}" />
+                                        </DataTrigger>
+                                        <DataTrigger TargetType="Label" Binding="{Binding Co2Level, Converter={x:Static helpers:Converters.Co2Rating}}" Value="{x:Static loc:Co2Rating.Poor}">
+                                            <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource CriticalLight}, Dark={StaticResource CriticalDark}}" />
+                                        </DataTrigger>
+                                    </Label.Triggers>
+                                </Label>
+                            </VerticalStackLayout>
+                        </Border>
+                        <Border Style="{StaticResource Tile}" IsVisible="{Binding Humidity, Converter={x:Static helpers:Converters.IsNotNull}}">
+                            <VerticalStackLayout Spacing="4">
+                                <HorizontalStackLayout Spacing="8">
+                                    <Label Text="{x:Static helpers:FluentIcons.Drop}" Style="{StaticResource Icon16}"
+                                           TextColor="{AppThemeBinding Light={StaticResource AttentionLight}, Dark={StaticResource AttentionDark}}" />
+                                    <Label Text="{x:Static loc:Strings.SensorHumidity}" Style="{StaticResource SecondaryCaption}" VerticalOptions="Center" />
+                                </HorizontalStackLayout>
+                                <Label Text="{Binding Humidity, Converter={x:Static helpers:Converters.Humidity}}" Style="{StaticResource Metric}" />
+                            </VerticalStackLayout>
+                        </Border>
+                    </controls:TileLayout>
+
+                    <!-- ── Cards: one column on phones, two on tablets ─────── -->
+                    <controls:TileLayout MinItemWidth="340" MaxColumns="2" Spacing="12">
+
+                        <!-- Ventilation: mode + flow -->
+                        <Border Style="{StaticResource Card}">
+                            <VerticalStackLayout Spacing="8">
+                                <Grid ColumnDefinitions="*,Auto" Margin="0,-8,-8,0">
+                                    <Label Text="{x:Static loc:Strings.VentilationTitle}" Style="{StaticResource BodyStrong}" VerticalOptions="Center" />
+                                    <Button Grid.Column="1" Style="{StaticResource AccentTextButton}" Padding="8,0" Clicked="OnScheduleClicked"
+                                            Text="{x:Static loc:Strings.ScheduleTitle}" />
+                                </Grid>
+
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <Label Text="{x:Static loc:Strings.OperatingModeLabel}" Style="{StaticResource SecondaryCaption}" VerticalOptions="Center" />
+                                    <ActivityIndicator Grid.Column="1" Style="{StaticResource SmallSpinner}"
+                                                       IsRunning="{Binding OperatingMode.IsModeChanging}" IsVisible="{Binding OperatingMode.IsModeChanging}" />
+                                </Grid>
+                                <controls:SegmentedControl x:Name="ModeSelector" SegmentTapped="OnModeTapped"
+                                                           IsEnabled="{Binding OperatingMode.IsModeChanging, Converter={x:Static helpers:Converters.Not}}" />
+
+                                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" Margin="0,12,0,0">
+                                    <Label Text="{x:Static loc:Strings.FlowRateLabel}" Style="{StaticResource SecondaryCaption}" VerticalOptions="Center" />
+                                    <ActivityIndicator Grid.Column="1" Style="{StaticResource SmallSpinner}"
+                                                       IsRunning="{Binding FlowSpeed.IsChanging}" IsVisible="{Binding FlowSpeed.IsChanging}" />
+                                    <Label Grid.Column="2" Text="{Binding FlowSpeed.FlowSpeedText}" Style="{StaticResource BodyStrong}" />
+                                </Grid>
+                                <Slider x:Name="FlowSlider" Minimum="50" Maximum="220"
+                                        SemanticProperties.Description="{x:Static loc:Strings.FlowRateLabel}"
+                                        DragStarted="OnFlowDragStarted" DragCompleted="OnFlowDragCompleted" ValueChanged="OnFlowValueChanged">
+                                    <Slider.IsEnabled>
+                                        <MultiBinding Converter="{x:Static helpers:Converters.AllTrue}">
+                                            <Binding Path="IsManualMode" />
+                                            <Binding Path="FlowSpeed.IsChanging" Converter="{x:Static helpers:Converters.Not}" />
+                                        </MultiBinding>
+                                    </Slider.IsEnabled>
+                                </Slider>
+                                <Label Text="{x:Static loc:Strings.FlowManualHint}" Style="{StaticResource SecondaryCaption}"
+                                       IsVisible="{Binding IsManualMode, Converter={x:Static helpers:Converters.Not}}" />
+                            </VerticalStackLayout>
+                        </Border>
+
+                        <!-- Boost -->
+                        <Border Style="{StaticResource Card}">
+                            <VerticalStackLayout Spacing="12">
+                                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                                    <Label Text="{x:Static helpers:FluentIcons.Flash}" Style="{StaticResource Icon}" />
+                                    <Label Grid.Column="1" Text="{x:Static loc:Strings.BoostTitle}" Style="{StaticResource BodyStrong}" VerticalOptions="Center" />
+                                    <Border Grid.Column="2" Style="{StaticResource Pill}" IsVisible="{Binding BoostMode.IsBoostActive}"
+                                            BackgroundColor="{AppThemeBinding Light={StaticResource AccentLight}, Dark={StaticResource AccentDark}}">
+                                        <HorizontalStackLayout Spacing="4">
+                                            <Label Text="{x:Static helpers:FluentIcons.Timer}" Style="{StaticResource Icon16}"
+                                                   TextColor="{AppThemeBinding Light={StaticResource TextOnAccentLight}, Dark={StaticResource TextOnAccentDark}}" />
+                                            <Label x:Name="BoostCountdown" Style="{StaticResource BodyStrong}" FontSize="12" VerticalOptions="Center"
+                                                   TextColor="{AppThemeBinding Light={StaticResource TextOnAccentLight}, Dark={StaticResource TextOnAccentDark}}" />
+                                        </HorizontalStackLayout>
+                                    </Border>
+                                </Grid>
+                                <Label x:Name="BoostState" Style="{StaticResource SecondaryCaption}" />
+                                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+                                    <Button Style="{StaticResource Chip}" Text="15 min" Command="{Binding BoostMode.SetBoostCommand}" CommandParameter="900" />
+                                    <Button Grid.Column="1" Style="{StaticResource Chip}" Text="30 min" Command="{Binding BoostMode.SetBoostCommand}" CommandParameter="1800" />
+                                    <Button Grid.Column="2" Style="{StaticResource Chip}" Text="60 min" Command="{Binding BoostMode.SetBoostCommand}" CommandParameter="3600" />
+                                </Grid>
+                                <Button Text="{x:Static loc:Strings.BoostStop}" Command="{Binding BoostMode.SetBoostCommand}" CommandParameter="0"
+                                        IsVisible="{Binding BoostMode.IsBoostActive}" />
+                            </VerticalStackLayout>
+                        </Border>
+
+                        <!-- Silent / holiday -->
+                        <Border Style="{StaticResource Card}">
+                            <VerticalStackLayout Spacing="12">
+                                <Label Text="{x:Static loc:Strings.ModesTitle}" Style="{StaticResource BodyStrong}" />
+                                <controls:SettingRow Icon="{x:Static helpers:FluentIcons.WeatherMoon}"
+                                                     Title="{x:Static loc:Strings.SilentTitle}" Description="{x:Static loc:Strings.SilentDescription}">
+                                    <Switch x:Name="SilentSwitch" Toggled="OnSilentToggled"
+                                            SemanticProperties.Description="{x:Static loc:Strings.SilentModeName}"
+                                            IsToggled="{Binding SpecialModes.IsSilentMode, Mode=OneWay}"
+                                            IsEnabled="{Binding SpecialModes.IsSilentModeChanging, Converter={x:Static helpers:Converters.Not}}" />
+                                </controls:SettingRow>
+                                <BoxView Style="{StaticResource Divider}" />
+                                <controls:SettingRow Icon="{x:Static helpers:FluentIcons.Airplane}"
+                                                     Title="{x:Static loc:Strings.HolidayTitle}" Description="{x:Static loc:Strings.HolidayDescription}">
+                                    <Switch x:Name="HolidaySwitch" Toggled="OnHolidayToggled"
+                                            SemanticProperties.Description="{x:Static loc:Strings.HolidayModeName}"
+                                            IsToggled="{Binding SpecialModes.IsHolidayMode, Mode=OneWay}"
+                                            IsEnabled="{Binding SpecialModes.IsHolidayModeChanging, Converter={x:Static helpers:Converters.Not}}" />
+                                </controls:SettingRow>
+                            </VerticalStackLayout>
+                        </Border>
+
+                        <!-- Filters -->
+                        <Border Style="{StaticResource Card}">
+                            <VerticalStackLayout Spacing="12">
+                                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                                    <Label Text="{x:Static helpers:FluentIcons.Filter}" Style="{StaticResource Icon}" />
+                                    <Label Grid.Column="1" Text="{x:Static loc:Strings.FiltersTitle}" Style="{StaticResource BodyStrong}" VerticalOptions="Center" />
+                                </Grid>
+                                <VerticalStackLayout Spacing="16" IsVisible="{Binding FreshFilterHealth, Converter={x:Static helpers:Converters.IsNotNull}}">
+                                    <VerticalStackLayout Spacing="6">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <Label Text="{x:Static loc:Strings.FilterSupply}" />
+                                            <Label Grid.Column="1" Text="{Binding FreshFilterHealth, Converter={x:Static helpers:Converters.Percent}}"
+                                                   Style="{StaticResource SecondaryCaption}" VerticalOptions="Center" />
+                                        </Grid>
+                                        <ProgressBar Progress="{Binding FreshFilterHealth, Converter={x:Static helpers:Converters.Progress}}">
+                                            <ProgressBar.Triggers>
+                                                <DataTrigger TargetType="ProgressBar" Binding="{Binding FreshFilterHealth, Converter={x:Static helpers:Converters.IsFilterLow}}" Value="True">
+                                                    <Setter Property="ProgressColor" Value="{AppThemeBinding Light={StaticResource CautionLight}, Dark={StaticResource CautionDark}}" />
+                                                </DataTrigger>
+                                            </ProgressBar.Triggers>
+                                        </ProgressBar>
+                                    </VerticalStackLayout>
+                                    <VerticalStackLayout Spacing="6">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <Label Text="{x:Static loc:Strings.FilterExhaust}" />
+                                            <Label Grid.Column="1" Text="{Binding WasteFilterHealth, Converter={x:Static helpers:Converters.Percent}}"
+                                                   Style="{StaticResource SecondaryCaption}" VerticalOptions="Center" />
+                                        </Grid>
+                                        <ProgressBar Progress="{Binding WasteFilterHealth, Converter={x:Static helpers:Converters.Progress}}">
+                                            <ProgressBar.Triggers>
+                                                <DataTrigger TargetType="ProgressBar" Binding="{Binding WasteFilterHealth, Converter={x:Static helpers:Converters.IsFilterLow}}" Value="True">
+                                                    <Setter Property="ProgressColor" Value="{AppThemeBinding Light={StaticResource CautionLight}, Dark={StaticResource CautionDark}}" />
+                                                </DataTrigger>
+                                            </ProgressBar.Triggers>
+                                        </ProgressBar>
+                                    </VerticalStackLayout>
+                                </VerticalStackLayout>
+                                <Label Text="{x:Static loc:Strings.FilterNoData}" Style="{StaticResource SecondaryCaption}"
+                                       IsVisible="{Binding FreshFilterHealth, Converter={x:Static helpers:Converters.IsNull}}" />
+                            </VerticalStackLayout>
+                        </Border>
+                    </controls:TileLayout>
+                </VerticalStackLayout>
+            </ScrollView>
+        </RefreshView>
+
+        <controls:StatusToast x:Name="Toast" />
+    </Grid>
+</ContentPage>

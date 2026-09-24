@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  Color tokens from DESIGN.md, section 2. Each token has a Light and a Dark value; views never use these
+  directly but go through the styles in Styles.xaml (or Theme.SetColor in code), which pick the value with
+  AppThemeBinding. Keep this file and DESIGN.md in sync.
+-->
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <!-- Brand (icon, splash) -->
+    <Color x:Key="Brand">#3090DC</Color>
+
+    <!-- Surfaces -->
+    <Color x:Key="PageBackgroundLight">#F3F3F3</Color>
+    <Color x:Key="PageBackgroundDark">#202020</Color>
+    <Color x:Key="CardBackgroundLight">#FFFFFF</Color>
+    <Color x:Key="CardBackgroundDark">#2B2B2B</Color>
+    <Color x:Key="CardStrokeLight">#E5E5E5</Color>
+    <Color x:Key="CardStrokeDark">#1C1C1C</Color>
+    <Color x:Key="DividerLight">#EBEBEB</Color>
+    <Color x:Key="DividerDark">#3D3D3D</Color>
+
+    <!-- Controls -->
+    <Color x:Key="ControlFillLight">#FBFBFB</Color>
+    <Color x:Key="ControlFillDark">#373737</Color>
+    <Color x:Key="ControlStrokeLight">#E0E0E0</Color>
+    <Color x:Key="ControlStrokeDark">#434343</Color>
+    <Color x:Key="ControlAltFillLight">#F3F3F3</Color>
+    <Color x:Key="ControlAltFillDark">#242424</Color>
+    <Color x:Key="ControlStrongLight">#8A8A8A</Color>
+    <Color x:Key="ControlStrongDark">#9D9D9D</Color>
+
+    <!-- Text -->
+    <Color x:Key="TextPrimaryLight">#1B1B1B</Color>
+    <Color x:Key="TextPrimaryDark">#FFFFFF</Color>
+    <Color x:Key="TextSecondaryLight">#5F5F5F</Color>
+    <Color x:Key="TextSecondaryDark">#C8C8C8</Color>
+    <Color x:Key="TextTertiaryLight">#8A8A8A</Color>
+    <Color x:Key="TextTertiaryDark">#9E9E9E</Color>
+    <Color x:Key="TextDisabledLight">#A3A3A3</Color>
+    <Color x:Key="TextDisabledDark">#6E6E6E</Color>
+
+    <!-- Accent -->
+    <Color x:Key="AccentLight">#1A6DB5</Color>
+    <Color x:Key="AccentDark">#78BAEE</Color>
+    <Color x:Key="AccentTextLight">#155A96</Color>
+    <Color x:Key="AccentTextDark">#99CCF3</Color>
+    <Color x:Key="TextOnAccentLight">#FFFFFF</Color>
+    <Color x:Key="TextOnAccentDark">#000000</Color>
+
+    <!-- Semantic -->
+    <Color x:Key="SuccessLight">#0F7B0F</Color>
+    <Color x:Key="SuccessDark">#6CCB5F</Color>
+    <Color x:Key="CautionLight">#9D5D00</Color>
+    <Color x:Key="CautionDark">#FCE100</Color>
+    <Color x:Key="CriticalLight">#C42B1C</Color>
+    <Color x:Key="CriticalDark">#FF99A4</Color>
+    <Color x:Key="AttentionLight">#005FB7</Color>
+    <Color x:Key="AttentionDark">#60CDFF</Color>
+    <Color x:Key="SuccessBackgroundLight">#DFF6DD</Color>
+    <Color x:Key="SuccessBackgroundDark">#393D1B</Color>
+    <Color x:Key="CautionBackgroundLight">#FFF4CE</Color>
+    <Color x:Key="CautionBackgroundDark">#433519</Color>
+    <Color x:Key="CriticalBackgroundLight">#FDE7E9</Color>
+    <Color x:Key="CriticalBackgroundDark">#442726</Color>
+    <Color x:Key="AttentionBackgroundLight">#F6F6F6</Color>
+    <Color x:Key="AttentionBackgroundDark">#272727</Color>
+
+    <!-- Schedule modes: the same in both themes and in the Windows app (DESIGN.md, section 2.3) -->
+    <Color x:Key="ScheduleModeMin">#2F6FD6</Color>
+    <Color x:Key="ScheduleModeAuto">#2E8B57</Color>
+    <Color x:Key="ScheduleModeNominal">#B86E0A</Color>
+    <Color x:Key="ScheduleModeBoost">#BC3F3A</Color>
+    <Color x:Key="ScheduleModeUnknown">#6B7280</Color>
+
+</ResourceDictionary>

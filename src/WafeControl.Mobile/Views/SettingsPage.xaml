@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="WafeControl.Mobile.Views.SettingsPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:controls="clr-namespace:WafeControl.Mobile.Controls"
+    xmlns:helpers="clr-namespace:WafeControl.Mobile.Helpers"
+    xmlns:loc="clr-namespace:WafeControl.Core.Localization;assembly=WafeControl.Core"
+    xmlns:vm="clr-namespace:WafeControl.Core.ViewModels;assembly=WafeControl.Core"
+    x:DataType="vm:SettingsViewModel"
+    Shell.NavBarIsVisible="False">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16,16,16,24" Spacing="12" MaximumWidthRequest="1100">
+            <Grid ColumnDefinitions="Auto,*" Padding="0,8,0,4">
+                <!-- Back, when opened from the sign-in page -->
+                <Button x:Name="BackButton" Style="{StaticResource IconButton}" Text="{x:Static helpers:FluentIcons.ChevronRight}" Rotation="180"
+                        IsVisible="False" Margin="-12,0,4,0" Clicked="OnBackClicked" SemanticProperties.Description="{x:Static loc:Strings.ButtonCancel}" />
+                <Label Grid.Column="1" Text="{x:Static loc:Strings.SettingsTitle}" Style="{StaticResource Title}" SemanticProperties.HeadingLevel="Level1" />
+            </Grid>
+
+            <!-- ── Language ────────────────────────────────────────────── -->
+            <Border Style="{StaticResource Card}">
+                <VerticalStackLayout Spacing="12">
+                    <controls:SettingRow Icon="{x:Static helpers:FluentIcons.LocalLanguage}" Title="{x:Static loc:Strings.SettingsLanguage}"
+                                         Description="{x:Static loc:Strings.SettingsLanguageDescription}" />
+                    <Border Style="{StaticResource InputBox}" Margin="36,0,0,0">
+                        <Picker x:Name="LanguagePicker" SelectedIndexChanged="OnLanguageChanged"
+                                SemanticProperties.Description="{x:Static loc:Strings.SettingsLanguage}" />
+                    </Border>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- ── Appearance ──────────────────────────────────────────── -->
+            <Border Style="{StaticResource Card}">
+                <VerticalStackLayout Spacing="8">
+                    <controls:SettingRow Icon="{x:Static helpers:FluentIcons.DarkTheme}" Title="{x:Static loc:Strings.SettingsTheme}"
+                                         Description="{x:Static loc:Strings.SettingsThemeDescription}" />
+                    <!-- In AppTheme order: System, Light, Dark -->
+                    <VerticalStackLayout x:Name="ThemeChoices" Margin="28,0,0,0">
+                        <RadioButton GroupName="Theme" Content="{x:Static loc:Strings.SettingsThemeSystem}" CheckedChanged="OnThemeChecked" />
+                        <RadioButton GroupName="Theme" Content="{x:Static loc:Strings.SettingsThemeLight}" CheckedChanged="OnThemeChecked" />
+                        <RadioButton GroupName="Theme" Content="{x:Static loc:Strings.SettingsThemeDark}" CheckedChanged="OnThemeChecked" />
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- ── Unit: name, model, serial number, service contact (after sign-in) ── -->
+            <Border x:Name="UnitCard" Style="{StaticResource Card}" x:DataType="vm:AppViewModel"
+                    IsVisible="{Binding Unit, Converter={x:Static helpers:Converters.IsNotNull}}">
+                <VerticalStackLayout Spacing="12">
+                    <controls:SettingRow Icon="{x:Static helpers:FluentIcons.Rename}" Title="{x:Static loc:Strings.UnitNameLabel}"
+                                         Description="{Binding PortalUnitName}">
+                        <Button Text="{x:Static loc:Strings.UnitRename}" Clicked="OnRenameClicked" />
+                    </controls:SettingRow>
+                    <BoxView Style="{StaticResource Divider}" />
+                    <controls:SettingRow Icon="{x:Static helpers:FluentIcons.Cube}" Title="{x:Static loc:Strings.SettingsUnit}"
+                                         Description="{Binding Unit, Converter={x:Static helpers:Converters.UnitDetails}}" />
+                    <BoxView Style="{StaticResource Divider}" />
+                    <controls:SettingRow Icon="{x:Static helpers:FluentIcons.PersonSupport}" Title="{x:Static loc:Strings.SettingsService}"
+                                         Description="{Binding Unit, Converter={x:Static helpers:Converters.ServiceName}}" />
+                    <HorizontalStackLayout Spacing="8" Margin="28,-8,0,0">
+                        <Button Style="{StaticResource AccentTextButton}" Padding="8,0" Clicked="OnServiceMailClicked"
+                                Text="{Binding Unit, Converter={x:Static helpers:Converters.ServiceMail}}"
+                                IsVisible="{Binding Unit, Converter={x:Static helpers:Converters.HasServiceMail}}" />
+                        <Button Style="{StaticResource AccentTextButton}" Padding="8,0" Clicked="OnServiceWebClicked"
+                                Text="{Binding Unit, Converter={x:Static helpers:Converters.ServiceWeb}}"
+                                IsVisible="{Binding Unit, Converter={x:Static helpers:Converters.HasServiceWeb}}" />
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- ── Account (after sign-in) ─────────────────────────────── -->
+            <Border x:Name="AccountCard" Style="{StaticResource Card}" x:DataType="vm:AppViewModel" IsVisible="{Binding IsAuthenticated}">
+                <controls:SettingRow Icon="{x:Static helpers:FluentIcons.Person}" Title="{x:Static loc:Strings.SettingsAccount}"
+                                     Description="{Binding Login.Username}">
+                    <Button Text="{x:Static loc:Strings.MenuSignOut}" Command="{Binding SignOutCommand}" />
+                </controls:SettingRow>
+            </Border>
+
+            <!-- ── About ───────────────────────────────────────────────── -->
+            <Border Style="{StaticResource Card}">
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="16" RowDefinitions="Auto,Auto">
+                    <Image Source="wafe_logo.png" WidthRequest="20" HeightRequest="20" VerticalOptions="Center" />
+                    <VerticalStackLayout Grid.Column="1" Spacing="2">
+                        <Label Text="{x:Static loc:Strings.SettingsAbout}" />
+                        <Label Text="{Binding Version, Converter={x:Static helpers:Converters.About}}" Style="{StaticResource SecondaryCaption}" />
+                    </VerticalStackLayout>
+                    <Button Grid.Row="1" Grid.Column="1" Style="{StaticResource AccentTextButton}" Padding="0" HorizontalOptions="Start"
+                            Text="{x:Static loc:Strings.SettingsProjectLink}" Clicked="OnProjectClicked" />
+                </Grid>
+            </Border>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

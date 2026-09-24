@@ -19,6 +19,9 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 10.0.x
+    # The mobile app (MAUI, Android) is part of the solution; the runner has the Android SDK and JDK.
+    - name: Install MAUI Android workload
+      run: dotnet workload install maui-android
     - name: Restore dependencies
       run: dotnet restore WafeControl.slnx
     - name: Build

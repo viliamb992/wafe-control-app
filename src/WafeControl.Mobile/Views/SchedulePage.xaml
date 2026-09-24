@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="WafeControl.Mobile.Views.SchedulePage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:controls="clr-namespace:WafeControl.Mobile.Controls"
+    xmlns:helpers="clr-namespace:WafeControl.Mobile.Helpers"
+    xmlns:loc="clr-namespace:WafeControl.Core.Localization;assembly=WafeControl.Core"
+    xmlns:schedule="clr-namespace:WafeControl.Core.ViewModels.Schedule;assembly=WafeControl.Core"
+    x:DataType="schedule:ScheduleViewModel"
+    Shell.NavBarIsVisible="False">
+
+    <Grid>
+        <ScrollView>
+            <VerticalStackLayout Padding="16,16,16,24" Spacing="12" MaximumWidthRequest="1100">
+
+                <!-- ── Header ──────────────────────────────────────────── -->
+                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="4" Padding="0,8,0,4">
+                    <VerticalStackLayout>
+                        <Label Text="{x:Static loc:Strings.ScheduleTitle}" Style="{StaticResource Title}" SemanticProperties.HeadingLevel="Level1" />
+                        <Label Text="{Binding EntryCountText}" Style="{StaticResource SecondaryCaption}" />
+                    </VerticalStackLayout>
+                    <ActivityIndicator Grid.Column="1" Style="{StaticResource SmallSpinner}" IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+                    <Button Grid.Column="2" Style="{StaticResource IconButton}" Text="{x:Static helpers:FluentIcons.ArrowClockwise}" VerticalOptions="Start"
+                            Command="{Binding LoadCommand}" SemanticProperties.Description="{x:Static loc:Strings.ScheduleReload}" />
+                </Grid>
+
+                <Label Text="{x:Static loc:Strings.ScheduleTouchHint}" Style="{StaticResource SecondaryBody}" />
+
+                <!-- ── Notices ─────────────────────────────────────────── -->
+                <controls:InfoBanner x:Name="ModeOffBanner" Severity="Informational" IsShown="False"
+                                     Title="{x:Static loc:Strings.ScheduleModeOffTitle}" Message="{x:Static loc:Strings.ScheduleModeOffMessage}"
+                                     ActionText="{x:Static loc:Strings.ScheduleUseScheduleMode}" ActionClicked="OnUseScheduleModeClicked" />
+                <controls:InfoBanner Severity="Warning" Message="{Binding ErrorMessage}" />
+
+                <!-- ── Day ─────────────────────────────────────────────── -->
+                <controls:SegmentedControl x:Name="DaySelector" SegmentTapped="OnDayTapped" />
+                <Label x:Name="DayName" Style="{StaticResource BodyStrong}" Margin="0,4,0,0" />
+
+                <Border Style="{StaticResource Card}" Padding="8,0,12,0">
+                    <controls:DayTimeline x:Name="Timeline" SlotTapped="OnSlotTapped" EntryTapped="OnEntryTapped" />
+                </Border>
+
+                <!-- Legend, filled from the unit's modes -->
+                <FlexLayout x:Name="Legend" Wrap="Wrap" />
+
+                <Button Style="{StaticResource AccentButton}" Text="{x:Static loc:Strings.ScheduleAddAction}"
+                        Clicked="OnAddClicked" IsEnabled="{Binding CanAddEntry}" />
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <controls:StatusToast x:Name="Toast" />
+    </Grid>
+</ContentPage>

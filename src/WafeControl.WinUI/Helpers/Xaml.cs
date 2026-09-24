@@ -1,9 +1,7 @@
-using System.Globalization;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using WafeControl.Core.Localization;
-using WafeControl.Core.ViewModels.Schedule;
 using WafeControl.Shared;
 using WafeControl.Shared.Models;
 
@@ -14,8 +12,6 @@ namespace WafeControl.WinUI.Helpers;
 /// </summary>
 public static class Xaml
 {
-    private const string NoValue = ModeNames.NoValue;
-
     public static Visibility VisibleIf(bool value) => value ? Visibility.Visible : Visibility.Collapsed;
 
     public static Visibility CollapsedIf(bool value) => value ? Visibility.Collapsed : Visibility.Visible;
@@ -36,73 +32,54 @@ public static class Xaml
 
     public static bool CanAdjustFlow(bool isManualMode, bool isChanging) => isManualMode && !isChanging;
 
-    public static string Temperature(double? value) =>
-        value is { } v ? $"{v.ToString("0.0", CultureInfo.CurrentCulture)} °C" : NoValue;
+    public static string Temperature(double? value) => DisplayFormat.Temperature(value);
 
-    public static string Humidity(double? value) => value is { } v ? $"{v:0} %" : NoValue;
+    public static string Humidity(double? value) => DisplayFormat.Humidity(value);
 
-    public static string Flow(int value) => $"{value} m³/h";
+    public static string Co2(int value) => DisplayFormat.Co2(value);
 
-    public static string Co2(int value) => value > 0 ? $"{value} ppm" : NoValue;
+    public static string Co2Quality(int value) => DisplayFormat.Co2Quality(value);
 
-    public static string Co2Quality(int value) => value switch
+    public static Brush Co2Brush(int value) => Resource<Brush>(DisplayFormat.RateCo2(value) switch
     {
-        <= 0 => Strings.Co2NoReading,
-        < 800 => Strings.Co2Good,
-        < 1200 => Strings.Co2Fair,
-        _ => Strings.Co2Poor,
-    };
-
-    public static Brush Co2Brush(int value) => Resource<Brush>(value switch
-    {
-        <= 0 => "TextFillColorSecondaryBrush",
-        < 800 => "SystemFillColorSuccessBrush",
-        < 1200 => "SystemFillColorCautionBrush",
-        _ => "SystemFillColorCriticalBrush",
+        Co2Rating.Good => "SystemFillColorSuccessBrush",
+        Co2Rating.Fair => "SystemFillColorCautionBrush",
+        Co2Rating.Poor => "SystemFillColorCriticalBrush",
+        _ => "TextFillColorSecondaryBrush",
     });
 
     public static double Percent(int? value) => value ?? 0;
 
-    public static string PercentText(int? value) => value is { } v ? $"{v} %" : NoValue;
+    public static string PercentText(int? value) => DisplayFormat.Percent(value);
 
-    public static string SystemState(bool isRunning) => isRunning ? Strings.SystemRunning : Strings.SystemStopped;
+    public static string SystemState(bool isRunning) => DisplayFormat.SystemState(isRunning);
 
     public static Brush SystemStateBrush(bool isRunning) =>
         Resource<Brush>(isRunning ? "SystemFillColorSuccessBrush" : "ControlStrongFillColorDefaultBrush");
 
     public static string SystemSummary(string authority, int currentFlow, bool hasSensorData) =>
-        hasSensorData
-            ? string.Format(Strings.SystemSummary, ModeName(authority), Flow(currentFlow))
-            : string.Format(Strings.SystemSummaryModeOnly, ModeName(authority));
+        DisplayFormat.SystemSummary(authority, currentFlow, hasSensorData);
 
-    public static string NextStart(DateTime? nextStart) =>
-        nextStart is { } next ? string.Format(Strings.SystemNextStart, ScheduleFormat.DateAndTime(next)) : string.Empty;
+    public static string NextStart(DateTime? nextStart) => DisplayFormat.NextStart(nextStart);
 
     /// <summary>
     /// The next scheduled start matters only while the unit runs on its schedule.
     /// </summary>
     public static Visibility VisibleIfNextStart(DateTime? nextStart, string authority, bool isRunning) =>
-        VisibleIf(nextStart.HasValue && isRunning && authority == AppConstants.ModeSchedule);
+        VisibleIf(DisplayFormat.ShowsNextStart(nextStart, authority, isRunning));
 
     /// <summary>
     /// "Ventilation unit connection", plus "Last update: 14:32:05" once the unit's data time is known.
     /// </summary>
-    public static string ConnectionToolTip(DateTimeOffset? lastUpdate)
-    {
-        if (lastUpdate is not { } time)
-            return Strings.TitleBarConnection;
+    public static string ConnectionToolTip(DateTimeOffset? lastUpdate) =>
+        lastUpdate is null ? Strings.TitleBarConnection : $"{Strings.TitleBarConnection}\n{DisplayFormat.LastUpdate(lastUpdate)}";
 
-        var local = time.LocalDateTime;
-        var text = local.Date == DateTime.Today ? local.ToString("HH:mm:ss", CultureInfo.CurrentCulture) : ScheduleFormat.DateAndTime(local);
-        return $"{Strings.TitleBarConnection}\n{string.Format(Strings.TitleBarLastUpdate, text)}";
-    }
-
-    public static string OnlineText(bool isOnline) => isOnline ? Strings.TitleBarOnline : Strings.TitleBarOffline;
+    public static string OnlineText(bool isOnline) => DisplayFormat.Online(isOnline);
 
     public static Brush OnlineBrush(bool isOnline) =>
         Resource<Brush>(isOnline ? "SystemFillColorSuccessBrush" : "SystemFillColorCriticalBrush");
 
-    public static string BoostState(bool isActive, string remaining) => isActive ? string.Format(Strings.BoostActive, remaining) : Strings.BoostOff;
+    public static string BoostState(bool isActive, string remaining) => DisplayFormat.BoostState(isActive, remaining);
 
     public static string ModeName(string? mode) => ModeNames.Operating(mode);
 
@@ -131,32 +108,28 @@ public static class Xaml
         [""] = new SolidColorBrush(ColorHelper.FromArgb(0xFF, 0x6B, 0x72, 0x80)),
     };
 
-    public static string VersionText(string version) => string.Format(Strings.SettingsVersion, version);
+    public static string VersionText(string version) => DisplayFormat.Version(version);
 
-    public static string UnitDetails(SystemInfo? info) =>
-        string.Format(Strings.SettingsUnitDetails, info?.Unit?.Type ?? NoValue, info?.Unit?.Model ?? NoValue, info?.Unit?.SerialNumber ?? NoValue);
+    public static string UnitDetails(SystemInfo? info) => DisplayFormat.UnitDetails(info);
 
-    public static string ServiceName(SystemInfo? info) => info?.Contacts?.Service?.Name ?? NoValue;
+    public static string ServiceName(SystemInfo? info) => DisplayFormat.ServiceName(info);
 
-    public static string ServiceMail(SystemInfo? info) => info?.Contacts?.Service?.Mail ?? string.Empty;
+    public static string ServiceMail(SystemInfo? info) => DisplayFormat.ServiceMail(info);
 
-    public static Uri? ServiceMailUri(SystemInfo? info) =>
-        ServiceMail(info) is { Length: > 0 } mail && Uri.TryCreate($"mailto:{mail}", UriKind.Absolute, out var uri) ? uri : null;
+    public static Uri? ServiceMailUri(SystemInfo? info) => DisplayFormat.ServiceMailUri(info);
 
     public static Visibility VisibleIfServiceMail(SystemInfo? info) => VisibleIf(ServiceMailUri(info) is not null);
 
-    public static Uri? ServiceWebUri(SystemInfo? info) =>
-        Uri.TryCreate(info?.Contacts?.Service?.Web, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https" ? uri : null;
+    public static Uri? ServiceWebUri(SystemInfo? info) => DisplayFormat.ServiceWebUri(info);
 
     /// <summary>
     /// "wafe.eu" for "https://wafe.eu/".
     /// </summary>
-    public static string ServiceWebText(SystemInfo? info) =>
-        ServiceWebUri(info) is { } uri ? $"{uri.Host}{uri.PathAndQuery.TrimEnd('/')}" : string.Empty;
+    public static string ServiceWebText(SystemInfo? info) => DisplayFormat.ServiceWebText(info);
 
     public static Visibility VisibleIfServiceWeb(SystemInfo? info) => VisibleIf(ServiceWebUri(info) is not null);
 
-    public static string AboutText(string version) => $"WAFE Control · {VersionText(version)}";
+    public static string AboutText(string version) => DisplayFormat.About(version);
 
     private static T Resource<T>(string key) => (T)Application.Current.Resources[key];
 }

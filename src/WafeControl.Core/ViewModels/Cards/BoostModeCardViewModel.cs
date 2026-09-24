@@ -21,8 +21,7 @@ public sealed partial class BoostModeCardViewModel : CardViewModelBase
 
     public bool IsBoostActive => BoostRemaining > 0;
 
-    public string BoostRemainingText =>
-        BoostRemaining <= 0 ? Strings.BoostOff : $"{BoostRemaining / 60:D2}:{BoostRemaining % 60:D2}";
+    public string BoostRemainingText => DisplayFormat.Countdown(BoostRemaining);
 
     /// <summary>
     /// Parameter: boost duration in seconds as a string (XAML CommandParameter); "0" stops the boost.

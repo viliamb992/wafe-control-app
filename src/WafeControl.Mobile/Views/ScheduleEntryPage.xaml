@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="WafeControl.Mobile.Views.ScheduleEntryPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:controls="clr-namespace:WafeControl.Mobile.Controls"
+    xmlns:ios="clr-namespace:Microsoft.Maui.Controls.PlatformConfiguration.iOSSpecific;assembly=Microsoft.Maui.Controls"
+    xmlns:loc="clr-namespace:WafeControl.Core.Localization;assembly=WafeControl.Core"
+    xmlns:schedule="clr-namespace:WafeControl.Core.ViewModels.Schedule;assembly=WafeControl.Core"
+    x:DataType="schedule:ScheduleEntryEditorViewModel"
+    ios:Page.ModalPresentationStyle="PageSheet">
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- ── Sheet header: Cancel · title · Save ───────────────────── -->
+        <Grid ColumnDefinitions="*,Auto,*" Padding="4,8">
+            <Button Style="{StaticResource SubtleButton}" Text="{x:Static loc:Strings.ButtonCancel}" HorizontalOptions="Start" Clicked="OnCancelClicked" />
+            <Label x:Name="SheetTitle" Grid.Column="1" Style="{StaticResource BodyStrong}" FontSize="18" VerticalOptions="Center"
+                   SemanticProperties.HeadingLevel="Level1" />
+            <Grid Grid.Column="2" HorizontalOptions="End">
+                <Button x:Name="SaveButton" Style="{StaticResource AccentTextButton}" Clicked="OnSaveClicked" />
+                <ActivityIndicator x:Name="Busy" Style="{StaticResource SmallSpinner}" IsVisible="False" HorizontalOptions="Center" />
+            </Grid>
+        </Grid>
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="16,8,16,24" Spacing="12" MaximumWidthRequest="560">
+                <!-- From / to -->
+                <Border Style="{StaticResource Card}">
+                    <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="12">
+                        <Label Text="{x:Static loc:Strings.ScheduleFrom}" Style="{StaticResource SecondaryBody}" VerticalOptions="Center" />
+                        <Border Grid.Column="1" Style="{StaticResource InputBox}">
+                            <Picker ItemsSource="{Binding DayNames}" SelectedIndex="{Binding StartDay}"
+                                    Title="{x:Static loc:Strings.ScheduleFromDay}" SemanticProperties.Description="{x:Static loc:Strings.ScheduleFromDay}" />
+                        </Border>
+                        <Border Grid.Column="2" Style="{StaticResource InputBox}">
+                            <TimePicker Time="{Binding StartTime}" SemanticProperties.Description="{x:Static loc:Strings.ScheduleFromTime}" />
+                        </Border>
+
+                        <Label Grid.Row="1" Text="{x:Static loc:Strings.ScheduleTo}" Style="{StaticResource SecondaryBody}" VerticalOptions="Center" />
+                        <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource InputBox}">
+                            <Picker ItemsSource="{Binding DayNames}" SelectedIndex="{Binding EndDay}"
+                                    Title="{x:Static loc:Strings.ScheduleToDay}" SemanticProperties.Description="{x:Static loc:Strings.ScheduleToDay}" />
+                        </Border>
+                        <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource InputBox}">
+                            <TimePicker Time="{Binding EndTime}" SemanticProperties.Description="{x:Static loc:Strings.ScheduleToTime}" />
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <!-- Mode: one row per mode, with its schedule color -->
+                <Label Text="{x:Static loc:Strings.ScheduleUnitMode}" Style="{StaticResource SecondaryCaption}" Margin="4,8,0,0" />
+                <Border Style="{StaticResource Card}" Padding="16,4">
+                    <VerticalStackLayout x:Name="ModeList" />
+                </Border>
+
+                <controls:InfoBanner Severity="Error" Message="{Binding ErrorMessage}" />
+
+                <Button x:Name="DeleteButton" Style="{StaticResource DangerTextButton}" Text="{x:Static loc:Strings.ButtonDelete}"
+                        HorizontalOptions="Center" Clicked="OnDeleteClicked" />
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>

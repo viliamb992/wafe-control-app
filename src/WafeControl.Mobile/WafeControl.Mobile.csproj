@@ -1,0 +1,59 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- iOS: always on macOS. On Windows it compiles with EnableIosBuild=true, but packaging, signing and running
+         need a Mac (VS "Pair to Mac"), so it stays out of the default (and CI) build. -->
+    <TargetFrameworks>net10.0-android</TargetFrameworks>
+    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('osx')) or '$(EnableIosBuild)' == 'true'">$(TargetFrameworks);net10.0-ios</TargetFrameworks>
+
+    <OutputType>Exe</OutputType>
+    <RootNamespace>WafeControl.Mobile</RootNamespace>
+    <UseMaui>true</UseMaui>
+    <SingleProject>true</SingleProject>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <!-- XAML compiled to C# at build time; together with x:DataType everywhere this keeps the app trimmable. -->
+    <MauiXamlInflator>SourceGen</MauiXamlInflator>
+    <MauiEnableXamlCBindingWithSourceCompilation>true</MauiEnableXamlCBindingWithSourceCompilation>
+    <!-- A binding without x:DataType (reflection-based) fails the build. -->
+    <WarningsAsErrors>$(WarningsAsErrors);XC0022;XC0023;XC0025</WarningsAsErrors>
+
+    <ApplicationTitle>WAFE Control</ApplicationTitle>
+    <!-- The app is sideloaded, not published to a store. Changing the id makes it a different app on the device
+         (a new install next to the old one, remembered login lost). -->
+    <ApplicationId>com.wafecontrol.app</ApplicationId>
+    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+    <ApplicationVersion>1</ApplicationVersion>
+
+    <!-- Only the app's languages (Czech, Slovak, English). -->
+    <SatelliteResourceLanguages>cs;sk;en</SatelliteResourceLanguages>
+
+    <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">26.0</SupportedOSPlatformVersion>
+    <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
+  </PropertyGroup>
+
+  <!-- Release: full trimming; R8 shrinks the Java side on Android. -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <TrimMode>full</TrimMode>
+    <AndroidLinkTool>r8</AndroidLinkTool>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Brand blue (DESIGN.md, section 2.1) behind the white WAFE wordmark. -->
+    <MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#3090DC" />
+    <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#3090DC" BaseSize="192,192" />
+    <MauiImage Include="Resources\Images\*.svg" />
+    <MauiFont Include="Resources\Fonts\*.ttf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" />
+    <PackageReference Include="Microsoft.Maui.Controls" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WafeControl.Core\WafeControl.Core.csproj" />
+  </ItemGroup>
+
+</Project>

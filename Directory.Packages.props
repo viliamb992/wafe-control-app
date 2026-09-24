@@ -19,6 +19,9 @@
     <PackageVersion Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2705" />
     <PackageVersion Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
   </ItemGroup>
+  <ItemGroup Label="MAUI">
+    <PackageVersion Include="Microsoft.Maui.Controls" Version="10.0.110" />
+  </ItemGroup>
   <!-- ── MVVM ────────────────────────────────────────────────────────── -->
   <ItemGroup Label="MVVM">
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
@@ -27,6 +30,7 @@
   <ItemGroup Label="Microsoft Extensions">
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Debug" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.10.0" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.12" />

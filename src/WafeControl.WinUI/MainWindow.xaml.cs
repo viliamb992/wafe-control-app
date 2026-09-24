@@ -324,7 +324,7 @@ public sealed partial class MainWindow : Window
             text = $"{text}\n{state} · {mode}";
 
             if (ViewModel.HasSensorData)
-                text += "\n" + string.Format(Strings.TrayReadings, Xaml.Flow(ViewModel.CurrentFlow), Xaml.Co2(ViewModel.Co2Level));
+                text += "\n" + string.Format(Strings.TrayReadings, DisplayFormat.Flow(ViewModel.CurrentFlow), Xaml.Co2(ViewModel.Co2Level));
             else if (!ViewModel.IsSystemOnline)
                 text += "\n" + Strings.AppStatusUnitOffline;
         }

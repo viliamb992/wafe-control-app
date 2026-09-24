@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The app icon as an in-app image (sign-in page, About): brand blue rounded square with the WAFE wordmark. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 456 456">
+  <defs>
+    <linearGradient id="brand" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3398E8"/>
+      <stop offset="1" stop-color="#2C87CF"/>
+    </linearGradient>
+  </defs>
+  <rect width="456" height="456" rx="100" fill="url(#brand)"/>
+  <g transform="translate(228 228) scale(1.3) translate(-228 -228)">
+    <path fill="#FFFFFF" d="M129.12 238.94 141.64 195.26H151.55L164.07 238.94L172.49 195.26H185.19L170.11 260.74H158.49L146.87 214.98L134.71 260.74H123.09L108 195.26H120.7ZM186.54 260.74 211.58 195.26H219.42L244.46 260.74H231.18L215.5 216.02L199.83 260.74ZM198.57 250.25V238.36H233.02V250.25ZM252.57 260.74V195.26H264.91V260.74ZM257.07 234.76V222.87H290.62V234.76ZM257.07 207.15V195.26H295.58V207.15ZM304.13 260.74V195.26H316.47V260.74ZM308.59 260.74V248.85H348V260.74ZM308.59 234.17V222.28H343.05V234.17ZM308.59 207.15V195.26H348V207.15Z"/>
+  </g>
+</svg>
