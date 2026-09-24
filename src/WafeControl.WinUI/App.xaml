@@ -67,6 +67,27 @@
                 </Setter>
             </Style>
 
+            <!-- Weekly schedule grid lines and time labels. Styles so the brushes follow the app's theme
+                 (Settings → Appearance), which a brush looked up in code wouldn't when it differs from Windows'. -->
+            <Style x:Key="ScheduleHourLineStyle" TargetType="Border">
+                <Setter Property="Background" Value="{ThemeResource ControlStrokeColorDefaultBrush}" />
+            </Style>
+            <Style x:Key="ScheduleDividerStyle" TargetType="Border">
+                <Setter Property="Background" Value="{ThemeResource DividerStrokeColorDefaultBrush}" />
+            </Style>
+            <Style x:Key="ScheduleSelectionStyle" TargetType="Border">
+                <Setter Property="Background" Value="{ThemeResource AccentFillColorDefaultBrush}" />
+            </Style>
+            <Style x:Key="ScheduleHourLabelStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="Foreground" Value="{ThemeResource TextFillColorPrimaryBrush}" />
+            </Style>
+            <Style x:Key="ScheduleHalfHourLabelStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="Foreground" Value="{ThemeResource TextFillColorTertiaryBrush}" />
+            </Style>
+
             <Style x:Key="TitleBarButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
                 <Setter Property="Background" Value="Transparent" />
                 <Setter Property="BorderThickness" Value="0" />

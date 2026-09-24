@@ -2,32 +2,54 @@
 
 Unofficial apps for monitoring and controlling a Wafe heat-recovery ventilation unit through the go2my.wafe.eu cloud API.
 
+Vibe coded with [Claude Code](https://claude.com/claude-code): the code, tests and docs were written by Claude from prompts, then reviewed and tested by hand.
+
+[Latest release](#latest-release) · [Screenshots](#screenshots) · [Apps](#apps) · [Translations](#translations) · [Solution layout](#solution-layout) · [Tools](#tools) · [Build and run](#build-and-run) · [CI](#ci) · [Release](#release) · [Where data is stored](#where-data-is-stored) · [Wafe API](#wafe-api) · [Planned features](#planned-features) · [Open questions](#open-questions) · [License](#license)
+
+## Latest release
+
+| Platform | Version | Release build |
+| --- | --- | --- |
+| 🖥️ Windows 11 (x64, ARM64) | [v1.1.0](https://github.com/viliamb992/wafe-recuperation-app/releases/tag/v1.1.0) | [![Release](https://github.com/viliamb992/wafe-recuperation-app/actions/workflows/release.yml/badge.svg)](https://github.com/viliamb992/wafe-recuperation-app/actions/workflows/release.yml) |
+| 🤖 Android 8+ | [android-v1.1.0](https://github.com/viliamb992/wafe-recuperation-app/releases/tag/android-v1.1.0) | [![Release Android](https://github.com/viliamb992/wafe-recuperation-app/actions/workflows/release-android.yml/badge.svg)](https://github.com/viliamb992/wafe-recuperation-app/actions/workflows/release-android.yml) |
+| 🍎 iOS 15+ | – | Not released |
+
+A release is **stable** when its tag has no suffix (`v1.1.0`, `android-v1.1.0`) and its release build passed. A suffix (`v1.2.0-beta.1`) publishes a pre-release. The badges show the result of each app's latest release build.
+
+## Screenshots
+
+| 🖥️ Windows 11 | 📱 Android |
+| --- | --- |
+| ![Windows dashboard](docs/screenshots/windows-dashboard.png) | <img src="docs/screenshots/android-phone-overview.png" width="220" alt="Phone overview"> |
+
+More screens (schedule, settings, dark theme, tablet) are in [docs/SCREENSHOTS.md](docs/SCREENSHOTS.md).
+
 ## Apps
 
 | Project | Platform | Status |
 | --- | --- | --- |
 | `WafeControl.WinUI` | Windows 11, native WinUI 3 | Main desktop app |
-| `WafeControl.Mobile` | Android 8+ and iOS 15+, .NET MAUI | Dashboard, schedule and settings; not yet released (see [TODO.md](TODO.md)) |
+| `WafeControl.Mobile` | Android 8+ and iOS 15+, .NET MAUI | Dashboard, schedule and settings; Android is released for sideloading, iOS isn't |
 
-Both apps follow one design manual, [DESIGN.md](DESIGN.md): colors, type, spacing, icons and components.
+Both apps follow one design manual, [docs/DESIGN.md](docs/DESIGN.md): colors, type, spacing, icons and components.
 
-### Windows app features
+### 🖥️ Windows app features
 
-- Sign in with your Wafe account. "Keep me signed in" remembers the login, and the app signs in again automatically when the session expires.
-- Dashboard: running state with Start/Stop, outdoor/supply/indoor/exhaust temperatures, CO₂ with air-quality hint, humidity (only on units with that sensor), operating mode (Intelligent / Manual / Schedule), flow rate (Manual mode), Boost 15/30/60 min, Silent and Holiday modes, filter health.
-- Windows 11 look: Mica, native title bar, light/dark theme (follows Windows or set in Settings), layout adapts to window width. The window reopens where you left it; the version is shown in the footer and in Settings → About.
-- Weekly schedule: a Mon–Sun grid like the Wafe web app. Click or drag to add an action, click a block to edit or delete it (up to 50 actions).
-- Closing the window keeps the app in the tray (in Efficiency Mode), or exits it if you choose that in Settings. Pointing at the tray icon shows whether the unit is running, its mode, air flow and CO₂. The tray menu offers boost shortcuts and Exit. Launching the app again brings the existing window back (single instance).
-- Optional: start with Windows, and start hidden in the tray (the window still opens if you need to sign in).
-- Czech (default), Slovak and English. Switch in Settings (gear in the footer, also on the sign-in screen). The change applies right away and is kept for the next launch.
+- 🔐 **Sign in** with your Wafe account. "Keep me signed in" remembers the login, and the app signs in again automatically when the session expires.
+- 📊 **Dashboard:** running state with Start/Stop, outdoor/supply/indoor/exhaust temperatures, CO₂ with air-quality hint, humidity (only on units with that sensor), operating mode (Intelligent / Manual / Schedule), flow rate (Manual mode), Boost 15/30/60 min, Silent and Holiday modes, filter health.
+- 🎨 **Windows 11 look:** Mica, native title bar, light/dark theme (follows Windows or set in Settings), layout adapts to window width. The window reopens where you left it; the version is shown in the footer and in Settings → About.
+- 📅 **Weekly schedule:** a Mon–Sun grid like the Wafe web app. Click or drag to add an action, click a block to edit or delete it (up to 50 actions).
+- 🔔 **Tray:** closing the window keeps the app in the tray (in Efficiency Mode), or exits it if you choose that in Settings. Pointing at the tray icon shows whether the unit is running, its mode, air flow and CO₂. The tray menu offers boost shortcuts and Exit. Launching the app again brings the existing window back (single instance).
+- 🚀 **Startup (optional):** start with Windows, and start hidden in the tray (the window still opens if you need to sign in).
+- 🌐 **Languages:** Czech (default), Slovak and English. Switch in Settings (gear in the footer, also on the sign-in screen). The change applies right away and is kept for the next launch.
 
-### Mobile app features
+### 📱 Mobile app features
 
-- Same sign-in, remembered login (Android Keystore / iOS Keychain) and languages as on Windows; language and appearance can be set before signing in (gear on the sign-in screen).
-- Tabs: Overview, Schedule, Settings. Pull down to refresh; banners for no internet and an offline unit; command results show as a short message at the bottom.
-- Overview: unit name as the title, online state, running state with Start/Stop (stopping asks first), the sensor tiles, operating mode, flow slider (sends when you let go, with a haptic tick every 10 m³/h), Boost 15/30/60 min with a live countdown, Silent/Holiday switches, filter health.
-- Schedule: one day at a time on a 24-hour timeline with a "now" line. Tap an empty time to add an action, tap an action to edit or delete it (same rules as the Windows grid).
-- Settings: language, appearance (system/light/dark), the unit (rename, model, serial number, service contact), sign out, about.
+- 🔐 **Sign-in:** same sign-in, remembered login (Android Keystore / iOS Keychain) and languages as on Windows; language and appearance can be set before signing in (gear on the sign-in screen).
+- 🧭 **Tabs:** Overview, Schedule, Settings. Pull down to refresh; banners for no internet and an offline unit; command results show as a short message at the bottom.
+- 📊 **Overview:** unit name as the title, online state, running state with Start/Stop (stopping asks first), the sensor tiles, operating mode, flow slider (sends when you let go, with a haptic tick every 10 m³/h), Boost 15/30/60 min with a live countdown, Silent/Holiday switches, filter health.
+- 📅 **Schedule:** one day at a time on a 24-hour timeline with a "now" line. Tap an empty time to add an action, tap an action to edit or delete it (same rules as the Windows grid).
+- ⚙️ **Settings:** language, appearance (system/light/dark), the unit (rename, model, serial number, service contact), sign out, about.
 
 ## Translations
 
@@ -44,13 +66,33 @@ src/
   WafeControl.Tests/     Tests for Shared + Core (xUnit.net v3 on Microsoft.Testing.Platform)
 ```
 
+## Tools
+
+Needed to build:
+
+- **.NET 10 SDK** (10.0.401 or later) with the **`maui-android` workload** (`dotnet workload install maui-android`). The solution includes the mobile app, so the workload is needed even for the Windows app.
+- **Windows 11** for the WinUI app. The Windows App SDK (2.5) comes from NuGet and is bundled self-contained, so no runtime installer is needed.
+- **Android SDK and OpenJDK 21** for the Android app (Visual Studio's Android workload installs both), plus an emulator or a phone with USB debugging.
+- **Inno Setup 7** to build the Windows installer locally (`installer/WafeControl.iss`); the release workflow installs it itself.
+- **A Mac with Xcode** for iOS builds.
+
+Optional:
+
+- **Visual Studio** (.NET MAUI and WinUI workloads) or **VS Code** with the C# Dev Kit.
+- **Python 3 + fonttools** (`pip install fonttools`) to regenerate the mobile icon font with `tools/subset-icons.py`.
+- **Claude Code**, which wrote the app.
+
+Used by the project: **GitHub Actions** (Build CI on pull requests, releases from tags), **CommunityToolkit.Mvvm** (view models), **Windows App SDK / WinUI 3** with CommunityToolkit.WinUI Segmented and **H.NotifyIcon** (tray), **.NET MAUI**, **Microsoft.Extensions.Http.Resilience**, **Serilog** (logs), **xUnit.net v3** on Microsoft.Testing.Platform and **NSubstitute** (tests), **Fluent System Icons**.
+
 ## Build and run
 
-Requirements: .NET 10 SDK and the `maui-android` workload (`dotnet workload install maui-android`), which the solution needs for the mobile app. The WinUI app builds on Windows only. The Windows App SDK is bundled (self-contained), so no runtime installer is needed.
+The WinUI app builds on Windows only.
 
 ```powershell
 dotnet build WafeControl.slnx
 dotnet test --solution WafeControl.slnx
+# Tests with code coverage (Cobertura XML in TestResults/)
+dotnet test --project src/WafeControl.Tests --coverage --coverage-output-format cobertura --results-directory TestResults
 dotnet run --project src/WafeControl.WinUI
 
 # Android: running emulator or device (adb devices)
@@ -62,6 +104,16 @@ dotnet publish src/WafeControl.Mobile -f net10.0-android -c Release
 iOS is built only on a Mac (or from Visual Studio paired with one): the `net10.0-ios` target is on by default on macOS, and on Windows with `-p:EnableIosBuild=true`, which compiles but can't package or sign.
 
 `global.json` puts `dotnet test` in Microsoft.Testing.Platform mode, so pass the solution with `--solution` (or a project with `--project`). Visual Studio's Test Explorer runs the tests directly.
+
+## CI
+
+`.github/workflows/build-ci.yml` runs on every pull request to `master` and only does what the change needs:
+
+- 🧪 **Tests with coverage** when Shared, Core or the tests change. The coverage summary is posted as a pull request comment and in the run summary; the full HTML report is a run artifact.
+- 🖥️ **Windows build** when the WinUI app changes; 🤖 **Android build** when the mobile app changes.
+- Changes to Shared, Core, central package versions or SDK settings run everything. Docs-only changes run nothing.
+
+Run it manually (Actions → Build CI → Run workflow) to build everything.
 
 ## Release
 
@@ -122,6 +174,40 @@ Plan entries are `mode-D:H:M-D:H:M` with day 0 = Monday, e.g. `boost-6:2:0-6:2:3
 All PUT bodies are `{"value": …}`. Requests carry the `Sandcastle-Key` header; on 401/403 the app signs in again and retries once.
 
 Request bodies must be sent with a `Content-Length`: the server answers chunked bodies with 500.
+
+## Planned features
+
+**🖥️ Windows**
+
+- 🎛️ Hide controls the unit doesn't support (its `capabilities` list, e.g. `["boost","silent","holiday"]`).
+- ⏱️ Boost countdown that ticks every second between polls.
+- 🔔 Toast notifications: filter health low, unit offline, boost finished.
+- ⚙️ Setting for the poll interval.
+- ⬆️ Auto-updater from GitHub Releases: an "Update available" button in the title bar, a dialog with the new version and download size, then a silent run of the setup for the current architecture. Checks `releases/latest` on startup and every few hours. The installer needs a switch to relaunch the app after a silent install (its `[Run]` entry is `skipifsilent`).
+- 📌 Jump list: Boost 15/30, Stop boost.
+- 📅 Schedule: a "now" line, copy a day to other days (already in Core), and a keyboard way to add an action.
+- 🔏 Code signing, so SmartScreen stops warning on first run (Azure Trusted Signing or a certificate).
+
+**📱 Mobile**
+
+- ⚡ App shortcuts: Boost 15/30, Stop boost.
+- 🤖 Android: edge-to-edge, optional biometric unlock. iOS: haptics, optional Face ID.
+- 🍎 iOS: first run on a Mac (page sheets, safe areas, tab icons, input borders), then an ad hoc `.ipa` from a macOS runner.
+- ♿ Screen reader pass (TalkBack, VoiceOver), possibly with a list view of the day's actions.
+- 🔔 Background notifications (Android `WorkManager`, iOS `BGAppRefreshTask`).
+- 🧩 Android Quick Settings tile and home-screen widget.
+
+**🔁 Both**
+
+- ✉️ Messages screen, once a real `/messages` response has been captured (Debug log → test fixture → model).
+- 📈 History chart for temperatures and CO₂. The API has no history, so the app would sample into SQLite.
+
+## Open questions
+
+- Is a Mac available for iOS builds, or should they go through CI only?
+- How long does a `Sandcastle-Key` session live? Re-login on 401 covers it either way.
+- Is there official Wafe API documentation, or are all models reverse-engineered?
+- What do the `/header` fields `message` (always `null` so far) and `pm` mean?
 
 ## License
 
