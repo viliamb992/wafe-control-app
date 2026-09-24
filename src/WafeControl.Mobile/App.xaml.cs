@@ -30,6 +30,7 @@ public partial class App : Application
     {
         _window = new Window(new AppShell(_services, _app)) { Title = "WAFE Control" };
         _window.Created += async (_, _) => await _app.StartAsync();
+
         return _window;
     }
 
@@ -39,12 +40,24 @@ public partial class App : Application
             ApplyTheme();
     }
 
-    private void ApplyTheme() => UserAppTheme = _settings.Theme switch
+    private void ApplyTheme()
     {
-        Core.Services.AppTheme.Light => AppTheme.Light,
-        Core.Services.AppTheme.Dark => AppTheme.Dark,
-        _ => AppTheme.Unspecified,
-    };
+        UserAppTheme = _settings.Theme switch
+        {
+            Core.Services.AppTheme.Light => AppTheme.Light,
+            Core.Services.AppTheme.Dark => AppTheme.Dark,
+            _ => AppTheme.Unspecified,
+        };
+#if ANDROID
+        // Native widgets (radio buttons, drop-downs, the time dialog) take their colors from the Android theme.
+        AndroidX.AppCompat.App.AppCompatDelegate.DefaultNightMode = UserAppTheme switch
+        {
+            AppTheme.Light => AndroidX.AppCompat.App.AppCompatDelegate.ModeNightNo,
+            AppTheme.Dark => AndroidX.AppCompat.App.AppCompatDelegate.ModeNightYes,
+            _ => AndroidX.AppCompat.App.AppCompatDelegate.ModeNightFollowSystem,
+        };
+#endif
+    }
 
     /// <summary>
     /// Text comes from Strings when a page is built, so rebuild the pages in the new language and return to Settings.

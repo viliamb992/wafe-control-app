@@ -35,6 +35,12 @@ public static class Theme
 
     public static Color Dark(string token) => Resource(token + "Dark");
 
+    /// <summary>
+    /// A token's value in the theme shown now, for platform views that can't bind to the theme.
+    /// </summary>
+    public static Color Current(string token) =>
+        Application.Current?.RequestedTheme == AppTheme.Dark ? Dark(token) : Light(token);
+
     public static Color ScheduleMode(string mode) => Resource(mode switch
     {
         AppConstants.ScheduleModeMin => "ScheduleModeMin",

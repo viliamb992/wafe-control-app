@@ -1,5 +1,8 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Maui.Handlers;
+#if ANDROID
+using Microsoft.Maui.Platform;
+#endif
 using WafeControl.Core;
 using WafeControl.Core.Localization;
 using WafeControl.Core.Services;
@@ -16,7 +19,13 @@ public static class MauiProgram
         var builder = MauiApp.CreateBuilder();
         builder
             .UseMauiApp<App>()
-            .ConfigureFonts(fonts => fonts.AddFont("FluentIcons.ttf", FluentIcons.FontFamily));
+            .ConfigureFonts(fonts => fonts.AddFont("FluentIcons.ttf", FluentIcons.FontFamily))
+            .ConfigureMauiHandlers(handlers =>
+            {
+#if ANDROID
+                handlers.AddHandler<Picker, DropDownPickerHandler>();
+#endif
+            });
 
 #if DEBUG
         builder.Logging.AddDebug();
@@ -42,6 +51,7 @@ public static class MauiProgram
         builder.Services.AddTransient<SettingsPage>();
 
         RemoveInputUnderlines();
+        TintRadioButtons();
 
         var app = builder.Build();
 
@@ -71,6 +81,25 @@ public static class MauiProgram
         EntryHandler.Mapper.AppendToMapping("NoBorder", (handler, _) => handler.PlatformView.BorderStyle = UIKit.UITextBorderStyle.None);
         PickerHandler.Mapper.AppendToMapping("NoBorder", (handler, _) => handler.PlatformView.BorderStyle = UIKit.UITextBorderStyle.None);
         TimePickerHandler.Mapper.AppendToMapping("NoBorder", (handler, _) => handler.PlatformView.BorderStyle = UIKit.UITextBorderStyle.None);
+#endif
+    }
+
+    /// <summary>
+    /// Android radio circle: <c>Accent</c> when checked, <c>ControlStrong</c> otherwise. Runs with the text color,
+    /// which is an AppThemeBinding, so it follows theme changes.
+    /// </summary>
+    private static void TintRadioButtons()
+    {
+#if ANDROID
+        RadioButtonHandler.Mapper.AppendToMapping(nameof(ITextStyle.TextColor), (handler, _) =>
+        {
+            if (handler.PlatformView is not Android.Widget.CompoundButton button)
+                return;
+
+            button.ButtonTintList = new Android.Content.Res.ColorStateList(
+                [[Android.Resource.Attribute.StateChecked], []],
+                [Theme.Current("Accent").ToPlatform().ToArgb(), Theme.Current("ControlStrong").ToPlatform().ToArgb()]);
+        });
 #endif
     }
 }
