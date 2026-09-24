@@ -43,7 +43,7 @@ public sealed partial class WeekScheduleGrid : UserControl
     {
         _selection = new Border
         {
-            Background = Brush("AccentFillColorDefaultBrush"),
+            Style = Style("ScheduleSelectionStyle"),
             Opacity = 0.35,
             CornerRadius = new CornerRadius(4),
             VerticalAlignment = VerticalAlignment.Top,
@@ -175,7 +175,7 @@ public sealed partial class WeekScheduleGrid : UserControl
             var line = new Border
             {
                 Height = 1,
-                Background = Brush(isHour ? "ControlStrokeColorDefaultBrush" : "DividerStrokeColorDefaultBrush"),
+                Style = Style(isHour ? "ScheduleHourLineStyle" : "ScheduleDividerStyle"),
                 VerticalAlignment = VerticalAlignment.Top,
                 Margin = new Thickness(0, top, 0, 0),
                 IsHitTestVisible = false,
@@ -190,9 +190,7 @@ public sealed partial class WeekScheduleGrid : UserControl
             var label = new TextBlock
             {
                 Text = $"{slot / 2:D2}:{slot % 2 * SlotMinutes:D2}",
-                FontSize = 12,
-                FontWeight = isHour ? Microsoft.UI.Text.FontWeights.SemiBold : Microsoft.UI.Text.FontWeights.Normal,
-                Foreground = Brush(isHour ? "TextFillColorPrimaryBrush" : "TextFillColorTertiaryBrush"),
+                Style = Style(isHour ? "ScheduleHourLabelStyle" : "ScheduleHalfHourLabelStyle"),
                 HorizontalAlignment = HorizontalAlignment.Right,
                 VerticalAlignment = VerticalAlignment.Top,
                 Margin = new Thickness(0, top - LabelPadding, 10, 0),
@@ -207,7 +205,7 @@ public sealed partial class WeekScheduleGrid : UserControl
             var separator = new Border
             {
                 Width = 1,
-                Background = Brush("DividerStrokeColorDefaultBrush"),
+                Style = Style("ScheduleDividerStyle"),
                 HorizontalAlignment = HorizontalAlignment.Left,
                 IsHitTestVisible = false,
             };
@@ -297,5 +295,7 @@ public sealed partial class WeekScheduleGrid : UserControl
         return grid;
     }
 
-    private static Brush Brush(string key) => (Brush)Application.Current.Resources[key];
+    // Styles from App.xaml rather than brushes: a theme brush looked up in code follows Windows' theme,
+    // not the one chosen in Settings → Appearance.
+    private static Style Style(string key) => (Style)Application.Current.Resources[key];
 }
