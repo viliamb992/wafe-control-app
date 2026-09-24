@@ -20,6 +20,7 @@ public static class FluentIcons
     public const string ChevronRight = "\uF2B1";
     public const string Clock = "\uF2DE";
     public const string CloudOff = "\uF2EA";
+    public const string Copy = "\uF32C";
     public const string Cube = "\uF336";
     public const string DarkTheme = "\uF33C";
     public const string Delete = "\uF34D";

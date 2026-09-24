@@ -561,9 +561,30 @@
     <value>Jednotka nie je pripojená k portálu Wafe. Skontrolujte jej napájanie a sieť.</value>
   </data>
   <data name="ScheduleTouchHint" xml:space="preserve">
-    <value>Ťuknutím na voľný čas naplánujete režim jednotky, ťuknutím na akciu ju zmeníte. Naplánovať možno až 50 akcií.</value>
+    <value>Ťuknutím na voľný čas naplánujete režim jednotky, ťuknutím na akciu ju zmeníte. Potiahnutím prstom zmeníte deň, podržaním dňa ho skopírujete. Naplánovať možno až 50 akcií.</value>
   </data>
   <data name="SettingsAccount" xml:space="preserve">
     <value>Účet</value>
+  </data>
+  <data name="ScheduleCopyDay" xml:space="preserve">
+    <value>Kopírovať deň</value>
+  </data>
+  <data name="ScheduleCopyTo" xml:space="preserve">
+    <value>Kopírovať do</value>
+  </data>
+  <data name="ScheduleCopyActionCount" xml:space="preserve">
+    <value>Počet akcií: {0}</value>
+  </data>
+  <data name="ScheduleCopyReplaces" xml:space="preserve">
+    <value>Akcie vo vybraných dňoch budú nahradené.</value>
+  </data>
+  <data name="ScheduleCopyChooseDays" xml:space="preserve">
+    <value>Vyberte aspoň jeden deň.</value>
+  </data>
+  <data name="ScheduleCopyOverlaps" xml:space="preserve">
+    <value>Akcia {0} by sa prekrývala s akciou {1}.</value>
+  </data>
+  <data name="ButtonCopy" xml:space="preserve">
+    <value>Kopírovať</value>
   </data>
 </root>

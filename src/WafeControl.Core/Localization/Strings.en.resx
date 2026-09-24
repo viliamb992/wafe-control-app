@@ -561,9 +561,30 @@
     <value>The unit isn't connected to the Wafe portal. Check its power and network.</value>
   </data>
   <data name="ScheduleTouchHint" xml:space="preserve">
-    <value>Tap an empty time to plan the unit's mode, tap an action to change it. You can plan up to 50 actions.</value>
+    <value>Tap an empty time to plan the unit's mode, tap an action to change it. Swipe to change the day, hold a day to copy it. You can plan up to 50 actions.</value>
   </data>
   <data name="SettingsAccount" xml:space="preserve">
     <value>Account</value>
+  </data>
+  <data name="ScheduleCopyDay" xml:space="preserve">
+    <value>Copy day</value>
+  </data>
+  <data name="ScheduleCopyTo" xml:space="preserve">
+    <value>Copy to</value>
+  </data>
+  <data name="ScheduleCopyActionCount" xml:space="preserve">
+    <value>Actions: {0}</value>
+  </data>
+  <data name="ScheduleCopyReplaces" xml:space="preserve">
+    <value>The actions on the chosen days will be replaced.</value>
+  </data>
+  <data name="ScheduleCopyChooseDays" xml:space="preserve">
+    <value>Choose at least one day.</value>
+  </data>
+  <data name="ScheduleCopyOverlaps" xml:space="preserve">
+    <value>{0} would overlap with {1}.</value>
+  </data>
+  <data name="ButtonCopy" xml:space="preserve">
+    <value>Copy</value>
   </data>
 </root>

@@ -37,7 +37,12 @@ internal sealed class FakeSystemControlService : ISystemControlService
         StatusUpdated?.Invoke(this, status);
     }
 
-    public Task<SystemStatus?> RefreshStatusAsync(CancellationToken ct = default) => Task.FromResult<SystemStatus?>(null);
+    public int Refreshes { get; private set; }
+    public Task<SystemStatus?> RefreshStatusAsync(CancellationToken ct = default)
+    {
+        Refreshes++;
+        return Task.FromResult<SystemStatus?>(null);
+    }
     public Task<SystemInfo?> GetSystemInfoAsync(CancellationToken ct = default) => Task.FromResult(SystemInfo);
     public Task<bool> SetFlowSpeedAsync(int speed, CancellationToken ct = default) => Record($"flow:{speed}");
     public Task<bool> SetAuthorityModeAsync(string mode, CancellationToken ct = default) => Record($"mode:{mode}");
@@ -86,6 +91,8 @@ public abstract class CardViewModelTestBase : IDisposable
     protected IAuthenticationService AuthService => _authService;
 
     protected IReadOnlyList<string> SentCommands => _systemControl.Commands;
+
+    protected int Refreshes => _systemControl.Refreshes;
 
     protected void RaiseStatusUpdated(SystemStatus status) =>
         _systemControl.TriggerStatusUpdated(status);
@@ -429,6 +436,38 @@ public class AppViewModelLifecycleTests : CardViewModelTestBase
 
         await AuthService.Received(1).ClearRememberedLoginAsync(Arg.Any<CancellationToken>());
         AuthService.Received(1).Logout();
+    }
+
+    [Fact]
+    public async Task ResumeAsync_AfterPause_RefreshesAtOnce()
+    {
+        SignIn();
+        var before = Refreshes;
+
+        App.Pause();
+        await App.ResumeAsync();
+
+        Assert.Equal(before + 1, Refreshes);
+    }
+
+    [Fact]
+    public async Task ResumeAsync_WithoutPause_DoesNothing()
+    {
+        SignIn();
+        var before = Refreshes;
+
+        await App.ResumeAsync();
+
+        Assert.Equal(before, Refreshes);
+    }
+
+    [Fact]
+    public async Task ResumeAsync_SignedOut_DoesNotRefresh()
+    {
+        App.Pause();
+        await App.ResumeAsync();
+
+        Assert.Equal(0, Refreshes);
     }
 
     [Fact]

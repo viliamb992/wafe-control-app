@@ -10,8 +10,8 @@ using WafeControl.Shared.Models;
 namespace WafeControl.Mobile.Views;
 
 /// <summary>
-/// The weekly schedule, one day at a time: tap an empty time to add an action, tap an action to edit it.
-/// Same <see cref="ScheduleViewModel"/> as the Windows grid.
+/// The weekly schedule, one day at a time: tap an empty time to add an action, tap an action to edit it, swipe for
+/// another day, hold a day to copy it. Same <see cref="ScheduleViewModel"/> as the Windows grid.
 /// </summary>
 public partial class SchedulePage : ContentPage
 {
@@ -21,7 +21,9 @@ public partial class SchedulePage : ContentPage
     private readonly ScheduleViewModel _schedule;
     private readonly AppViewModel _app;
     private readonly IDispatcherTimer _clock;
+    private Window? _window;
     private int _day = Today;
+    private bool _isSwitchingDay;
 
     public SchedulePage(ScheduleViewModel schedule, AppViewModel app)
     {
@@ -48,8 +50,22 @@ public partial class SchedulePage : ContentPage
         base.OnAppearing();
 
         // It may have been changed elsewhere (e.g. the Wafe web app) since it was last shown.
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
         if (!_schedule.IsBusy)
             await _schedule.LoadAsync();
+    }
+
+    /// <summary>
+    /// Back from the background: reload if this tab is the one shown, as on appearing.
+    /// </summary>
+    private async void OnWindowResumed(object? sender, EventArgs e)
+    {
+        if (Shell.Current?.CurrentPage == this && Navigation.ModalStack.Count == 0)
+            await ReloadAsync();
     }
 
     private void OnLoaded(object? sender, EventArgs e)
@@ -58,6 +74,9 @@ public partial class SchedulePage : ContentPage
         _app.OperatingMode.PropertyChanged += OnOperatingModePropertyChanged;
         Toast.Attach(_app);
         _clock.Start();
+        _window = Window;
+        if (_window is not null)
+            _window.Resumed += OnWindowResumed;
 
         ShowDay();
         BuildLegend();
@@ -70,6 +89,9 @@ public partial class SchedulePage : ContentPage
         _app.OperatingMode.PropertyChanged -= OnOperatingModePropertyChanged;
         Toast.Detach();
         _clock.Stop();
+        if (_window is not null)
+            _window.Resumed -= OnWindowResumed;
+        _window = null;
     }
 
     private void OnSchedulePropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -110,6 +132,54 @@ public partial class SchedulePage : ContentPage
     {
         _day = day;
         ShowDay();
+    }
+
+    private async void OnTimelineSwiped(object? sender, SwipeDirection direction)
+    {
+        if (_isSwitchingDay)
+            return;
+
+        // Left brings in the next day, as if the week were a row of pages; wraps around.
+        var step = direction == SwipeDirection.Left ? 1 : -1;
+        _isSwitchingDay = true;
+        try
+        {
+            var width = TimelineCard.Width;
+            await Task.WhenAll(
+                Timeline.TranslateToAsync(-step * width / 3, 0, 150, Easing.CubicIn),
+                Timeline.FadeToAsync(0, 150, Easing.CubicIn));
+
+            _day = (_day + step + 7) % 7;
+            DaySelector.SelectedIndex = _day;
+            ShowDay();
+
+            Timeline.TranslationX = step * width / 3;
+            await Task.WhenAll(
+                Timeline.TranslateToAsync(0, 0, 250, Easing.CubicOut),
+                Timeline.FadeToAsync(1, 250, Easing.CubicOut));
+        }
+        finally
+        {
+            Timeline.TranslationX = 0;
+            Timeline.Opacity = 1;
+            _isSwitchingDay = false;
+        }
+    }
+
+    private async void OnDayLongPressed(object? sender, int day)
+    {
+        _day = day;
+        DaySelector.SelectedIndex = day;
+        ShowDay();
+        await ShowCopyDayAsync();
+    }
+
+    private async void OnCopyDayClicked(object? sender, EventArgs e) => await ShowCopyDayAsync();
+
+    private async Task ShowCopyDayAsync()
+    {
+        if (_schedule.CanEdit && Navigation.ModalStack.Count == 0)
+            await Navigation.PushModalAsync(new ScheduleDayCopyPage(_schedule, _schedule.CopyDay(_day)));
     }
 
     private void ShowDay()

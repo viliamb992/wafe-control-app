@@ -31,6 +31,9 @@ public partial class App : Application
         _window = new Window(new AppShell(_services, _app)) { Title = "WAFE Control" };
         _window.Created += async (_, _) => await _app.StartAsync();
 
+        // No polling in the background; fresh data as soon as the app is back.
+        _window.Stopped += (_, _) => _app.Pause();
+        _window.Resumed += async (_, _) => await _app.ResumeAsync();
         return _window;
     }
 

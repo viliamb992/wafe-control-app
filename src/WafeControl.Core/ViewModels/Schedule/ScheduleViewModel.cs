@@ -193,6 +193,59 @@ public sealed partial class ScheduleViewModel : ObservableObject
         return saved;
     }
 
+    /// <summary>
+    /// A dialog for copying the actions that start on <paramref name="day"/> to other days.
+    /// </summary>
+    public ScheduleDayCopyViewModel CopyDay(int day) => new(day, Entries.Count(e => StartDay(e) == day));
+
+    /// <summary>
+    /// Replaces the actions starting on each chosen day with copies of those starting on the source day, and saves
+    /// the plan. Nothing is sent if a copy would overlap another action or the plan would be too long; the reason
+    /// is in <see cref="ScheduleDayCopyViewModel.ErrorMessage"/>.
+    /// </summary>
+    public async Task<bool> CopyDayAsync(ScheduleDayCopyViewModel copy)
+    {
+        var toDays = copy.SelectedDays;
+        var source = Entries.Where(e => StartDay(e) == copy.FromDay).ToList();
+        var kept = Entries.Where(e => !toDays.Contains(StartDay(e))).ToList();
+        var copies = toDays.SelectMany(day => source.Select(e => Shift(e, (day - copy.FromDay) * ScheduleEntry.MinutesPerDay))).ToList();
+
+        copy.ErrorMessage = !CanEdit ? Strings.ScheduleCannotChange
+            : toDays.Count == 0 ? Strings.ScheduleCopyChooseDays
+            : kept.Count + copies.Count > MaxEntries ? string.Format(Strings.ScheduleFull, MaxEntries)
+            : FindOverlap(kept, copies);
+        if (copy.ErrorMessage is not null)
+            return false;
+
+        var saved = await SavePlanAsync([.. kept, .. copies]);
+        if (!saved)
+            copy.ErrorMessage = ErrorMessage;
+
+        return saved;
+    }
+
+    private static string? FindOverlap(List<ScheduleEntry> kept, List<ScheduleEntry> copies)
+    {
+        var placed = new List<ScheduleEntry>(kept);
+        foreach (var entry in copies)
+        {
+            if (placed.FirstOrDefault(entry.Overlaps) is { } clash)
+                return string.Format(Strings.ScheduleCopyOverlaps, ScheduleFormat.Describe(entry), ScheduleFormat.Describe(clash));
+
+            placed.Add(entry);
+        }
+
+        return null;
+    }
+
+    private static int StartDay(ScheduleEntry entry) => entry.Start / ScheduleEntry.MinutesPerDay;
+
+    private static ScheduleEntry Shift(ScheduleEntry entry, int minutes) => entry with
+    {
+        Start = ScheduleEntry.WeekMinute(0, entry.Start + minutes),
+        End = ScheduleEntry.WeekMinute(0, entry.End + minutes),
+    };
+
     public async Task<bool> DeleteEntryAsync(ScheduleEntry entry)
     {
         if (!CanEdit)

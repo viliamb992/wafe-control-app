@@ -24,6 +24,7 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
     private readonly SynchronizationContext? _uiContext;
     private CancellationTokenSource? _autoRefreshCts;
     private bool _isLoadingUnit;
+    private bool _isPaused;
     private bool _disposed;
 
     public AppViewModel(
@@ -194,6 +195,31 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
         }
     }
 
+    /// <summary>
+    /// Stops polling while the app is in the background (mobile). <see cref="ResumeAsync"/> starts it again.
+    /// </summary>
+    public void Pause()
+    {
+        _isPaused = true;
+        StopAutoRefresh();
+    }
+
+    /// <summary>
+    /// Back in the foreground: refreshes at once and polls again. Does nothing unless <see cref="Pause"/> was called.
+    /// </summary>
+    public async Task ResumeAsync()
+    {
+        if (!_isPaused)
+            return;
+
+        _isPaused = false;
+        if (!IsAuthenticated)
+            return;
+
+        _ = StartAutoRefreshAsync();
+        await RefreshStatusAsync();
+    }
+
     [RelayCommand(CanExecute = nameof(CanSubmitLogin))]
     private async Task SubmitLoginAsync()
     {
@@ -293,7 +319,10 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
             {
                 StatusMessage = Strings.AppStatusConnected;
                 _ = RefreshStatusAsync();
-                _ = StartAutoRefreshAsync();
+
+                // Signed in while in the background (remembered login): polling starts on resume.
+                if (!_isPaused)
+                    _ = StartAutoRefreshAsync();
             }
             else
             {

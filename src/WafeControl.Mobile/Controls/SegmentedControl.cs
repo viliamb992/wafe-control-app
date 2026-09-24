@@ -6,6 +6,7 @@ namespace WafeControl.Mobile.Controls;
 /// <summary>
 /// Fluent segmented control (DESIGN.md, section 7): a track with one raised, selected segment marked by an accent pill.
 /// <see cref="SegmentTapped"/> is raised only for the user's taps, not when <see cref="SelectedIndex"/> is set in code.
+/// Holding a segment raises <see cref="SegmentLongPressed"/> instead, when someone listens to it.
 /// </summary>
 public sealed class SegmentedControl : ContentView
 {
@@ -17,8 +18,17 @@ public sealed class SegmentedControl : ContentView
         nameof(SelectedIndex), typeof(int), typeof(SegmentedControl), -1, BindingMode.TwoWay,
         propertyChanged: (bindable, _, _) => ((SegmentedControl)bindable).UpdateSelection());
 
+    private static readonly TimeSpan HoldTime = TimeSpan.FromMilliseconds(500);
+
+    // Moving the finger further than this (dp) is a scroll, not a hold.
+    private const double HoldSlop = 10;
+
     private readonly Grid _segments = new() { ColumnSpacing = 2 };
     private readonly List<Segment> _items = [];
+    private IDispatcherTimer? _holdTimer;
+    private int _heldIndex = -1;
+    private Point? _holdStart;
+    private bool _held;
 
     public SegmentedControl()
     {
@@ -53,6 +63,8 @@ public sealed class SegmentedControl : ContentView
 
     public event EventHandler<int>? SegmentTapped;
 
+    public event EventHandler<int>? SegmentLongPressed;
+
     private void Rebuild()
     {
         _segments.Children.Clear();
@@ -67,6 +79,14 @@ public sealed class SegmentedControl : ContentView
             tap.Tapped += (_, _) => OnTapped(index);
             segment.View.GestureRecognizers.Add(tap);
 
+            // No long-press gesture in MAUI: a press that stays put for HoldTime is one.
+            var pointer = new PointerGestureRecognizer();
+            pointer.PointerPressed += (_, e) => StartHold(index, e.GetPosition(segment.View));
+            pointer.PointerMoved += (_, e) => OnPointerMoved(e.GetPosition(segment.View));
+            pointer.PointerReleased += (_, _) => StopHold();
+            pointer.PointerExited += (_, _) => StopHold();
+            segment.View.GestureRecognizers.Add(pointer);
+
             _segments.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
             _segments.Add(segment.View, i);
             _items.Add(segment);
@@ -77,11 +97,69 @@ public sealed class SegmentedControl : ContentView
 
     private void OnTapped(int index)
     {
+        // The end of a hold also arrives as a tap.
+        if (_held)
+        {
+            _held = false;
+            return;
+        }
+
         if (!IsEnabled || index == SelectedIndex)
             return;
 
         SelectedIndex = index;
         SegmentTapped?.Invoke(this, index);
+    }
+
+    private void StartHold(int index, Point? position)
+    {
+        _held = false;
+        if (!IsEnabled || SegmentLongPressed is null)
+            return;
+
+        _heldIndex = index;
+        _holdStart = position;
+        if (_holdTimer is null)
+        {
+            _holdTimer = Dispatcher.CreateTimer();
+            _holdTimer.IsRepeating = false;
+            _holdTimer.Interval = HoldTime;
+            _holdTimer.Tick += (_, _) => OnHeld();
+        }
+
+        _holdTimer.Stop();
+        _holdTimer.Start();
+    }
+
+    private void OnPointerMoved(Point? position)
+    {
+        if (_holdStart is { } start && position is { } now && start.Distance(now) > HoldSlop)
+            StopHold();
+    }
+
+    private void StopHold()
+    {
+        _holdTimer?.Stop();
+        _heldIndex = -1;
+    }
+
+    private void OnHeld()
+    {
+        if (_heldIndex < 0 || !IsEnabled)
+            return;
+
+        var index = _heldIndex;
+        _heldIndex = -1;
+        _held = true;
+        try
+        {
+            HapticFeedback.Default.Perform(HapticFeedbackType.LongPress);
+        }
+        catch (FeatureNotSupportedException)
+        {
+        }
+
+        SegmentLongPressed?.Invoke(this, index);
     }
 
     private void UpdateSelection()

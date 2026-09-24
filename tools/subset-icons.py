@@ -34,6 +34,7 @@ ICONS = [
     "chevron_right",
     "clock",
     "cloud_off",
+    "copy",
     "cube",
     "dark_theme",
     "delete",

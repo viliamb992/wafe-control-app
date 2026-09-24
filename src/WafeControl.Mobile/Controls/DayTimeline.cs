@@ -9,7 +9,7 @@ namespace WafeControl.Mobile.Controls;
 /// <summary>
 /// One day of the weekly schedule as a 24-hour timeline (DESIGN.md, section 7): 30-minute rows, entries as blocks in
 /// their mode color and a "now" line on today. Tapping an empty row raises <see cref="SlotTapped"/> (minute of the day);
-/// tapping a block raises <see cref="EntryTapped"/>.
+/// tapping a block raises <see cref="EntryTapped"/>; a horizontal swipe raises <see cref="Swiped"/>.
 /// </summary>
 public sealed class DayTimeline : ContentView
 {
@@ -55,6 +55,14 @@ public sealed class DayTimeline : ContentView
         tap.Tapped += OnCanvasTapped;
         _canvas.GestureRecognizers.Add(tap);
 
+        // On the canvas, not a parent: the canvas takes the touches for its taps.
+        foreach (var direction in new[] { SwipeDirection.Left, SwipeDirection.Right })
+        {
+            var swipe = new SwipeGestureRecognizer { Direction = direction };
+            swipe.Swiped += (_, e) => Swiped?.Invoke(this, e.Direction);
+            _canvas.GestureRecognizers.Add(swipe);
+        }
+
         var root = new Grid
         {
             ColumnDefinitions = { new ColumnDefinition(TimeColumnWidth), new ColumnDefinition(GridLength.Star) },
@@ -68,6 +76,8 @@ public sealed class DayTimeline : ContentView
     public event EventHandler<int>? SlotTapped;
 
     public event EventHandler<ScheduleEntry>? EntryTapped;
+
+    public event EventHandler<SwipeDirection>? Swiped;
 
     /// <summary>
     /// Shows <paramref name="day"/> (0 = Monday) of <paramref name="entries"/>.

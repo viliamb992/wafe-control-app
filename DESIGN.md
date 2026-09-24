@@ -258,7 +258,10 @@ icon, name, and an `Accent` checkmark on the selected row; rows 44 dp, separated
 Day segmented control (Mon…Sun) above a card with a 24 h timeline: 30-minute rows 24 dp high, hour labels in
 `Caption`/`TextTertiary` on the left, actions as blocks in their mode color (section 2.3) with white
 `Caption` semibold text, radius 6. Tap an empty row to add, tap a block to edit. A "now" line in `Critical`.
-Legend with 12 px rounded squares below.
+Legend with 12 px rounded squares below. Swipe the timeline left/right for the next/previous day (it slides a third
+of its width and fades, 150 ms out, 250 ms in). Hold a day in the segmented control (500 ms, long-press haptic), or
+use the copy icon button next to the day's name, to open the copy sheet: the other days as a checkmark list; the
+chosen days' actions are replaced.
 
 ### Empty, loading, error
 - Loading a screen: centered 32 px spinner with a `Body`/`TextSecondary` line.

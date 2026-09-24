@@ -587,9 +587,32 @@
     <value>Jednotka není připojena k portálu Wafe. Zkontrolujte její napájení a síť.</value>
   </data>
   <data name="ScheduleTouchHint" xml:space="preserve">
-    <value>Klepnutím na volný čas naplánujete režim jednotky, klepnutím na akci ji změníte. Naplánovat lze až 50 akcí.</value>
+    <value>Klepnutím na volný čas naplánujete režim jednotky, klepnutím na akci ji změníte. Přejetím prstem změníte den, podržením dne ho zkopírujete. Naplánovat lze až 50 akcí.</value>
   </data>
   <data name="SettingsAccount" xml:space="preserve">
     <value>Účet</value>
+  </data>
+  <data name="ScheduleCopyDay" xml:space="preserve">
+    <value>Kopírovat den</value>
+  </data>
+  <data name="ScheduleCopyTo" xml:space="preserve">
+    <value>Kopírovat do</value>
+  </data>
+  <data name="ScheduleCopyActionCount" xml:space="preserve">
+    <value>Počet akcí: {0}</value>
+    <comment>{0} = number of actions on the copied day</comment>
+  </data>
+  <data name="ScheduleCopyReplaces" xml:space="preserve">
+    <value>Akce ve vybraných dnech budou nahrazeny.</value>
+  </data>
+  <data name="ScheduleCopyChooseDays" xml:space="preserve">
+    <value>Vyberte alespoň jeden den.</value>
+  </data>
+  <data name="ScheduleCopyOverlaps" xml:space="preserve">
+    <value>Akce {0} by se překrývala s akcí {1}.</value>
+    <comment>{0} = the copied action, {1} = the other action, e.g. "Boost · Mon 02:00 – Mon 03:00"</comment>
+  </data>
+  <data name="ButtonCopy" xml:space="preserve">
+    <value>Kopírovat</value>
   </data>
 </root>

@@ -202,6 +202,95 @@ public class ScheduleViewModelTests
     }
 
     [Fact]
+    public async Task CopyDay_ReplacesChosenDaysWithSourceDaysActions()
+    {
+        // Mon 02:00-03:00 and Mon 22:00 - Tue 01:00, Wed 02:00-03:00, Thu 05:00-06:00.
+        await LoadAsync("boost-0:2:0-0:3:0 min-0:22:0-1:1:0 boost-2:2:0-2:3:0 nom-3:5:0-3:6:0");
+        var copy = _sut.CopyDay(0);
+        Assert.Equal(2, copy.ActionCount);
+        Assert.Equal([1, 2, 3, 4, 5, 6], copy.Days.Select(d => d.Day));
+
+        copy.Days.Single(d => d.Day == 2).IsSelected = true;
+        copy.Days.Single(d => d.Day == 6).IsSelected = true;
+
+        Assert.True(await _sut.CopyDayAsync(copy));
+
+        // Wednesday's own action is replaced; Sunday's late action wraps into Monday.
+        await _api.Received(1).SetSchedulePlanAsync(
+            "boost-0:2:0-0:3:0 min-0:22:0-1:1:0 boost-2:2:0-2:3:0 min-2:22:0-3:1:0 nom-3:5:0-3:6:0 boost-6:2:0-6:3:0 min-6:22:0-0:1:0",
+            Arg.Any<CancellationToken>());
+        Assert.Null(copy.ErrorMessage);
+        Assert.Equal(7, _sut.Entries.Count);
+    }
+
+    [Fact]
+    public async Task CopyDay_EmptyDay_ClearsChosenDays()
+    {
+        await LoadAsync();
+        var copy = _sut.CopyDay(1);
+        Assert.Equal(0, copy.ActionCount);
+        copy.Days.Single(d => d.Day == 2).IsSelected = true;
+
+        Assert.True(await _sut.CopyDayAsync(copy));
+
+        await _api.Received(1).SetSchedulePlanAsync(
+            "boost-0:2:0-0:3:0 boost-4:2:0-4:3:0 boost-6:2:0-6:2:30", Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task CopyDay_NoDayChosen_IsRejected()
+    {
+        await LoadAsync();
+        var copy = _sut.CopyDay(0);
+
+        Assert.False(await _sut.CopyDayAsync(copy));
+
+        Assert.Equal("Choose at least one day.", copy.ErrorMessage);
+        await _api.DidNotReceive().SetSchedulePlanAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task CopyDay_OverlappingTheNextDay_IsRejectedWithoutRequest()
+    {
+        // Mon 22:00 - Tue 01:00 copied to Tuesday would run into Wednesday's 00:30 action.
+        await LoadAsync("min-0:22:0-1:1:0 boost-2:0:30-2:2:0");
+        var copy = _sut.CopyDay(0);
+        copy.Days.Single(d => d.Day == 1).IsSelected = true;
+
+        Assert.False(await _sut.CopyDayAsync(copy));
+
+        Assert.Equal("Minimum · Tue 22:00 – Wed 01:00 would overlap with Boost · Wed 00:30 – Wed 02:00.", copy.ErrorMessage);
+        await _api.DidNotReceive().SetSchedulePlanAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task CopyDay_TooManyActions_IsRejected()
+    {
+        var monday = string.Join(' ', Enumerable.Range(0, 10).Select(i => $"min-0:{i}:0-0:{i}:30"));
+        await LoadAsync(monday);
+        var copy = _sut.CopyDay(0);
+        foreach (var day in copy.Days)
+            day.IsSelected = true;
+
+        Assert.False(await _sut.CopyDayAsync(copy));
+        Assert.Equal("The schedule is full (50 actions).", copy.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task CopyDay_ServerRejects_KeepsEntriesAndReportsError()
+    {
+        await LoadAsync();
+        _api.SetSchedulePlanAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(false);
+        var copy = _sut.CopyDay(0);
+        copy.Days.Single(d => d.Day == 1).IsSelected = true;
+
+        Assert.False(await _sut.CopyDayAsync(copy));
+
+        Assert.Equal(4, _sut.Entries.Count);
+        Assert.Equal("Couldn't save the schedule. Please try again.", copy.ErrorMessage);
+    }
+
+    [Fact]
     public async Task TrackUnitMode_OnSwitchToSchedule_LoadsPlanAndSetsNextStart()
     {
         _api.GetScheduleAsync(Arg.Any<CancellationToken>()).Returns(new ScheduleResponse { Plan = Plan });
