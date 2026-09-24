@@ -1,0 +1,132 @@
+# Pull request checks: runs the tests (with code coverage) and builds only the apps a pull request affects.
+#   - Shared/Core, central package versions, SDK settings or this file changed → tests + both apps.
+#   - Only src/WafeControl.Tests changed → tests.
+#   - Only src/WafeControl.WinUI changed → Windows build; only src/WafeControl.Mobile → Android build.
+#   - Nothing else (docs, README, installer, release workflows) triggers a job.
+# Running it manually (Actions → Build CI → Run workflow) runs everything.
+
+name: Build CI
+
+on:
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      tests: ${{ steps.filter.outputs.tests }}
+      windows: ${{ steps.filter.outputs.windows }}
+      android: ${{ steps.filter.outputs.android }}
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Find affected projects
+      id: filter
+      env:
+        BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      run: |
+        if [ "$GITHUB_EVENT_NAME" != "pull_request" ]; then
+          echo "tests=true" >> "$GITHUB_OUTPUT"
+          echo "windows=true" >> "$GITHUB_OUTPUT"
+          echo "android=true" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        changed=$(git diff --name-only "$BASE_SHA...$HEAD_SHA")
+        echo "$changed"
+        has() { if grep -qE "$1" <<< "$changed"; then echo true; else echo false; fi; }
+        core=$(has '^(src/WafeControl\.(Shared|Core)/|Directory\.[^/]*$|global\.json$|nuget\.config$|\.github/workflows/build-ci\.yml$)')
+        tests=$(has '^src/WafeControl\.Tests/')
+        windows=$(has '^src/WafeControl\.WinUI/')
+        android=$(has '^src/WafeControl\.Mobile/')
+        [ "$core" = true ] && tests=true && windows=true && android=true
+        echo "tests=$tests" >> "$GITHUB_OUTPUT"
+        echo "windows=$windows" >> "$GITHUB_OUTPUT"
+        echo "android=$android" >> "$GITHUB_OUTPUT"
+        echo "Tests: $tests, Windows: $windows, Android: $android"
+
+  test:
+    needs: changes
+    if: needs.changes.outputs.tests == 'true'
+    runs-on: windows-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+    # Microsoft.Testing.Platform mode (global.json): the project is passed with --project.
+    # The tests cover Shared + Core only, so no workloads are needed.
+    - name: Test with coverage
+      run: >
+        dotnet test --project src/WafeControl.Tests/WafeControl.Tests.csproj --configuration Release
+        --coverage --coverage-output-format cobertura --coverage-output coverage.cobertura.xml
+        --results-directory TestResults
+    - name: Coverage report
+      if: always() && hashFiles('TestResults/coverage.cobertura.xml') != ''
+      shell: pwsh
+      run: |
+        dotnet tool install --global dotnet-reportgenerator-globaltool --version 5.5.11
+        reportgenerator -reports:TestResults/coverage.cobertura.xml -targetdir:coverage `
+          -reporttypes:"HtmlInline;MarkdownSummaryGithub" -filefilters:"-*.g.cs;-*.Designer.cs" `
+          -title:"WAFE Control"
+        Get-Content coverage/SummaryGithub.md | Add-Content $env:GITHUB_STEP_SUMMARY
+    - name: Upload coverage report
+      if: always() && hashFiles('coverage/index.html') != ''
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: coverage
+    # One comment per pull request, updated on every push. Pull requests from forks get a read-only token.
+    - name: Comment coverage on the pull request
+      if: github.event_name == 'pull_request' && hashFiles('coverage/SummaryGithub.md') != ''
+      continue-on-error: true
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: gh pr comment ${{ github.event.pull_request.number }} --body-file coverage/SummaryGithub.md --edit-last --create-if-none
+
+  windows:
+    needs: changes
+    if: needs.changes.outputs.windows == 'true'
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+    - name: Build Windows app
+      run: dotnet build src/WafeControl.WinUI/WafeControl.WinUI.csproj --configuration Release -p:Platform=x64
+
+  android:
+    needs: changes
+    if: needs.changes.outputs.android == 'true'
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+    # The runner has the Android SDK and JDK.
+    - name: Install MAUI Android workload
+      run: dotnet workload install maui-android
+    - name: Build Android app
+      run: dotnet build src/WafeControl.Mobile/WafeControl.Mobile.csproj --framework net10.0-android --configuration Release

@@ -47,6 +47,8 @@
   </ItemGroup>
   <!-- ── Testing ───────────────────────────────────────────────────────── -->
   <ItemGroup Label="Testing">
+    <!-- Code coverage for dotnet test (Microsoft.Testing.Platform extension). -->
+    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.11.2" />
     <PackageVersion Include="NSubstitute" Version="6.2.0" />
     <!-- Runs on Microsoft.Testing.Platform v2 (see global.json); no VSTest packages needed. -->
     <PackageVersion Include="xunit.v3" Version="4.0.1" />
