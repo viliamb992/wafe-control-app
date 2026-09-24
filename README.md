@@ -10,8 +10,8 @@ Vibe coded with [Claude Code](https://claude.com/claude-code): the code, tests a
 
 | Platform | Version | Release build |
 | --- | --- | --- |
-| 🖥️ Windows 11 (x64, ARM64) | [v1.1.0](https://github.com/viliamb992/wafe-control-app/releases/tag/v1.1.0) | [![Release](https://github.com/viliamb992/wafe-control-app/actions/workflows/release.yml/badge.svg)](https://github.com/viliamb992/wafe-control-app/actions/workflows/release.yml) |
-| 🤖 Android 8+ | [android-v1.1.0](https://github.com/viliamb992/wafe-control-app/releases/tag/android-v1.1.0) | [![Release Android](https://github.com/viliamb992/wafe-control-app/actions/workflows/release-android.yml/badge.svg)](https://github.com/viliamb992/wafe-control-app/actions/workflows/release-android.yml) |
+| 🖥️ Windows 11 (x64, ARM64) | [v1.1.1](https://github.com/viliamb992/wafe-control-app/releases/tag/v1.1.1) | [![Release](https://github.com/viliamb992/wafe-control-app/actions/workflows/release.yml/badge.svg)](https://github.com/viliamb992/wafe-control-app/actions/workflows/release.yml) |
+| 🤖 Android 8+ | [android-v1.1.1](https://github.com/viliamb992/wafe-control-app/releases/tag/android-v1.1.1) | [![Release Android](https://github.com/viliamb992/wafe-control-app/actions/workflows/release-android.yml/badge.svg)](https://github.com/viliamb992/wafe-control-app/actions/workflows/release-android.yml) |
 | 🍎 iOS 15+ | – | Not released |
 
 A release is **stable** when its tag has no suffix (`v1.1.0`, `android-v1.1.0`) and its release build passed. A suffix (`v1.2.0-beta.1`) publishes a pre-release. The badges show the result of each app's latest release build.
