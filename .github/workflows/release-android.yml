@@ -3,8 +3,9 @@
 #
 # Trigger by pushing an Android version tag:   git tag android-v1.0.0 && git push origin android-v1.0.0
 #   - Tags with a suffix (android-v1.0.0-beta.1) become a pre-release.
-#   - versionName = the tag without "android-v"; versionCode = the workflow run number, so every build
-#     installs over the previous one.
+#   - versionName = the tag without "android-v"; versionCode = 1000 + the workflow run number, so every
+#     build installs over the previous one. The offset keeps it above the APKs built before the repository
+#     was recreated (September 2026), whose run numbers started over.
 #   - The release is never marked "latest": that stays the desktop release, which the Windows updater reads.
 # Running it manually (Actions → Release Android → Run workflow) builds the APK as a workflow artifact only.
 #
@@ -52,6 +53,7 @@ jobs:
           throw "Tag '$env:GITHUB_REF_NAME' is not a version like android-v1.2.0 or android-v1.2.0-beta.1"
         }
         "version=$version" >> $env:GITHUB_OUTPUT
+        "version_code=$(1000 + [int]$env:GITHUB_RUN_NUMBER)" >> $env:GITHUB_OUTPUT
 
     - name: Restore keystore
       shell: pwsh
@@ -74,7 +76,7 @@ jobs:
         -p:AndroidPackageFormats=apk
         -p:Version=${{ steps.version.outputs.version }}
         -p:ApplicationDisplayVersion=${{ steps.version.outputs.version }}
-        -p:ApplicationVersion=${{ github.run_number }}
+        -p:ApplicationVersion=${{ steps.version.outputs.version_code }}
         -p:AndroidKeyStore=true
         -p:AndroidSigningKeyStore=${{ runner.temp }}\wafe.keystore
         -p:AndroidSigningKeyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
