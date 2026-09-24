@@ -20,7 +20,7 @@
 
 #define AppName "WAFE Control"
 #define AppExe "WafeControl.WinUI.exe"
-#define RepoUrl "https://github.com/viliamb992/wafe-recuperation-app"
+#define RepoUrl "https://github.com/viliamb992/wafe-control-app"
 ; Must match RegistryStartupRegistration.ValueName.
 #define StartupValueName "WafeControl"
 

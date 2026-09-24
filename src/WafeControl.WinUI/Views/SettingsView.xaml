@@ -196,7 +196,7 @@
                                    Text="{x:Bind helpers:Xaml.AboutText(ViewModel.Version)}" />
                     </StackPanel>
                     <HyperlinkButton Grid.Column="2" VerticalAlignment="Center" Content="{x:Bind loc:Strings.SettingsProjectLink}"
-                                     NavigateUri="https://github.com/viliamb992/wafe-recuperation-app" />
+                                     NavigateUri="https://github.com/viliamb992/wafe-control-app" />
                 </Grid>
             </Border>
         </StackPanel>

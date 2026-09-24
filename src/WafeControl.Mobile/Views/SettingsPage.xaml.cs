@@ -9,7 +9,7 @@ namespace WafeControl.Mobile.Views;
 /// </summary>
 public partial class SettingsPage : ContentPage
 {
-    private const string ProjectUrl = "https://github.com/viliamb992/wafe-recuperation-app";
+    private const string ProjectUrl = "https://github.com/viliamb992/wafe-control-app";
 
     private readonly SettingsViewModel _settings;
     private readonly AppViewModel _app;
