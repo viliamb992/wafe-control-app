@@ -1,11 +1,19 @@
-# Release: publishes the WinUI app (unpackaged, self-contained) for x64 and ARM64, builds an installer
-# for each (installer/WafeControl.iss, Inno Setup) and attaches them to a GitHub Release.
+# Release: publishes the WinUI app (unpackaged, self-contained) for x64 and ARM64, packs each with Velopack
+# (a one-click Setup.exe plus the update packages) and attaches them to a GitHub Release, where the app's
+# updater finds them.
 #
 # Trigger by pushing a version tag:   git tag v1.2.0 && git push origin v1.2.0
-#   - Tags with a suffix (v1.2.0-beta.1) become a pre-release.
+#   - Tags with a suffix (v1.2.0-beta.1) become a pre-release; the app offers them only with "Get beta versions".
 #   - Version = the tag without "v"; FileVersion = <major.minor.patch>.<run number>.
-# Running it manually (Actions → Release → Run workflow) builds the installers as workflow artifacts
-# only, without creating a release.
+#   - Release notes: the "## 1.2.0" section of CHANGELOG.md, shown in the app's update flyout and on the release.
+#   - Each architecture is a Velopack channel (win-x64, win-arm64); the previous release's package is downloaded
+#     first, so updates from it are small delta packages.
+# Running it manually (Actions → Release → Run workflow) builds the packages as workflow artifacts only,
+# without creating a release.
+#
+# Secrets (Settings → Secrets and variables → Actions):
+#   GLITCHTIP_DSN_WINDOWS   where crash reports go (docs/plans/crash-tracking.md). Optional: without it the
+#                           app has no crash reports and hides the setting.
 
 name: Release
 
@@ -16,6 +24,9 @@ on:
 
 permissions:
   contents: read
+
+env:
+  VPK_VERSION: 1.2.158   # keep equal to the Velopack package in Directory.Packages.props
 
 jobs:
   test:
@@ -45,10 +56,8 @@ jobs:
         include:
           - platform: x64
             rid: win-x64
-            arch: x64
           - platform: ARM64
             rid: win-arm64
-            arch: arm64
 
     steps:
     - uses: actions/checkout@v4
@@ -70,7 +79,22 @@ jobs:
         "version=$version" >> $env:GITHUB_OUTPUT
         "file_version=$numeric.$env:GITHUB_RUN_NUMBER" >> $env:GITHUB_OUTPUT
         "assembly_version=$numeric.0" >> $env:GITHUB_OUTPUT
+        "prerelease=$(if ($version.Contains('-')) { 'true' } else { 'false' })" >> $env:GITHUB_OUTPUT
 
+    # The "## 1.2.0" section of CHANGELOG.md (up to the next "## "), or a pointer to the commits.
+    - name: Release notes
+      shell: pwsh
+      env:
+        VERSION: ${{ steps.version.outputs.version }}
+      run: |
+        $changelog = Get-Content CHANGELOG.md -Raw
+        $section = [regex]::Match($changelog, "(?ms)^## \[?$([regex]::Escape($env:VERSION))\]?[^\n]*\n(.*?)(?=^## |\z)")
+        $notes = if ($section.Success -and $section.Groups[1].Value.Trim()) { $section.Groups[1].Value.Trim() } else { 'See the commits since the previous release.' }
+        Set-Content release-notes.md $notes -Encoding utf8
+        Get-Content release-notes.md
+
+    # Symbols are embedded in the app's own DLLs, so crash stacks in logs and reports carry file and line.
+    # The DSN is empty unless the secret is set; then the app has no crash reports.
     - name: Publish
       run: >
         dotnet publish src/WafeControl.WinUI/WafeControl.WinUI.csproj
@@ -82,38 +106,63 @@ jobs:
         -p:Version=${{ steps.version.outputs.version }}
         -p:FileVersion=${{ steps.version.outputs.file_version }}
         -p:AssemblyVersion=${{ steps.version.outputs.assembly_version }}
-        -p:DebugType=None
-        -p:DebugSymbols=false
+        -p:DebugType=embedded
+        -p:ContinuousIntegrationBuild=true
+        "-p:CrashReportsDsn=${{ secrets.GLITCHTIP_DSN_WINDOWS }}"
 
-    # Pinned and hash-checked; installed portably (no registry, no Program Files).
-    - name: Install Inno Setup
-      shell: pwsh
-      run: |
-        $url = 'https://github.com/jrsoftware/issrc/releases/download/is-7_1_0/innosetup-7.1.0-x64.exe'
-        $sha256 = '0362A383ED217D4C4239B5933866DD96D3EB2102737DA92F80F6057A4B40DF2F'
-        $setup = "$env:RUNNER_TEMP\innosetup.exe"
-        Invoke-WebRequest $url -OutFile $setup
-        if ((Get-FileHash $setup -Algorithm SHA256).Hash -ne $sha256) { throw 'Inno Setup download hash mismatch' }
-        $dir = "$env:RUNNER_TEMP\inno"
-        $p = Start-Process $setup -ArgumentList '/PORTABLE=1', '/CURRENTUSER', '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-', "/DIR=`"$dir`"" -Wait -PassThru
-        if ($p.ExitCode -ne 0) { throw "Inno Setup install failed ($($p.ExitCode))" }
-        "$dir" >> $env:GITHUB_PATH
+    - name: Install Velopack
+      run: dotnet tool install --global vpk --version ${{ env.VPK_VERSION }}
 
-    - name: Build installer
+    # The previous release of this channel, so the new one also gets a small delta package.
+    # The first Velopack release has none; that's fine.
+    - name: Download previous release
+      if: github.event_name == 'push'
+      continue-on-error: true
       run: >
-        iscc
-        /DAppVersion=${{ steps.version.outputs.version }}
-        /DFileVersion=${{ steps.version.outputs.file_version }}
-        /DArch=${{ matrix.arch }}
-        /DSourceDir=${{ github.workspace }}\publish
-        /O${{ github.workspace }}\dist
-        installer\WafeControl.iss
+        vpk download github
+        --repoUrl ${{ github.server_url }}/${{ github.repository }}
+        --token ${{ github.token }}
+        --channel ${{ matrix.rid }}
+        --outputDir releases
+
+    - name: Pack
+      run: >
+        vpk pack
+        --packId WafeControl.App
+        --packVersion ${{ steps.version.outputs.version }}
+        --packDir publish
+        --mainExe WafeControl.WinUI.exe
+        --packTitle "WAFE Control"
+        --packAuthors "Viliam Birmon"
+        --icon src/WafeControl.WinUI/Assets/app-icon.ico
+        --channel ${{ matrix.rid }}
+        --shortcuts StartMenuRoot
+        --releaseNotes release-notes.md
+        --outputDir releases
+
+    # Only this version's files go to the release; the downloaded previous package was just the delta base.
+    - name: Collect release files
+      shell: pwsh
+      env:
+        VERSION: ${{ steps.version.outputs.version }}
+      run: |
+        New-Item -ItemType Directory dist | Out-Null
+        Get-ChildItem releases -File |
+          Where-Object { $_.Name -notlike '*.nupkg' -or $_.Name -like "*-$env:VERSION-*" } |
+          Copy-Item -Destination dist
+        Get-ChildItem dist | Format-Table Name, Length
 
     - uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.rid }}
-        path: dist/*.exe
+        path: dist/*
         if-no-files-found: error
+
+    - uses: actions/upload-artifact@v4
+      if: matrix.rid == 'win-x64'
+      with:
+        name: release-notes
+        path: release-notes.md
 
   release:
     needs: publish
@@ -125,9 +174,15 @@ jobs:
     steps:
     - uses: actions/download-artifact@v4
       with:
+        pattern: win-*
         path: dist
         merge-multiple: true
 
+    - uses: actions/download-artifact@v4
+      with:
+        name: release-notes
+
+    # Both channels' files side by side; their names don't collide (releases.win-x64.json, …-win-arm64-Setup.exe).
     - name: Create GitHub Release
       env:
         GH_TOKEN: ${{ github.token }}
@@ -135,9 +190,10 @@ jobs:
       run: |
         prerelease=""
         if [[ "$TAG" == *-* ]]; then prerelease="--prerelease"; fi
-        gh release create "$TAG" dist/*.exe \
+        gh release create "$TAG" dist/* \
           --repo "$GITHUB_REPOSITORY" \
           --title "$TAG (Windows 11)" \
+          --notes-file release-notes.md \
           --generate-notes \
           --verify-tag \
           $prerelease

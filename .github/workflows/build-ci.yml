@@ -2,7 +2,7 @@
 #   - Shared/Core, central package versions, SDK settings or this file changed → tests + both apps.
 #   - Only src/WafeControl.Tests changed → tests.
 #   - Only src/WafeControl.WinUI changed → Windows build; only src/WafeControl.Mobile → Android build.
-#   - Nothing else (docs, README, installer, release workflows) triggers a job.
+#   - Nothing else (docs, README, CHANGELOG, release workflows) triggers a job.
 # Running it manually (Actions → Build CI → Run workflow) runs everything.
 
 name: Build CI

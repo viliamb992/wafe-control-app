@@ -4,7 +4,7 @@ Unofficial apps for monitoring and controlling a Wafe heat-recovery ventilation 
 
 Vibe coded with [Claude Code](https://claude.com/claude-code): the code, tests and docs were written by Claude from prompts, then reviewed and tested by hand.
 
-[Latest release](#latest-release) · [Screenshots](#screenshots) · [Apps](#apps) · [Translations](#translations) · [Solution layout](#solution-layout) · [Tools](#tools) · [Build and run](#build-and-run) · [CI](#ci) · [Release](#release) · [Where data is stored](#where-data-is-stored) · [Wafe API](#wafe-api) · [Planned features](#planned-features) · [Open questions](#open-questions) · [License](#license)
+[Latest release](#latest-release) · [Screenshots](#screenshots) · [Apps](#apps) · [Translations](#translations) · [Solution layout](#solution-layout) · [Tools](#tools) · [Build and run](#build-and-run) · [CI](#ci) · [Release](#release) · [Where data is stored](#where-data-is-stored) · [Privacy](#privacy) · [Wafe API](#wafe-api) · [Planned features](#planned-features) · [Open questions](#open-questions) · [License](#license)
 
 ## Latest release
 
@@ -35,21 +35,25 @@ Both apps follow one design manual, [docs/DESIGN.md](docs/DESIGN.md): colors, ty
 
 ### 🖥️ Windows app features
 
-- 🔐 **Sign in** with your Wafe account. "Keep me signed in" remembers the login, and the app signs in again automatically when the session expires.
+- 🔐 **Sign in** with your Wafe account. "Keep me signed in" remembers the login, and the app signs in again automatically when the session expires. A failed sign-in says why (wrong password, no connection, server problem); Caps Lock is pointed out.
+- 🧪 **Demo mode:** "Try the demo" on the sign-in screen opens a simulated unit, for trying the app without one. A banner on every screen says so and leads to a real sign-in.
 - 📊 **Dashboard:** running state with Start/Stop, outdoor/supply/indoor/exhaust temperatures, CO₂ with air-quality hint, humidity (only on units with that sensor), operating mode (Intelligent / Manual / Schedule), flow rate (Manual mode), Boost 15/30/60 min, Silent and Holiday modes, filter health.
 - 🎨 **Windows 11 look:** Mica, native title bar, light/dark theme (follows Windows or set in Settings), layout adapts to window width. The window reopens where you left it; the version is shown in the footer and in Settings → About.
 - 📅 **Weekly schedule:** a Mon–Sun grid like the Wafe web app. Click or drag to add an action, click a block to edit or delete it (up to 50 actions).
+- 💬 **Feedback:** the footer shows what a command is doing ("Waiting for the unit to confirm…"), the result, and Retry when trying again can help. Stopping the unit asks first. When the readings are out of date or the server can't be reached, a banner says so and the readings are dimmed.
+- ⬆️ **Updates:** a new version downloads in the background; the title bar then offers "Restart to update" (about a second), and it also installs on exit. Settings → Updates: automatic download, beta versions, check now.
+- 🐞 **Report a problem** (⋯ menu, Settings): a GitHub issue with the version and device filled in, or diagnostics to copy. After a crash, the next start offers it. Crash reports are opt-in (see [Privacy](#privacy)).
 - 🔔 **Tray:** closing the window keeps the app in the tray (in Efficiency Mode), or exits it if you choose that in Settings. Pointing at the tray icon shows whether the unit is running, its mode, air flow and CO₂. The tray menu offers boost shortcuts and Exit. Launching the app again brings the existing window back (single instance).
 - 🚀 **Startup (optional):** start with Windows, and start hidden in the tray (the window still opens if you need to sign in).
 - 🌐 **Languages:** Czech (default), Slovak and English. Switch in Settings (gear in the footer, also on the sign-in screen). The change applies right away and is kept for the next launch.
 
 ### 📱 Mobile app features
 
-- 🔐 **Sign-in:** same sign-in, remembered login (Android Keystore / iOS Keychain) and languages as on Windows; language and appearance can be set before signing in (gear on the sign-in screen).
-- 🧭 **Tabs:** Overview, Schedule, Settings. Pull down to refresh; banners for no internet and an offline unit; command results show as a short message at the bottom.
+- 🔐 **Sign-in:** same sign-in, remembered login (Android Keystore / iOS Keychain), demo mode and languages as on Windows; language and appearance can be set before signing in (gear on the sign-in screen). The password can be shown.
+- 🧭 **Tabs:** Overview, Schedule, Settings. Pull down to refresh; banners for no internet, an unreachable server, old data and an offline unit; command results show as a short message at the bottom, with Retry when it can help.
 - 📊 **Overview:** unit name as the title, online state, running state with Start/Stop (stopping asks first), the sensor tiles, operating mode, flow slider (sends when you let go, with a haptic tick every 10 m³/h), Boost 15/30/60 min with a live countdown, Silent/Holiday switches, filter health.
 - 📅 **Schedule:** one day at a time on a 24-hour timeline with a "now" line. Tap an empty time to add an action, tap an action to edit or delete it (same rules as the Windows grid).
-- ⚙️ **Settings:** language, appearance (system/light/dark), the unit (rename, model, serial number, service contact), sign out, about.
+- ⚙️ **Settings:** language, appearance (system/light/dark), the unit (rename, model, serial number, service contact), sign out, crash reports, about with Report a problem and Share logs.
 
 ## Translations
 
@@ -73,7 +77,7 @@ Needed to build:
 - **.NET 10 SDK** (10.0.401 or later) with the **`maui-android` workload** (`dotnet workload install maui-android`). The solution includes the mobile app, so the workload is needed even for the Windows app.
 - **Windows 11** for the WinUI app. The Windows App SDK (2.5) comes from NuGet and is bundled self-contained, so no runtime installer is needed.
 - **Android SDK and OpenJDK 21** for the Android app (Visual Studio's Android workload installs both), plus an emulator or a phone with USB debugging.
-- **Inno Setup 7** to build the Windows installer locally (`installer/WafeControl.iss`); the release workflow installs it itself.
+- **Velopack's `vpk`** (`dotnet tool install -g vpk --version 1.2.158`, the same version as the Velopack package) to build the Windows installer and update packages locally; the release workflow installs it itself.
 - **A Mac with Xcode** for iOS builds.
 
 Optional:
@@ -82,7 +86,7 @@ Optional:
 - **Python 3 + fonttools** (`pip install fonttools`) to regenerate the mobile icon font with `tools/subset-icons.py`.
 - **Claude Code**, which wrote the app.
 
-Used by the project: **GitHub Actions** (Build CI on pull requests, releases from tags), **CommunityToolkit.Mvvm** (view models), **Windows App SDK / WinUI 3** with CommunityToolkit.WinUI Segmented and **H.NotifyIcon** (tray), **.NET MAUI**, **Microsoft.Extensions.Http.Resilience**, **Serilog** (logs), **xUnit.net v3** on Microsoft.Testing.Platform and **NSubstitute** (tests), **Fluent System Icons**.
+Used by the project: **GitHub Actions** (Build CI on pull requests, releases from tags), **CommunityToolkit.Mvvm** (view models), **Windows App SDK / WinUI 3** with CommunityToolkit.WinUI Segmented and **H.NotifyIcon** (tray), **Velopack** (Windows installer and updates), **.NET MAUI**, **Microsoft.Extensions.Http.Resilience**, **Serilog** (logs), **Sentry SDK** sending to **GlitchTip** (opt-in crash reports), **Microsoft.VisualStudio.Threading.Analyzers** (no `async void`), **xUnit.net v3** on Microsoft.Testing.Platform and **NSubstitute** (tests), **Fluent System Icons**.
 
 ## Build and run
 
@@ -101,6 +105,10 @@ dotnet build src/WafeControl.Mobile -f net10.0-android -t:Run
 dotnet publish src/WafeControl.Mobile -f net10.0-android -c Release
 ```
 
+Without a Wafe unit, use **Try the demo** on the sign-in screen. Debug builds of the Windows app add Settings → "Demo unit faults" to simulate a slow, refusing, unreachable or offline unit.
+
+To try the Windows updater locally: `vpk pack` two versions into one folder, install the first with its `Setup.exe`, and start it with `WAFE_UPDATE_SOURCE` set to that folder.
+
 iOS is built only on a Mac (or from Visual Studio paired with one): the `net10.0-ios` target is on by default on macOS, and on Windows with `-p:EnableIosBuild=true`, which compiles but can't package or sign.
 
 `global.json` puts `dotnet test` in Microsoft.Testing.Platform mode, so pass the solution with `--solution` (or a project with `--project`). Visual Studio's Test Explorer runs the tests directly.
@@ -117,7 +125,11 @@ Run it manually (Actions → Build CI → Run workflow) to build everything.
 
 ## Release
 
-**Windows:** push a version tag (`git tag v1.2.0 && git push origin v1.2.0`). `.github/workflows/release.yml` tests, publishes the WinUI app for x64 and ARM64, builds an installer for each with Inno Setup (`installer/WafeControl.iss`) and attaches them to a GitHub Release. Tags with a suffix (`v1.2.0-beta.1`) become pre-releases.
+Before tagging, add a `## 1.2.0` section to [CHANGELOG.md](CHANGELOG.md): it becomes the release notes, and the Windows app shows it when offering the update.
+
+**Windows:** push a version tag (`git tag v1.2.0 && git push origin v1.2.0`). `.github/workflows/release.yml` tests, publishes the WinUI app for x64 and ARM64, packs each with Velopack (`WafeControl.App-win-x64-Setup.exe` / `-win-arm64-Setup.exe`, update packages and the `releases.win-*.json` feed the app's updater reads) and attaches them to a GitHub Release. Each architecture is a Velopack channel; the previous release's package is downloaded first, so updates are small delta packages. Tags with a suffix (`v1.2.0-beta.1`) become pre-releases, which the app offers only with "Get beta versions" on.
+
+Up to 1.1.x the Windows app used an Inno Setup installer in Program Files. Version 1.2.0 installs per user (no administrator rights, needed for silent updates): uninstall 1.1.x from Settings → Apps, then run the new Setup. Settings and the remembered login stay; turn "Run when Windows starts" on again if you used it (the old entry pointed to Program Files).
 
 **Android:** push an Android tag (`git tag android-v1.0.0 && git push origin android-v1.0.0`). `.github/workflows/release-android.yml` tests, builds a signed APK and attaches it to its own GitHub Release (never marked "latest", so the Windows release stays the latest one). The app is sideloaded, not in a store: open the release on the phone, download the APK and install it (Android asks once to allow installs from the browser). Later versions install over it and keep the login.
 
@@ -150,8 +162,17 @@ dotnet publish src/WafeControl.Mobile -f net10.0-android -c Release -o publish -
 - **Remembered login:** `%AppData%\WafeControl\credentials.dat`, encrypted with Windows DPAPI for the current user. "Sign out" in the ⋯ menu deletes it.
 - **Settings (WinUI app):** `%AppData%\WafeControl\settings.json` (language, theme, closing and startup behaviour, window position). Start with Windows is the `WafeControl` entry under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` (also listed in Task Manager → Startup apps).
 - **Mobile app:** the remembered login is in the platform's secure storage (Android Keystore, iOS Keychain), language and theme in the app's preferences. App backup is off on Android, since a restored login couldn't be decrypted anyway.
-- **Logs (WinUI app):** `%LocalAppData%\WafeControl\logs`, kept for 7 days. Open them via ⋯ → "Open log folder". Passwords are never logged.
+- **App (Windows):** installed per user in `%LocalAppData%\WafeControl.App` (Velopack: `current\` is the app, downloaded updates wait in `packages\`). Uninstalling removes it and the Start with Windows entry.
+- **Logs:** Windows `%LocalAppData%\WafeControl\logs` (open via ⋯ → "Open log folder"), Android the app's private storage (Settings → Share logs). One file per day, 7 days, at most 2 MB each. Passwords are never logged; emails are logged masked (`v***@g***.com`). A crash leaves `last-crash.json` next to the logs until the next start.
+- **Crash reports waiting to be sent** (only with crash reports on): Windows `%LocalAppData%\WafeControl\reports`, Android the app's cache.
 - **Versions up to 1.0.1** used `RecuperationSystem` folders and a `WafeRecuperation` startup entry; the app moves them on its first start (`LegacyInstallMigration`), and setup removes the old files and shortcuts.
+
+## Privacy
+
+The apps talk to go2my.wafe.eu (your unit) and, on Windows, to GitHub (update checks). Nothing else leaves the device unless you agree:
+
+- **Crash reports** are off until you say yes (asked once after the first sign-in; Settings → Send crash reports). They go to [GlitchTip](https://glitchtip.com) and contain the app version, platform, device model, language, whether demo mode is on, the unit model, and the error with its stack trace and the app's last log lines. Never your email, password, unit name or serial number: emails are removed before anything is sent. Development builds never send reports.
+- **Report a problem** sends nothing by itself: it opens a GitHub issue in your browser, or your share sheet, with text you can read first.
 
 ## Wafe API
 
@@ -183,13 +204,13 @@ Request bodies must be sent with a `Content-Length`: the server answers chunked 
 - ⏱️ Boost countdown that ticks every second between polls.
 - 🔔 Toast notifications: filter health low, unit offline, boost finished.
 - ⚙️ Setting for the poll interval.
-- ⬆️ Auto-updater from GitHub Releases: an "Update available" button in the title bar, a dialog with the new version and download size, then a silent run of the setup for the current architecture. Checks `releases/latest` on startup and every few hours. The installer needs a switch to relaunch the app after a silent install (its `[Run]` entry is `skipifsilent`).
 - 📌 Jump list: Boost 15/30, Stop boost.
 - 📅 Schedule: a "now" line, copy a day to other days (already in Core), and a keyboard way to add an action.
-- 🔏 Code signing, so SmartScreen stops warning on first run (Azure Trusted Signing or a certificate).
+- 🔏 Code signing, so SmartScreen stops warning on first run (Azure Trusted Signing or a certificate; `vpk pack --azureTrustedSignFile`).
 
 **📱 Mobile**
 
+- ⬆️ "New version available" banner linking the APK of the latest `android-v*` release (the app is sideloaded, so nothing updates it).
 - ⚡ App shortcuts: Boost 15/30, Stop boost.
 - 🤖 Android: edge-to-edge, optional biometric unlock. iOS: haptics, optional Face ID.
 - 🍎 iOS: first run on a Mac (page sheets, safe areas, tab icons, input borders), then an ad hoc `.ipa` from a macOS runner.
