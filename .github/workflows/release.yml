@@ -12,7 +12,7 @@
 # without creating a release.
 #
 # Secrets (Settings → Secrets and variables → Actions):
-#   GLITCHTIP_DSN_WINDOWS   where crash reports go (docs/plans/crash-tracking.md). Optional: without it the
+#   GLITCHTIP_DSN_WINDOWS   where crash reports go (README → Release → Crash reports). Optional: without it the
 #                           app has no crash reports and hides the setting.
 
 name: Release

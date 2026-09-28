@@ -14,7 +14,7 @@
 #   ANDROID_KEYSTORE_PASSWORD  its store password
 #   ANDROID_KEY_ALIAS          the key's alias
 #   ANDROID_KEY_PASSWORD       the key's password (the same as the store password unless you chose another)
-#   GLITCHTIP_DSN_ANDROID      where crash reports go (docs/plans/crash-tracking.md). Optional: without it the
+#   GLITCHTIP_DSN_ANDROID      where crash reports go (README → Release → Crash reports). Optional: without it the
 #                              app has no crash reports and hides the setting.
 
 name: Release Android
