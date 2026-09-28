@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <!-- An exception in async void or an unobserved task ends the app; these rules must stay clean (.editorconfig). -->
+    <WarningsAsErrors>$(WarningsAsErrors);VSTHRD100;VSTHRD101;VSTHRD110</WarningsAsErrors>
+  </PropertyGroup>
+</Project>
