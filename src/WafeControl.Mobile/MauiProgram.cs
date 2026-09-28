@@ -3,7 +3,9 @@ using Microsoft.Maui.Handlers;
 #if ANDROID
 using Microsoft.Maui.Platform;
 #endif
+using Serilog;
 using WafeControl.Core;
+using WafeControl.Core.Diagnostics;
 using WafeControl.Core.Localization;
 using WafeControl.Core.Services;
 using WafeControl.Mobile.Helpers;
@@ -14,8 +16,30 @@ namespace WafeControl.Mobile;
 
 public static class MauiProgram
 {
+    /// <summary>
+    /// The app's log files (kept for a week), shared from Settings → About.
+    /// </summary>
+    public static string LogDirectory { get; } = Path.Combine(FileSystem.AppDataDirectory, "logs");
+
     public static MauiApp CreateMauiApp()
     {
+        // Crashes from here on leave a log entry and a marker for the next start.
+        CrashHandler.Initialize(LogDirectory);
+        AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+        {
+            if (e.ExceptionObject is Exception exception)
+                CrashHandler.OnFatal(exception, "AppDomain");
+        };
+        TaskScheduler.UnobservedTaskException += CrashHandler.OnUnobservedTask;
+
+        DeviceDescription.Current = new DeviceDescription(
+            DeviceInfo.Platform.ToString().ToLowerInvariant(),
+            $"{DeviceInfo.Platform} {DeviceInfo.VersionString}",
+            System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant(),
+            $"{DeviceInfo.Manufacturer} {DeviceInfo.Model}",
+            "sideload");
+        Log.Logger = AppLogging.Configure(LogDirectory).CreateLogger();
+
         var builder = MauiApp.CreateBuilder();
         builder
             .UseMauiApp<App>()
@@ -27,6 +51,7 @@ public static class MauiProgram
 #endif
             });
 
+        builder.Logging.AddSerilog(dispose: true);
 #if DEBUG
         builder.Logging.AddDebug();
         builder.Logging.SetMinimumLevel(LogLevel.Debug);
@@ -34,16 +59,21 @@ public static class MauiProgram
         builder.Logging.AddFilter("System.Net.Http.HttpClient", LogLevel.Warning);
         builder.Logging.AddFilter("Polly", LogLevel.Warning);
 
+        UseCrashReports(builder);
+
         builder.Services.AddWafeControlCore(polling =>
         {
             polling.StatusRefreshIntervalMs = 5000;
             polling.StateChangeIntervalMs = 3000;
+            polling.StateChangeInitialIntervalsMs = [1000, 1000, 2000, 2000];
             polling.StateChangeTimeoutSeconds = 30;
         });
         builder.Services.AddSingleton<ICredentialStore, SecureStorageCredentialStore>();
         builder.Services.AddSingleton<ISettingsStore, PreferencesSettingsStore>();
         builder.Services.AddSingleton<IStartupRegistration, NoStartupRegistration>();
         builder.Services.AddSingleton(Connectivity.Current);
+        builder.Services.AddSingleton<INetworkStatus, MauiNetworkStatus>();
+        builder.Services.AddSingleton<ICrashReports>(new MobileCrashReports(CrashReporting.ReadDsn(typeof(MauiProgram).Assembly)));
 
         builder.Services.AddTransient<LoginPage>();
         builder.Services.AddTransient<DashboardPage>();
@@ -56,10 +86,35 @@ public static class MauiProgram
         var app = builder.Build();
 
         // The language must be in place before any page produces text.
-        app.Services.GetRequiredService<LocalizationService>().Initialize();
+        var localization = app.Services.GetRequiredService<LocalizationService>();
+        localization.Initialize();
+        AppLogging.LogEnvironment(localization.Current.Code);
         Routing.RegisterRoute(AppShell.LoginSettingsRoute, typeof(SettingsPage));
 
         return app;
+    }
+
+    /// <summary>
+    /// Crash reports (Sentry SDK to GlitchTip) only in release builds with a reporting address, and only when the
+    /// user said yes; the SDK then also catches Java and native crashes and ANRs.
+    /// </summary>
+    private static void UseCrashReports(MauiAppBuilder builder)
+    {
+        var dsn = CrashReporting.ReadDsn(typeof(MauiProgram).Assembly);
+        var consent = new PreferencesSettingsStore().Load().CrashReports == true;
+
+        // Until the settings screen's view model takes over (App).
+        CrashReporting.IsAllowed = () => consent;
+        if (dsn is null || !consent)
+            return;
+
+        builder.UseSentry(options =>
+        {
+            CrashReporting.Configure(options, dsn, DeviceInfo.Platform.ToString().ToLowerInvariant(),
+                Path.Combine(FileSystem.CacheDirectory, "reports"));
+            options.MinimumEventLevel = LogLevel.Error;
+            options.MinimumBreadcrumbLevel = LogLevel.Information;
+        });
     }
 
     /// <summary>

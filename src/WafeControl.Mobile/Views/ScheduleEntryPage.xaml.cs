@@ -1,5 +1,6 @@
 using Microsoft.Maui.Controls.Shapes;
 using WafeControl.Core.Localization;
+using WafeControl.Core.Threading;
 using WafeControl.Core.ViewModels.Schedule;
 using WafeControl.Mobile.Helpers;
 
@@ -76,17 +77,17 @@ public partial class ScheduleEntryPage : ContentPage
             _modeRows[i].Check.IsVisible = i == index;
     }
 
-    private async void OnSaveClicked(object? sender, EventArgs e) => await RunAsync(() => _schedule.SaveEntryAsync(_editor));
+    private void OnSaveClicked(object? sender, EventArgs e) => SafeAsync.Run(() => RunAsync(() => _schedule.SaveEntryAsync(_editor)));
 
-    private async void OnDeleteClicked(object? sender, EventArgs e) => await RunAsync(async () =>
+    private void OnDeleteClicked(object? sender, EventArgs e) => SafeAsync.Run(() => RunAsync(async () =>
     {
         var deleted = await _schedule.DeleteEntryAsync(_editor.Original!);
         if (!deleted)
             _editor.ErrorMessage = _schedule.ErrorMessage;
         return deleted;
-    });
+    }));
 
-    private async void OnCancelClicked(object? sender, EventArgs e) => await Navigation.PopModalAsync();
+    private void OnCancelClicked(object? sender, EventArgs e) => SafeAsync.Run(() => Navigation.PopModalAsync());
 
     private async Task RunAsync(Func<Task<bool>> action)
     {

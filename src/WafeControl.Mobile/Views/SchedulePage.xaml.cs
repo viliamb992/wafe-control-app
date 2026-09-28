@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using Microsoft.Maui.Controls.Shapes;
+using WafeControl.Core.Threading;
 using WafeControl.Core.ViewModels;
 using WafeControl.Core.ViewModels.Schedule;
 using WafeControl.Mobile.Controls;
@@ -45,12 +46,12 @@ public partial class SchedulePage : ContentPage
 
     private static int Today => ((int)DateTime.Now.DayOfWeek + 6) % 7;
 
-    protected override async void OnAppearing()
+    protected override void OnAppearing()
     {
         base.OnAppearing();
 
         // It may have been changed elsewhere (e.g. the Wafe web app) since it was last shown.
-        await ReloadAsync();
+        SafeAsync.Run(ReloadAsync);
     }
 
     private async Task ReloadAsync()
@@ -62,10 +63,10 @@ public partial class SchedulePage : ContentPage
     /// <summary>
     /// Back from the background: reload if this tab is the one shown, as on appearing.
     /// </summary>
-    private async void OnWindowResumed(object? sender, EventArgs e)
+    private void OnWindowResumed(object? sender, EventArgs e)
     {
         if (Shell.Current?.CurrentPage == this && Navigation.ModalStack.Count == 0)
-            await ReloadAsync();
+            SafeAsync.Run(ReloadAsync);
     }
 
     private void OnLoaded(object? sender, EventArgs e)
@@ -81,6 +82,10 @@ public partial class SchedulePage : ContentPage
         ShowDay();
         BuildLegend();
         UpdateModeOffBanner();
+
+        // The page shows the schedule; the demo state comes from the app.
+        DemoBanner.IsShown = _app.IsDemo;
+        DemoBanner.ActionCommand = _app.SignOutCommand;
     }
 
     private void OnUnloaded(object? sender, EventArgs e)
@@ -118,12 +123,7 @@ public partial class SchedulePage : ContentPage
 
     private void OnUseScheduleModeClicked(object? sender, EventArgs e)
     {
-        var operatingMode = _app.OperatingMode;
-        if (!operatingMode.UpdateModeCommand.CanExecute(null))
-            return;
-
-        operatingMode.SelectedMode = AppConstants.ModeSchedule;
-        operatingMode.UpdateModeCommand.Execute(null);
+        SafeAsync.Run(() => _app.OperatingMode.ChangeModeAsync(AppConstants.ModeSchedule));
     }
 
     // ── Day ──────────────────────────────────────────────────────────────
@@ -134,7 +134,9 @@ public partial class SchedulePage : ContentPage
         ShowDay();
     }
 
-    private async void OnTimelineSwiped(object? sender, SwipeDirection direction)
+    private void OnTimelineSwiped(object? sender, SwipeDirection direction) => SafeAsync.Run(() => SwitchDayAsync(direction));
+
+    private async Task SwitchDayAsync(SwipeDirection direction)
     {
         if (_isSwitchingDay)
             return;
@@ -166,15 +168,15 @@ public partial class SchedulePage : ContentPage
         }
     }
 
-    private async void OnDayLongPressed(object? sender, int day)
+    private void OnDayLongPressed(object? sender, int day)
     {
         _day = day;
         DaySelector.SelectedIndex = day;
         ShowDay();
-        await ShowCopyDayAsync();
+        SafeAsync.Run(ShowCopyDayAsync);
     }
 
-    private async void OnCopyDayClicked(object? sender, EventArgs e) => await ShowCopyDayAsync();
+    private void OnCopyDayClicked(object? sender, EventArgs e) => SafeAsync.Run(ShowCopyDayAsync);
 
     private async Task ShowCopyDayAsync()
     {
@@ -216,19 +218,19 @@ public partial class SchedulePage : ContentPage
 
     // ── Add / edit ───────────────────────────────────────────────────────
 
-    private async void OnSlotTapped(object? sender, int minute)
+    private void OnSlotTapped(object? sender, int minute)
     {
         if (_schedule.CanAddEntry)
-            await ShowEditorAsync(_schedule.CreateEntry(_day, minute, EndOfFreeTime(minute)));
+            SafeAsync.Run(() => ShowEditorAsync(_schedule.CreateEntry(_day, minute, EndOfFreeTime(minute))));
     }
 
-    private async void OnAddClicked(object? sender, EventArgs e)
+    private void OnAddClicked(object? sender, EventArgs e)
     {
         var start = FirstFreeMinute();
-        await ShowEditorAsync(_schedule.CreateEntry(_day, start, EndOfFreeTime(start)));
+        SafeAsync.Run(() => ShowEditorAsync(_schedule.CreateEntry(_day, start, EndOfFreeTime(start))));
     }
 
-    private async void OnEntryTapped(object? sender, ScheduleEntry entry) => await ShowEditorAsync(_schedule.EditEntry(entry));
+    private void OnEntryTapped(object? sender, ScheduleEntry entry) => SafeAsync.Run(() => ShowEditorAsync(_schedule.EditEntry(entry)));
 
     private async Task ShowEditorAsync(ScheduleEntryEditorViewModel editor)
     {

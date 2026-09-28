@@ -1,16 +1,19 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using WafeControl.Core.Localization;
+using WafeControl.Core.Threading;
 using WafeControl.Core.ViewModels;
 using WafeControl.Core.ViewModels.Cards;
 using WafeControl.Core.ViewModels.Schedule;
+using WafeControl.Mobile.Controls;
+using WafeControl.Mobile.Helpers;
 
 namespace WafeControl.Mobile.Views;
 
 /// <summary>
 /// Dashboard. Most state flows through bindings; the code-behind covers controls whose user changes must be told
 /// apart from updates coming from the unit (mode selector, flow slider, switches), the stop confirmation, the
-/// boost countdown between polls and the network banner.
+/// boost countdown between polls and the data banner's look.
 /// </summary>
 public partial class DashboardPage : ContentPage
 {
@@ -18,17 +21,15 @@ public partial class DashboardPage : ContentPage
 
     private readonly AppViewModel _app;
     private readonly ScheduleViewModel _schedule;
-    private readonly IConnectivity _connectivity;
     private readonly IDispatcherTimer _countdown;
     private readonly Stopwatch _sinceBoostUpdate = new();
     private bool _syncing;
     private int _lastHapticStep;
 
-    public DashboardPage(AppViewModel app, ScheduleViewModel schedule, IConnectivity connectivity)
+    public DashboardPage(AppViewModel app, ScheduleViewModel schedule)
     {
         _app = app;
         _schedule = schedule;
-        _connectivity = connectivity;
         InitializeComponent();
         BindingContext = app;
 
@@ -46,56 +47,70 @@ public partial class DashboardPage : ContentPage
 
     private void OnLoaded(object? sender, EventArgs e)
     {
+        _app.PropertyChanged += OnAppPropertyChanged;
         OperatingMode.PropertyChanged += OnOperatingModePropertyChanged;
         FlowSpeed.PropertyChanged += OnFlowSpeedPropertyChanged;
         _app.SystemControl.PropertyChanged += OnSystemControlPropertyChanged;
         _app.BoostMode.PropertyChanged += OnBoostPropertyChanged;
         _schedule.PropertyChanged += OnSchedulePropertyChanged;
-        _connectivity.ConnectivityChanged += OnConnectivityChanged;
         Toast.Attach(_app);
 
         SyncModeItems();
         SyncFlowSlider();
         OnBoostPropertyChanged(null, new PropertyChangedEventArgs(nameof(BoostModeCardViewModel.BoostRemaining)));
         UpdateNextStart();
-        UpdateNetworkBanner();
-        _ = _schedule.TrackUnitModeAsync(_app.SystemControl.CurrentAuthority);
+        UpdateDataBanner();
+        SafeAsync.Run(() => _schedule.TrackUnitModeAsync(_app.SystemControl.CurrentAuthority));
     }
 
     private void OnUnloaded(object? sender, EventArgs e)
     {
+        _app.PropertyChanged -= OnAppPropertyChanged;
         OperatingMode.PropertyChanged -= OnOperatingModePropertyChanged;
         FlowSpeed.PropertyChanged -= OnFlowSpeedPropertyChanged;
         _app.SystemControl.PropertyChanged -= OnSystemControlPropertyChanged;
         _app.BoostMode.PropertyChanged -= OnBoostPropertyChanged;
         _schedule.PropertyChanged -= OnSchedulePropertyChanged;
-        _connectivity.ConnectivityChanged -= OnConnectivityChanged;
         Toast.Detach();
         _countdown.Stop();
     }
 
-    // ── Refresh ──────────────────────────────────────────────────────────
+    // ── Refresh and data state ───────────────────────────────────────────
 
-    private async void OnRefreshing(object? sender, EventArgs e)
+    // Pull to refresh; a failure shows in the toast.
+    private void OnRefreshing(object? sender, EventArgs e) => SafeAsync.Run(async () =>
     {
-        Toast.ShowRefreshErrors();
         try
         {
-            await _app.RefreshStatusAsync();
+            await _app.RefreshStatusCommand.ExecuteAsync(null);
         }
         finally
         {
             Refresh.IsRefreshing = false;
         }
+    });
+
+    private void OnAppPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(AppViewModel.DataState))
+            Dispatcher.Dispatch(UpdateDataBanner);
     }
 
-    private void OnConnectivityChanged(object? sender, ConnectivityChangedEventArgs e) => Dispatcher.Dispatch(UpdateNetworkBanner);
-
-    private void UpdateNetworkBanner() => NoInternetBanner.IsShown = _connectivity.NetworkAccess != NetworkAccess.Internet;
+    // The unit gone is an error; old data or no connection a warning, each with its own icon.
+    private void UpdateDataBanner()
+    {
+        DataBanner.Severity = _app.IsDataBannerError ? BannerSeverity.Error : BannerSeverity.Warning;
+        DataBanner.Icon = _app.DataState switch
+        {
+            DataState.NoInternet => FluentIcons.WifiOff,
+            DataState.UnitOffline or DataState.ServerUnreachable => FluentIcons.CloudOff,
+            _ => null,
+        };
+    }
 
     // ── Power ────────────────────────────────────────────────────────────
 
-    private async void OnPowerClicked(object? sender, EventArgs e)
+    private void OnPowerClicked(object? sender, EventArgs e) => SafeAsync.Run(async () =>
     {
         var system = _app.SystemControl;
         if (system.IsSystemRunning
@@ -103,8 +118,8 @@ public partial class DashboardPage : ContentPage
             return;
 
         if (system.ToggleSystemCommand.CanExecute(null))
-            system.ToggleSystemCommand.Execute(null);
-    }
+            await system.ToggleSystemCommand.ExecuteAsync(null);
+    });
 
     // ── Next scheduled start ─────────────────────────────────────────────
 
@@ -113,7 +128,7 @@ public partial class DashboardPage : ContentPage
     {
         if (e.PropertyName == nameof(SystemControlCardViewModel.CurrentAuthority))
         {
-            _ = _schedule.TrackUnitModeAsync(_app.SystemControl.CurrentAuthority);
+            SafeAsync.Run(() => _schedule.TrackUnitModeAsync(_app.SystemControl.CurrentAuthority));
             UpdateNextStart();
         }
     }
@@ -160,9 +175,8 @@ public partial class DashboardPage : ContentPage
         if (mode == OperatingMode.SelectedMode)
             return;
 
-        OperatingMode.SelectedMode = mode;
         if (OperatingMode.UpdateModeCommand.CanExecute(null))
-            OperatingMode.UpdateModeCommand.Execute(null);
+            SafeAsync.Run(() => OperatingMode.ChangeModeAsync(mode));
         else
             SyncModeSelection();
     }
@@ -255,5 +269,5 @@ public partial class DashboardPage : ContentPage
             modes.SetHolidayModeCommand.Execute(e.Value);
     }
 
-    private async void OnScheduleClicked(object? sender, EventArgs e) => await Shell.Current.GoToAsync("//main/schedule");
+    private void OnScheduleClicked(object? sender, EventArgs e) => SafeAsync.Run(() => Shell.Current.GoToAsync("//main/schedule"));
 }

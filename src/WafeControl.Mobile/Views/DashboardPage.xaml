@@ -27,32 +27,39 @@
                         </VerticalStackLayout>
                         <Border Grid.Column="1" Style="{StaticResource Pill}" VerticalOptions="Start" Margin="0,4,0,0">
                             <HorizontalStackLayout Spacing="6">
+                                <!-- Later triggers win: old data and no connection over online, demo over all. -->
                                 <Ellipse WidthRequest="8" HeightRequest="8" VerticalOptions="Center"
                                          Fill="{AppThemeBinding Light={StaticResource CriticalLight}, Dark={StaticResource CriticalDark}}">
                                     <Ellipse.Triggers>
                                         <DataTrigger TargetType="Ellipse" Binding="{Binding IsSystemOnline}" Value="True">
                                             <Setter Property="Fill" Value="{AppThemeBinding Light={StaticResource SuccessLight}, Dark={StaticResource SuccessDark}}" />
                                         </DataTrigger>
+                                        <DataTrigger TargetType="Ellipse" Binding="{Binding DataState}" Value="{x:Static vm:DataState.Stale}">
+                                            <Setter Property="Fill" Value="{AppThemeBinding Light={StaticResource CautionLight}, Dark={StaticResource CautionDark}}" />
+                                        </DataTrigger>
+                                        <DataTrigger TargetType="Ellipse" Binding="{Binding DataState}" Value="{x:Static vm:DataState.ServerUnreachable}">
+                                            <Setter Property="Fill" Value="{AppThemeBinding Light={StaticResource CriticalLight}, Dark={StaticResource CriticalDark}}" />
+                                        </DataTrigger>
+                                        <DataTrigger TargetType="Ellipse" Binding="{Binding DataState}" Value="{x:Static vm:DataState.NoInternet}">
+                                            <Setter Property="Fill" Value="{AppThemeBinding Light={StaticResource CriticalLight}, Dark={StaticResource CriticalDark}}" />
+                                        </DataTrigger>
+                                        <DataTrigger TargetType="Ellipse" Binding="{Binding IsDemo}" Value="True">
+                                            <Setter Property="Fill" Value="{AppThemeBinding Light={StaticResource AccentLight}, Dark={StaticResource AccentDark}}" />
+                                        </DataTrigger>
                                     </Ellipse.Triggers>
                                 </Ellipse>
-                                <Label Text="{Binding IsSystemOnline, Converter={x:Static helpers:Converters.Online}}" Style="{StaticResource Caption}"
-                                       VerticalOptions="Center" />
+                                <Label Text="{Binding DataStateText}" Style="{StaticResource Caption}" VerticalOptions="Center" />
                             </HorizontalStackLayout>
                         </Border>
                     </Grid>
 
                     <!-- ── Banners ─────────────────────────────────────────── -->
-                    <controls:InfoBanner x:Name="NoInternetBanner" Severity="Warning" Icon="{x:Static helpers:FluentIcons.WifiOff}" IsShown="False"
-                                         Title="{x:Static loc:Strings.BannerNoInternetTitle}" Message="{x:Static loc:Strings.BannerNoInternetMessage}" />
-                    <controls:InfoBanner Severity="Error" Icon="{x:Static helpers:FluentIcons.CloudOff}"
-                                         Title="{x:Static loc:Strings.AppStatusUnitOffline}" Message="{x:Static loc:Strings.BannerUnitOfflineMessage}">
-                        <controls:InfoBanner.IsShown>
-                            <MultiBinding Converter="{x:Static helpers:Converters.AllTrue}">
-                                <Binding Path="LastUpdate" Converter="{x:Static helpers:Converters.IsNotNull}" />
-                                <Binding Path="IsSystemOnline" Converter="{x:Static helpers:Converters.Not}" />
-                            </MultiBinding>
-                        </controls:InfoBanner.IsShown>
-                    </controls:InfoBanner>
+                    <controls:InfoBanner Severity="Informational" IsShown="{Binding IsDemo}"
+                                         Title="{x:Static loc:Strings.DemoBannerTitle}" Message="{x:Static loc:Strings.DemoBannerMessage}"
+                                         ActionText="{x:Static loc:Strings.DemoSignIn}" ActionCommand="{Binding SignOutCommand}" />
+                    <controls:InfoBanner x:Name="DataBanner" Severity="Warning"
+                                         Title="{Binding DataBannerTitle}" Message="{Binding DataBannerMessage}"
+                                         ActionText="{x:Static loc:Strings.TitleBarRefresh}" ActionCommand="{Binding RefreshStatusCommand}" />
 
                     <!-- ── System state + power ────────────────────────────── -->
                     <Border Style="{StaticResource Card}">
@@ -101,8 +108,13 @@
                             </Label>
 
                             <Grid Grid.Row="2" Grid.ColumnSpan="2" Margin="0,16,0,0">
-                                <Button x:Name="PowerButton" Text="{Binding SystemControl.SystemToggleButtonText}" Clicked="OnPowerClicked"
-                                        IsEnabled="{Binding SystemControl.IsOperationInProgress, Converter={x:Static helpers:Converters.Not}}">
+                                <Button x:Name="PowerButton" Text="{Binding SystemControl.SystemToggleButtonText}" Clicked="OnPowerClicked">
+                                    <Button.IsEnabled>
+                                        <MultiBinding Converter="{x:Static helpers:Converters.AllTrue}">
+                                            <Binding Path="CanSendCommands" />
+                                            <Binding Path="SystemControl.IsOperationInProgress" Converter="{x:Static helpers:Converters.Not}" />
+                                        </MultiBinding>
+                                    </Button.IsEnabled>
                                     <Button.Triggers>
                                         <DataTrigger TargetType="Button" Binding="{Binding SystemControl.IsOperationInProgress}" Value="True">
                                             <Setter Property="Text" Value="" />
@@ -116,7 +128,8 @@
                     </Border>
 
                     <!-- ── Sensors (humidity only on units that report it) ── -->
-                    <controls:TileLayout MinItemWidth="150" MaxColumns="3" Spacing="12">
+                    <controls:TileLayout MinItemWidth="150" MaxColumns="3" Spacing="12"
+                                         Opacity="{Binding IsDataCurrent, Converter={x:Static helpers:Converters.DataOpacity}}">
                         <Border Style="{StaticResource Tile}">
                             <VerticalStackLayout Spacing="4">
                                 <HorizontalStackLayout Spacing="8">

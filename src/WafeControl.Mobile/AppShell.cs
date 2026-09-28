@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using Microsoft.Extensions.DependencyInjection;
 using WafeControl.Core.Localization;
+using WafeControl.Core.Threading;
 using WafeControl.Core.ViewModels;
 using WafeControl.Mobile.Helpers;
 using WafeControl.Mobile.Views;
@@ -73,7 +74,9 @@ public sealed class AppShell : Shell
             Dispatcher.Dispatch(UpdateRoute);
     }
 
-    private async void UpdateRoute()
+    private void UpdateRoute() => SafeAsync.Run(UpdateRouteAsync);
+
+    private async Task UpdateRouteAsync()
     {
         var onTabs = CurrentItem == _tabs;
         if (_app.IsAuthenticated && !onTabs)
