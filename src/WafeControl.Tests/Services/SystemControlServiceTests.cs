@@ -94,7 +94,7 @@ public class SystemControlServiceTests
         var api = Substitute.For<IWafeApiService>();
         var auth = Substitute.For<IAuthenticationService>();
         auth.IsAuthenticated.Returns(true);
-        api.SetFlowSpeedAsync(150, Arg.Any<CancellationToken>()).Returns(true);
+        api.SetFlowSpeedAsync(150, Arg.Any<CancellationToken>()).Returns(ApiResult.Success);
 
         // Initial status, then updated status with new gen + new flow value.
         api.GetMainStatusAsync(Arg.Any<CancellationToken>())
@@ -104,9 +104,9 @@ public class SystemControlServiceTests
         var sut = CreateSut(api, auth);
         await sut.RefreshStatusAsync(TestContext.Current.CancellationToken); // prime with gen=1
 
-        var result = await sut.SetFlowSpeedAsync(150, TestContext.Current.CancellationToken);
+        var result = await sut.SetFlowSpeedAsync(150, cancellationToken: TestContext.Current.CancellationToken);
 
-        Assert.True(result);
+        Assert.Equal(CommandStatus.Confirmed, result.Status);
     }
 
     [Fact]
@@ -115,7 +115,7 @@ public class SystemControlServiceTests
         var api = Substitute.For<IWafeApiService>();
         var auth = Substitute.For<IAuthenticationService>();
         auth.IsAuthenticated.Returns(true);
-        api.SetFlowSpeedAsync(150, Arg.Any<CancellationToken>()).Returns(true);
+        api.SetFlowSpeedAsync(150, Arg.Any<CancellationToken>()).Returns(ApiResult.Success);
 
         // Gen never changes → timeout.
         api.GetMainStatusAsync(Arg.Any<CancellationToken>())
@@ -124,9 +124,9 @@ public class SystemControlServiceTests
         var sut = CreateSut(api, auth, timeoutSeconds: 1);
         await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
-        var result = await sut.SetFlowSpeedAsync(150, TestContext.Current.CancellationToken);
+        var result = await sut.SetFlowSpeedAsync(150, cancellationToken: TestContext.Current.CancellationToken);
 
-        Assert.False(result);
+        Assert.Equal(CommandStatus.Pending, result.Status);
     }
 
     // ── SetAuthorityModeAsync ───────────────────────────────────────────────
@@ -137,7 +137,7 @@ public class SystemControlServiceTests
         var api = Substitute.For<IWafeApiService>();
         var auth = Substitute.For<IAuthenticationService>();
         auth.IsAuthenticated.Returns(true);
-        api.SetAuthorityModeAsync("manual", Arg.Any<CancellationToken>()).Returns(true);
+        api.SetAuthorityModeAsync("manual", Arg.Any<CancellationToken>()).Returns(ApiResult.Success);
 
         api.GetMainStatusAsync(Arg.Any<CancellationToken>())
            .Returns(MakeStatus(gen: 1, authority: "intelligent"),
@@ -146,9 +146,9 @@ public class SystemControlServiceTests
         var sut = CreateSut(api, auth);
         await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
-        var result = await sut.SetAuthorityModeAsync("manual", TestContext.Current.CancellationToken);
+        var result = await sut.SetAuthorityModeAsync("manual", cancellationToken: TestContext.Current.CancellationToken);
 
-        Assert.True(result);
+        Assert.Equal(CommandStatus.Confirmed, result.Status);
     }
 
     // ── SetSilentModeAsync ──────────────────────────────────────────────────
@@ -159,7 +159,7 @@ public class SystemControlServiceTests
         var api = Substitute.For<IWafeApiService>();
         var auth = Substitute.For<IAuthenticationService>();
         auth.IsAuthenticated.Returns(true);
-        api.SetSilentModeAsync(true, Arg.Any<CancellationToken>()).Returns(true);
+        api.SetSilentModeAsync(true, Arg.Any<CancellationToken>()).Returns(ApiResult.Success);
 
         api.GetMainStatusAsync(Arg.Any<CancellationToken>())
            .Returns(MakeStatus(gen: 1, silentActive: false),
@@ -168,9 +168,9 @@ public class SystemControlServiceTests
         var sut = CreateSut(api, auth);
         await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
-        var result = await sut.SetSilentModeAsync(true, TestContext.Current.CancellationToken);
+        var result = await sut.SetSilentModeAsync(true, cancellationToken: TestContext.Current.CancellationToken);
 
-        Assert.True(result);
+        Assert.Equal(CommandStatus.Confirmed, result.Status);
     }
 
     // ── SetHolidayModeAsync ─────────────────────────────────────────────────
@@ -181,7 +181,7 @@ public class SystemControlServiceTests
         var api = Substitute.For<IWafeApiService>();
         var auth = Substitute.For<IAuthenticationService>();
         auth.IsAuthenticated.Returns(true);
-        api.SetHolidayModeAsync(true, Arg.Any<CancellationToken>()).Returns(true);
+        api.SetHolidayModeAsync(true, Arg.Any<CancellationToken>()).Returns(ApiResult.Success);
 
         api.GetMainStatusAsync(Arg.Any<CancellationToken>())
            .Returns(MakeStatus(gen: 1, holidayActive: false),
@@ -190,9 +190,9 @@ public class SystemControlServiceTests
         var sut = CreateSut(api, auth);
         await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
-        var result = await sut.SetHolidayModeAsync(true, TestContext.Current.CancellationToken);
+        var result = await sut.SetHolidayModeAsync(true, cancellationToken: TestContext.Current.CancellationToken);
 
-        Assert.True(result);
+        Assert.Equal(CommandStatus.Confirmed, result.Status);
     }
 
     // ── SetBoostAsync ───────────────────────────────────────────────────────
@@ -203,7 +203,7 @@ public class SystemControlServiceTests
         var api = Substitute.For<IWafeApiService>();
         var auth = Substitute.For<IAuthenticationService>();
         auth.IsAuthenticated.Returns(true);
-        api.SetBoostAsync(900, Arg.Any<CancellationToken>()).Returns(true);
+        api.SetBoostAsync(900, Arg.Any<CancellationToken>()).Returns(ApiResult.Success);
 
         api.GetMainStatusAsync(Arg.Any<CancellationToken>())
            .Returns(MakeStatus(gen: 1, boostRemaining: 0),
@@ -212,9 +212,9 @@ public class SystemControlServiceTests
         var sut = CreateSut(api, auth);
         await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
-        var result = await sut.SetBoostAsync(900, TestContext.Current.CancellationToken);
+        var result = await sut.SetBoostAsync(900, cancellationToken: TestContext.Current.CancellationToken);
 
-        Assert.True(result);
+        Assert.Equal(CommandStatus.Confirmed, result.Status);
     }
 
     // ── StartSystemAsync / StopSystemAsync ─────────────────────────────────
@@ -225,7 +225,7 @@ public class SystemControlServiceTests
         var api = Substitute.For<IWafeApiService>();
         var auth = Substitute.For<IAuthenticationService>();
         auth.IsAuthenticated.Returns(true);
-        api.SetStopActiveAsync(false, Arg.Any<CancellationToken>()).Returns(true);
+        api.SetStopActiveAsync(false, Arg.Any<CancellationToken>()).Returns(ApiResult.Success);
 
         // Initial: stopped (stopActive=true, gen=1) → confirmed: running (stopActive=false, gen=2)
         api.GetMainStatusAsync(Arg.Any<CancellationToken>())
@@ -235,9 +235,9 @@ public class SystemControlServiceTests
         var sut = CreateSut(api, auth);
         await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
-        var result = await sut.StartSystemAsync(TestContext.Current.CancellationToken);
+        var result = await sut.StartSystemAsync(cancellationToken: TestContext.Current.CancellationToken);
 
-        Assert.True(result);
+        Assert.Equal(CommandStatus.Confirmed, result.Status);
     }
 
     [Fact]
@@ -246,7 +246,7 @@ public class SystemControlServiceTests
         var api = Substitute.For<IWafeApiService>();
         var auth = Substitute.For<IAuthenticationService>();
         auth.IsAuthenticated.Returns(true);
-        api.SetStopActiveAsync(true, Arg.Any<CancellationToken>()).Returns(true);
+        api.SetStopActiveAsync(true, Arg.Any<CancellationToken>()).Returns(ApiResult.Success);
 
         api.GetMainStatusAsync(Arg.Any<CancellationToken>())
            .Returns(MakeStatus(gen: 1, stopActive: false),
@@ -255,9 +255,9 @@ public class SystemControlServiceTests
         var sut = CreateSut(api, auth);
         await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
-        var result = await sut.StopSystemAsync(TestContext.Current.CancellationToken);
+        var result = await sut.StopSystemAsync(cancellationToken: TestContext.Current.CancellationToken);
 
-        Assert.True(result);
+        Assert.Equal(CommandStatus.Confirmed, result.Status);
     }
 
     [Fact]
@@ -266,7 +266,7 @@ public class SystemControlServiceTests
         var api = Substitute.For<IWafeApiService>();
         var auth = Substitute.For<IAuthenticationService>();
         auth.IsAuthenticated.Returns(true);
-        api.SetStopActiveAsync(false, Arg.Any<CancellationToken>()).Returns(true);
+        api.SetStopActiveAsync(false, Arg.Any<CancellationToken>()).Returns(ApiResult.Success);
 
         // Gen never changes → timeout
         api.GetMainStatusAsync(Arg.Any<CancellationToken>())
@@ -275,9 +275,9 @@ public class SystemControlServiceTests
         var sut = CreateSut(api, auth, timeoutSeconds: 1);
         await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
-        var result = await sut.StartSystemAsync(TestContext.Current.CancellationToken);
+        var result = await sut.StartSystemAsync(cancellationToken: TestContext.Current.CancellationToken);
 
-        Assert.False(result);
+        Assert.Equal(CommandStatus.Pending, result.Status);
     }
 
     // ── IsSystemOnline ──────────────────────────────────────────────────────
@@ -360,7 +360,7 @@ public class SystemControlServiceTests
         var api = Substitute.For<IWafeApiService>();
         var auth = Substitute.For<IAuthenticationService>();
         auth.IsAuthenticated.Returns(true);
-        api.SetFlowSpeedAsync(150, Arg.Any<CancellationToken>()).Returns(true);
+        api.SetFlowSpeedAsync(150, Arg.Any<CancellationToken>()).Returns(ApiResult.Success);
         api.GetMainStatusAsync(Arg.Any<CancellationToken>())
            .Returns(MakeStatus(gen: 1, flowRequested: 100),
                     MakeStatus(gen: 1, flowRequested: 100),
@@ -369,7 +369,7 @@ public class SystemControlServiceTests
         var sut = CreateSut(api, auth);
         await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
-        Assert.True(await sut.SetFlowSpeedAsync(150, TestContext.Current.CancellationToken));
+        Assert.Equal(CommandStatus.Confirmed, (await sut.SetFlowSpeedAsync(150, cancellationToken: TestContext.Current.CancellationToken)).Status);
         await api.Received(3).GetMainStatusAsync(Arg.Any<CancellationToken>());
         await api.Received(1).GetHeaderInfoAsync(Arg.Any<CancellationToken>());
     }
@@ -380,13 +380,13 @@ public class SystemControlServiceTests
         var api = Substitute.For<IWafeApiService>();
         var auth = Substitute.For<IAuthenticationService>();
         auth.IsAuthenticated.Returns(true);
-        api.SetUnitNameAsync("Chata", Arg.Any<CancellationToken>()).Returns(true);
+        api.SetUnitNameAsync("Chata", Arg.Any<CancellationToken>()).Returns(ApiResult.Success);
         api.GetMainStatusAsync(Arg.Any<CancellationToken>()).Returns(MakeStatus(gen: 1));
         api.GetHeaderInfoAsync(Arg.Any<CancellationToken>()).Returns(new HeaderInfo { Name = "Chata" });
 
         var sut = CreateSut(api, auth);
 
-        Assert.True(await sut.SetUnitNameAsync("Chata", TestContext.Current.CancellationToken));
+        Assert.True((await sut.SetUnitNameAsync("Chata", TestContext.Current.CancellationToken)).Ok);
         Assert.Equal("Chata", sut.CurrentHeader?.Name);
     }
 
@@ -396,11 +396,11 @@ public class SystemControlServiceTests
         var api = Substitute.For<IWafeApiService>();
         var auth = Substitute.For<IAuthenticationService>();
         auth.IsAuthenticated.Returns(true);
-        api.SetUnitNameAsync("Chata", Arg.Any<CancellationToken>()).Returns(false);
+        api.SetUnitNameAsync("Chata", Arg.Any<CancellationToken>()).Returns(ApiResult.Fail(ApiError.Rejected, 400));
 
         var sut = CreateSut(api, auth);
 
-        Assert.False(await sut.SetUnitNameAsync("Chata", TestContext.Current.CancellationToken));
+        Assert.False((await sut.SetUnitNameAsync("Chata", TestContext.Current.CancellationToken)).Ok);
         await api.DidNotReceive().GetHeaderInfoAsync(Arg.Any<CancellationToken>());
     }
 
@@ -425,15 +425,15 @@ public class SystemControlServiceTests
         var api = Substitute.For<IWafeApiService>();
         var auth = Substitute.For<IAuthenticationService>();
         auth.IsAuthenticated.Returns(true);
-        api.SetFlowSpeedAsync(150, Arg.Any<CancellationToken>()).Returns(false);
+        api.SetFlowSpeedAsync(150, Arg.Any<CancellationToken>()).Returns(ApiResult.Fail(ApiError.Rejected, 400));
         api.GetMainStatusAsync(Arg.Any<CancellationToken>()).Returns(MakeStatus(gen: 1));
 
         var sut = CreateSut(api, auth);
         await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
-        var result = await sut.SetFlowSpeedAsync(150, TestContext.Current.CancellationToken);
+        var result = await sut.SetFlowSpeedAsync(150, cancellationToken: TestContext.Current.CancellationToken);
 
-        Assert.False(result);
+        Assert.Equal(CommandStatus.Failed, result.Status);
         await api.Received(1).GetMainStatusAsync(Arg.Any<CancellationToken>());
     }
 
@@ -462,14 +462,14 @@ public class SystemControlServiceTests
         var api = Substitute.For<IWafeApiService>();
         var auth = Substitute.For<IAuthenticationService>();
         auth.IsAuthenticated.Returns(true);
-        api.SetStopActiveAsync(true, Arg.Any<CancellationToken>()).Returns(true);
+        api.SetStopActiveAsync(true, Arg.Any<CancellationToken>()).Returns(ApiResult.Success);
         api.GetMainStatusAsync(Arg.Any<CancellationToken>()).Returns(MakeStatus(gen: 1, stopActive: false), (SystemStatus?)null);
 
         var sut = CreateSut(api, auth, timeoutSeconds: 1);
         await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
-        var result = await sut.StopSystemAsync(TestContext.Current.CancellationToken);
+        var result = await sut.StopSystemAsync(cancellationToken: TestContext.Current.CancellationToken);
 
-        Assert.False(result);
+        Assert.Equal(CommandStatus.Pending, result.Status);
     }
 }

@@ -41,7 +41,7 @@
     <value>System offline</value>
   </data>
   <data name="AppStatusRefreshError" xml:space="preserve">
-    <value>Refresh error: {0}</value>
+    <value>Couldn't refresh. {0}</value>
   </data>
   <data name="TitleBarConnection" xml:space="preserve">
     <value>Ventilation unit connection</value>
@@ -95,7 +95,7 @@
     <value>Sign in</value>
   </data>
   <data name="LoginDescription" xml:space="preserve">
-    <value>Use your Wafe account (go2my.wafe.eu).</value>
+    <value>Sign in with the email and password you use for the Wafe web app (go2my.wafe.eu).</value>
   </data>
   <data name="LoginEmail" xml:space="preserve">
     <value>Email</value>
@@ -149,7 +149,7 @@
     <value>System started</value>
   </data>
   <data name="SystemStartNotConfirmed" xml:space="preserve">
-    <value>Start command sent (not confirmed)</value>
+    <value>The unit hasn't confirmed the start yet. It may still start.</value>
   </data>
   <data name="SystemStopping" xml:space="preserve">
     <value>Stopping system…</value>
@@ -158,10 +158,10 @@
     <value>System stopped</value>
   </data>
   <data name="SystemStopNotConfirmed" xml:space="preserve">
-    <value>Stop command sent (not confirmed)</value>
+    <value>The unit hasn't confirmed the stop yet. It may still stop.</value>
   </data>
   <data name="SystemToggleError" xml:space="preserve">
-    <value>System toggle error: {0}</value>
+    <value>Couldn't start or stop the unit. {0}</value>
   </data>
   <data name="SensorOutdoor" xml:space="preserve">
     <value>Outdoor</value>
@@ -215,10 +215,10 @@
     <value>Mode changed to {0}</value>
   </data>
   <data name="ModeChangeTimedOut" xml:space="preserve">
-    <value>Mode change timed out. Please verify status.</value>
+    <value>The unit hasn't confirmed the mode change yet. It may still apply.</value>
   </data>
   <data name="ModeError" xml:space="preserve">
-    <value>Mode error: {0}</value>
+    <value>Couldn't change the mode. {0}</value>
   </data>
   <data name="FlowRateLabel" xml:space="preserve">
     <value>Flow rate</value>
@@ -236,10 +236,10 @@
     <value>Flow speed set to {0} m³/h</value>
   </data>
   <data name="FlowNotConfirmed" xml:space="preserve">
-    <value>Flow speed command sent to {0} m³/h (not confirmed)</value>
+    <value>The unit hasn't confirmed {0} m³/h yet. It may still apply.</value>
   </data>
   <data name="FlowError" xml:space="preserve">
-    <value>Flow speed error: {0}</value>
+    <value>Couldn't change the flow rate. {0}</value>
   </data>
   <data name="BoostTitle" xml:space="preserve">
     <value>Boost</value>
@@ -269,10 +269,10 @@
     <value>Boost stopped</value>
   </data>
   <data name="BoostNotConfirmed" xml:space="preserve">
-    <value>Boost command sent (not confirmed)</value>
+    <value>The unit hasn't confirmed the boost yet. It may still apply.</value>
   </data>
   <data name="BoostError" xml:space="preserve">
-    <value>Boost error: {0}</value>
+    <value>Couldn't change the boost. {0}</value>
   </data>
   <data name="ModesTitle" xml:space="preserve">
     <value>Modes</value>
@@ -299,13 +299,13 @@
     <value>Silent mode off</value>
   </data>
   <data name="SilentOnNotConfirmed" xml:space="preserve">
-    <value>Silent mode command sent (not confirmed)</value>
+    <value>The unit hasn't confirmed silent mode yet. It may still apply.</value>
   </data>
   <data name="SilentOffNotConfirmed" xml:space="preserve">
-    <value>Silent mode off command sent (not confirmed)</value>
+    <value>The unit hasn't confirmed silent mode off yet. It may still apply.</value>
   </data>
   <data name="SilentError" xml:space="preserve">
-    <value>Silent mode error: {0}</value>
+    <value>Couldn't change silent mode. {0}</value>
   </data>
   <data name="HolidayTitle" xml:space="preserve">
     <value>Holiday</value>
@@ -329,13 +329,13 @@
     <value>Holiday mode off</value>
   </data>
   <data name="HolidayOnNotConfirmed" xml:space="preserve">
-    <value>Holiday mode command sent (not confirmed)</value>
+    <value>The unit hasn't confirmed holiday mode yet. It may still apply.</value>
   </data>
   <data name="HolidayOffNotConfirmed" xml:space="preserve">
-    <value>Holiday mode off command sent (not confirmed)</value>
+    <value>The unit hasn't confirmed holiday mode off yet. It may still apply.</value>
   </data>
   <data name="HolidayError" xml:space="preserve">
-    <value>Holiday mode error: {0}</value>
+    <value>Couldn't change holiday mode. {0}</value>
   </data>
   <data name="FiltersTitle" xml:space="preserve">
     <value>Filters</value>
@@ -413,7 +413,7 @@
     <value>Mon,Tue,Wed,Thu,Fri,Sat,Sun</value>
   </data>
   <data name="ScheduleLoadFailed" xml:space="preserve">
-    <value>Couldn't load the schedule.</value>
+    <value>Couldn't load the schedule. {0}</value>
   </data>
   <data name="ScheduleReadOnly" xml:space="preserve">
     <value>The schedule contains entries this app doesn't understand. It's shown read-only so they aren't lost.</value>
@@ -425,7 +425,7 @@
     <value>The schedule is full ({0} actions).</value>
   </data>
   <data name="ScheduleSaveFailed" xml:space="preserve">
-    <value>Couldn't save the schedule. Please try again.</value>
+    <value>Couldn't save the schedule. {0}</value>
   </data>
   <data name="ScheduleChooseMode" xml:space="preserve">
     <value>Choose a mode.</value>
@@ -519,7 +519,7 @@
     <value>Up to {0} characters. The name changes on the Wafe portal too.</value>
   </data>
   <data name="UnitNameSaveFailed" xml:space="preserve">
-    <value>The name couldn't be saved. Please try again.</value>
+    <value>The name couldn't be saved. {0}</value>
   </data>
   <data name="ButtonAdd" xml:space="preserve">
     <value>Add</value>
@@ -555,7 +555,7 @@
     <value>No internet connection</value>
   </data>
   <data name="BannerNoInternetMessage" xml:space="preserve">
-    <value>Values may be out of date. The app reconnects on its own.</value>
+    <value>Showing data from {0}. The app reconnects on its own.</value>
   </data>
   <data name="BannerUnitOfflineMessage" xml:space="preserve">
     <value>The unit isn't connected to the Wafe portal. Check its power and network.</value>
@@ -586,5 +586,206 @@
   </data>
   <data name="ButtonCopy" xml:space="preserve">
     <value>Copy</value>
+  </data>
+  <data name="ErrorOffline" xml:space="preserve">
+    <value>Can't connect to the Wafe server. Check your internet connection.</value>
+  </data>
+  <data name="ErrorTimeout" xml:space="preserve">
+    <value>The Wafe server didn't answer in time. Try again.</value>
+  </data>
+  <data name="ErrorUnauthorized" xml:space="preserve">
+    <value>Your sign-in has expired. Sign in again.</value>
+  </data>
+  <data name="ErrorRejected" xml:space="preserve">
+    <value>The Wafe server refused the change.</value>
+  </data>
+  <data name="ErrorServer" xml:space="preserve">
+    <value>The Wafe server has a problem right now. Try again later.</value>
+  </data>
+  <data name="ErrorInvalidResponse" xml:space="preserve">
+    <value>The Wafe server answered in an unexpected way. The app may need an update.</value>
+  </data>
+  <data name="ErrorUnexpected" xml:space="preserve">
+    <value>Something went wrong. If it keeps happening, report a problem.</value>
+  </data>
+  <data name="CommandWaiting" xml:space="preserve">
+    <value>Waiting for the unit to confirm…</value>
+  </data>
+  <data name="CommandConfirmedLate" xml:space="preserve">
+    <value>{0} (confirmed later than usual)</value>
+  </data>
+  <data name="ButtonRetry" xml:space="preserve">
+    <value>Retry</value>
+  </data>
+  <data name="ButtonClose" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="DataStaleShort" xml:space="preserve">
+    <value>Data {0} min old</value>
+  </data>
+  <data name="DataNoConnectionShort" xml:space="preserve">
+    <value>No connection</value>
+  </data>
+  <data name="DataNoInternetShort" xml:space="preserve">
+    <value>No internet</value>
+  </data>
+  <data name="BannerStaleTitle" xml:space="preserve">
+    <value>Data may be out of date</value>
+  </data>
+  <data name="BannerStaleMessage" xml:space="preserve">
+    <value>The unit last reported {0} min ago.</value>
+  </data>
+  <data name="BannerUnreachableTitle" xml:space="preserve">
+    <value>Can't reach the Wafe server</value>
+  </data>
+  <data name="BannerUnreachableMessage" xml:space="preserve">
+    <value>Showing data from {0}. The app keeps trying.</value>
+  </data>
+  <data name="DemoTry" xml:space="preserve">
+    <value>Try the demo</value>
+  </data>
+  <data name="DemoTryDescription" xml:space="preserve">
+    <value>No Wafe unit? Try the app with a simulated one.</value>
+  </data>
+  <data name="DemoBannerTitle" xml:space="preserve">
+    <value>Demo mode</value>
+  </data>
+  <data name="DemoBannerMessage" xml:space="preserve">
+    <value>This is a simulated unit; nothing is sent to a real device.</value>
+  </data>
+  <data name="DemoSignIn" xml:space="preserve">
+    <value>Sign in with your account</value>
+  </data>
+  <data name="DemoLeave" xml:space="preserve">
+    <value>Leave demo</value>
+  </data>
+  <data name="DemoSubtitle" xml:space="preserve">
+    <value>Demo</value>
+  </data>
+  <data name="LoginRememberMeHint" xml:space="preserve">
+    <value>Stored encrypted on this device only.</value>
+  </data>
+  <data name="LoginCapsLock" xml:space="preserve">
+    <value>Caps Lock is on.</value>
+  </data>
+  <data name="LoginShowPassword" xml:space="preserve">
+    <value>Show</value>
+  </data>
+  <data name="LoginHidePassword" xml:space="preserve">
+    <value>Hide</value>
+  </data>
+  <data name="LoginUnofficial" xml:space="preserve">
+    <value>Unofficial app · not affiliated with WAFE s.r.o.</value>
+  </data>
+  <data name="ReportProblem" xml:space="preserve">
+    <value>Report a problem</value>
+  </data>
+  <data name="ReportDialogMessage" xml:space="preserve">
+    <value>Describe what happened in a GitHub issue; the app fills in its version and device. Without a GitHub account, send the diagnostics and the log file another way.</value>
+  </data>
+  <data name="ReportOpenGitHub" xml:space="preserve">
+    <value>Open GitHub issue</value>
+  </data>
+  <data name="ReportCopyDiagnostics" xml:space="preserve">
+    <value>Copy diagnostics</value>
+  </data>
+  <data name="ReportCopied" xml:space="preserve">
+    <value>Diagnostics copied.</value>
+  </data>
+  <data name="ReportShare" xml:space="preserve">
+    <value>Share logs and diagnostics</value>
+  </data>
+  <data name="ReportLogsHint" xml:space="preserve">
+    <value>Attach the newest file from the log folder.</value>
+  </data>
+  <data name="CrashDialogTitle" xml:space="preserve">
+    <value>The app closed unexpectedly</value>
+  </data>
+  <data name="CrashDialogMessage" xml:space="preserve">
+    <value>WAFE Control closed unexpectedly last time. Reporting it helps fix the problem.</value>
+  </data>
+  <data name="CrashDialogReportSent" xml:space="preserve">
+    <value>A crash report was sent automatically.</value>
+  </data>
+  <data name="CrashConsentTitle" xml:space="preserve">
+    <value>Send crash reports?</value>
+  </data>
+  <data name="CrashConsentMessage" xml:space="preserve">
+    <value>If the app crashes or hits an error, it can send an anonymous report: app version, device type and error details. Never your email, password or unit serial number. You can change this in Settings.</value>
+  </data>
+  <data name="CrashConsentSend" xml:space="preserve">
+    <value>Send</value>
+  </data>
+  <data name="CrashConsentDontSend" xml:space="preserve">
+    <value>Don't send</value>
+  </data>
+  <data name="SettingsCrashReports" xml:space="preserve">
+    <value>Send crash reports</value>
+  </data>
+  <data name="SettingsCrashReportsDescription" xml:space="preserve">
+    <value>Anonymous: app version, device and error details.</value>
+  </data>
+  <data name="SettingsCrashReportsRestart" xml:space="preserve">
+    <value>Turning it on takes effect the next time the app starts.</value>
+  </data>
+  <data name="SettingsShareLogs" xml:space="preserve">
+    <value>Share logs</value>
+  </data>
+  <data name="UpdatesTitle" xml:space="preserve">
+    <value>Updates</value>
+  </data>
+  <data name="UpdateDownloading" xml:space="preserve">
+    <value>Downloading update {0} %</value>
+  </data>
+  <data name="UpdateRestart" xml:space="preserve">
+    <value>Restart to update</value>
+  </data>
+  <data name="UpdateAvailable" xml:space="preserve">
+    <value>Update</value>
+  </data>
+  <data name="UpdateReadyTitle" xml:space="preserve">
+    <value>Version {0} is ready</value>
+  </data>
+  <data name="UpdateAvailableTitle" xml:space="preserve">
+    <value>Version {0} is available</value>
+  </data>
+  <data name="UpdateRestartNow" xml:space="preserve">
+    <value>Restart now</value>
+  </data>
+  <data name="UpdateDownloadNow" xml:space="preserve">
+    <value>Download</value>
+  </data>
+  <data name="UpdateUpToDate" xml:space="preserve">
+    <value>Up to date · checked {0}</value>
+  </data>
+  <data name="UpdateChecking" xml:space="preserve">
+    <value>Checking for updates…</value>
+  </data>
+  <data name="UpdateCheckFailed" xml:space="preserve">
+    <value>Couldn't check for updates.</value>
+  </data>
+  <data name="UpdateCheckNow" xml:space="preserve">
+    <value>Check now</value>
+  </data>
+  <data name="UpdateAutoDownload" xml:space="preserve">
+    <value>Download updates automatically</value>
+  </data>
+  <data name="UpdateBeta" xml:space="preserve">
+    <value>Get beta versions</value>
+  </data>
+  <data name="UpdatedTo" xml:space="preserve">
+    <value>Updated to {0}.</value>
+  </data>
+  <data name="UpdateWhatsNew" xml:space="preserve">
+    <value>What's new</value>
+  </data>
+  <data name="TrayUpdateReady" xml:space="preserve">
+    <value>Update ready</value>
+  </data>
+  <data name="UpdateNotInstalled" xml:space="preserve">
+    <value>Updates work in the installed app only.</value>
+  </data>
+  <data name="LoginHelp" xml:space="preserve">
+    <value>Forgot your password or have no account? Your installer or the Wafe service can help.</value>
   </data>
 </root>

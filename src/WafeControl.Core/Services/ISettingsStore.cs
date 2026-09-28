@@ -29,6 +29,31 @@ public sealed record UserSettings
     /// Where the main window was when it last closed; null until then. Desktop only.
     /// </summary>
     public WindowPlacement? MainWindow { get; init; }
+
+    /// <summary>
+    /// Send crash reports: null until the user answered the question.
+    /// </summary>
+    public bool? CrashReports { get; init; }
+
+    /// <summary>
+    /// Download new versions in the background (Windows).
+    /// </summary>
+    public bool AutoDownloadUpdates { get; init; } = true;
+
+    /// <summary>
+    /// Offer pre-release versions too (Windows).
+    /// </summary>
+    public bool BetaUpdates { get; init; }
+
+    /// <summary>
+    /// The version that ran last, to say "Updated to …" once after an update (Windows).
+    /// </summary>
+    public string? LastRunVersion { get; init; }
+
+    /// <summary>
+    /// Time of the newest crash already read from the Windows event log, so each is reported once (Windows).
+    /// </summary>
+    public DateTimeOffset? LastSeenCrashEventTime { get; init; }
 }
 
 public enum AppTheme

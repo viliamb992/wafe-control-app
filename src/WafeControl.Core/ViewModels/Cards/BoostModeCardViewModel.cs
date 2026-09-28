@@ -29,32 +29,25 @@ public sealed partial class BoostModeCardViewModel : CardViewModelBase
     [RelayCommand(CanExecute = nameof(CanSetBoost))]
     private async Task SetBoostAsync(string? secondsString)
     {
-        try
+        if (!int.TryParse(secondsString, out var seconds))
         {
-            if (!int.TryParse(secondsString, out var seconds))
-            {
-                App.StatusMessage = Strings.BoostInvalidDuration;
-                return;
-            }
-
-            var minutes = seconds / 60;
-            App.StatusMessage = seconds > 0 ? string.Format(Strings.BoostActivating, minutes) : Strings.BoostStopping;
-
-            var confirmed = await SystemControl.SetBoostAsync(seconds);
-
-            if (confirmed)
-                App.StatusMessage = seconds > 0 ? string.Format(Strings.BoostActivated, minutes) : Strings.BoostStopped;
-            else
-                App.StatusMessage = Strings.BoostNotConfirmed;
+            App.Feedback = Feedback.Error(Strings.BoostInvalidDuration);
+            return;
         }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error setting boost");
-            App.StatusMessage = string.Format(Strings.BoostError, ex.Message);
-        }
+
+        var minutes = seconds / 60;
+        var texts = seconds > 0
+            ? new CommandTexts(string.Format(Strings.BoostActivating, minutes), string.Format(Strings.BoostActivated, minutes),
+                Strings.BoostNotConfirmed, Strings.BoostError)
+            : new CommandTexts(Strings.BoostStopping, Strings.BoostStopped, Strings.BoostNotConfirmed, Strings.BoostError);
+
+        await RunCommandAsync(
+            onSent => SystemControl.SetBoostAsync(seconds, onSent),
+            texts,
+            () => SetBoostCommand.ExecuteAsync(secondsString));
     }
 
-    private bool CanSetBoost() => App.IsAuthenticated;
+    private bool CanSetBoost() => App.CanSendCommands;
 
     protected override void OnStatusUpdated(SystemStatus status) => BoostRemaining = status.BoostRemaining;
 

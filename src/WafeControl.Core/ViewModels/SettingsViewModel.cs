@@ -13,12 +13,15 @@ public sealed partial class SettingsViewModel : ObservableObject
     private readonly ILocalizationService _localization;
     private readonly ISettingsStore _settings;
     private readonly IStartupRegistration _startup;
+    private readonly ICrashReports _crashReports;
+    private readonly bool _loaded;
 
-    public SettingsViewModel(ILocalizationService localization, ISettingsStore settings, IStartupRegistration startup)
+    public SettingsViewModel(ILocalizationService localization, ISettingsStore settings, IStartupRegistration startup, ICrashReports? crashReports = null)
     {
         _localization = localization;
         _settings = settings;
         _startup = startup;
+        _crashReports = crashReports ?? new NoCrashReports();
 
         var saved = settings.Load();
         SelectedLanguage = localization.Current;
@@ -26,6 +29,10 @@ public sealed partial class SettingsViewModel : ObservableObject
         StartInTray = saved.StartInTray;
         Theme = saved.Theme;
         RunAtStartup = startup.IsEnabled;
+        CrashReportsEnabled = saved.CrashReports == true;
+        AutoDownloadUpdates = saved.AutoDownloadUpdates;
+        BetaUpdates = saved.BetaUpdates;
+        _loaded = true;
     }
 
     /// <summary>
@@ -80,6 +87,49 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     public string Version => AppVersion.Current;
 
+    /// <summary>
+    /// Send crash reports (opt-in). Only offered when <see cref="IsCrashReportsAvailable"/>.
+    /// </summary>
+    [ObservableProperty]
+    public partial bool CrashReportsEnabled { get; set; }
+
+    /// <summary>
+    /// A release build with a reporting address; development builds hide the setting.
+    /// </summary>
+    public bool IsCrashReportsAvailable => _crashReports.IsAvailable;
+
+    /// <summary>
+    /// Turning reports on needs a restart on this platform; the setting says so.
+    /// </summary>
+    public bool ShowsCrashReportsRestartHint => !_crashReports.AppliesImmediately;
+
+    /// <summary>
+    /// The user hasn't been asked about crash reports yet (ask once, after the first sign-in).
+    /// </summary>
+    public bool NeedsCrashReportConsent => IsCrashReportsAvailable && _settings.Load().CrashReports is null;
+
+    /// <summary>
+    /// The answer to the one-time question; saved even when it's "no", so it isn't asked again.
+    /// </summary>
+    public void AnswerCrashReportConsent(bool send)
+    {
+        _settings.Save(_settings.Load() with { CrashReports = send });
+        CrashReportsEnabled = send;
+        _crashReports.Apply(send);
+    }
+
+    /// <summary>
+    /// Download new versions in the background (Windows).
+    /// </summary>
+    [ObservableProperty]
+    public partial bool AutoDownloadUpdates { get; set; }
+
+    /// <summary>
+    /// Offer pre-release versions (Windows).
+    /// </summary>
+    [ObservableProperty]
+    public partial bool BetaUpdates { get; set; }
+
     partial void OnSelectedLanguageChanged(AppLanguage value)
     {
         // A list control briefly reports no selection while its items are rebuilt;
@@ -108,6 +158,33 @@ public sealed partial class SettingsViewModel : ObservableObject
         var saved = _settings.Load();
         if (saved.Theme != value)
             _settings.Save(saved with { Theme = value });
+    }
+
+    partial void OnCrashReportsEnabledChanged(bool value)
+    {
+        if (!_loaded)
+            return;
+
+        var saved = _settings.Load();
+        if (saved.CrashReports != value)
+        {
+            _settings.Save(saved with { CrashReports = value });
+            _crashReports.Apply(value);
+        }
+    }
+
+    partial void OnAutoDownloadUpdatesChanged(bool value)
+    {
+        var saved = _settings.Load();
+        if (saved.AutoDownloadUpdates != value)
+            _settings.Save(saved with { AutoDownloadUpdates = value });
+    }
+
+    partial void OnBetaUpdatesChanged(bool value)
+    {
+        var saved = _settings.Load();
+        if (saved.BetaUpdates != value)
+            _settings.Save(saved with { BetaUpdates = value });
     }
 
     partial void OnRunAtStartupChanged(bool value)

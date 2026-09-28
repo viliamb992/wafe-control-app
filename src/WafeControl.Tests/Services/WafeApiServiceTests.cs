@@ -29,7 +29,7 @@ public class WafeApiServiceTests
 
         var result = await CreateSut(stub).AuthenticateAsync("alice", "secret", TestContext.Current.CancellationToken);
 
-        Assert.True(result);
+        Assert.True(result.Ok);
         Assert.Equal("k1", _session.Key);
         Assert.Equal(("alice", "secret"), _session.Credentials);
         var login = Assert.Single(stub.Requests);
@@ -63,7 +63,7 @@ public class WafeApiServiceTests
 
         var result = await CreateSut(stub).AuthenticateAsync("alice", "secret", TestContext.Current.CancellationToken);
 
-        Assert.True(result);
+        Assert.True(result.Ok);
         Assert.Equal("k2", _session.Key);
     }
 
@@ -74,7 +74,7 @@ public class WafeApiServiceTests
 
         var result = await CreateSut(stub).AuthenticateAsync("alice", "wrong", TestContext.Current.CancellationToken);
 
-        Assert.False(result);
+        Assert.Equal(ApiError.Unauthorized, result.Error);
         Assert.Null(_session.Key);
     }
 
@@ -83,7 +83,7 @@ public class WafeApiServiceTests
     {
         var stub = new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.Created));
 
-        Assert.False(await CreateSut(stub).AuthenticateAsync("alice", "secret", TestContext.Current.CancellationToken));
+        Assert.Equal(ApiError.Unauthorized, (await CreateSut(stub).AuthenticateAsync("alice", "secret", TestContext.Current.CancellationToken)).Error);
     }
 
     // ── GetMainStatusAsync ─────────────────────────────────────────────────
@@ -110,7 +110,7 @@ public class WafeApiServiceTests
         _session.Start("alice", "secret", "k1");
         var stub = new StubHttpHandler(_ => StubHttpHandler.Json(json));
 
-        var status = await CreateSut(stub).GetMainStatusAsync(TestContext.Current.CancellationToken);
+        var status = (await CreateSut(stub).GetMainStatusAsync(TestContext.Current.CancellationToken)).Value;
 
         Assert.NotNull(status);
         Assert.Equal(42, status.Gen);
@@ -128,19 +128,19 @@ public class WafeApiServiceTests
     }
 
     [Fact]
-    public async Task GetMainStatusAsync_ServerError_ReturnsNull()
+    public async Task GetMainStatusAsync_ServerError_ReportsServerError()
     {
         var stub = new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.InternalServerError));
 
-        Assert.Null(await CreateSut(stub).GetMainStatusAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(ApiError.ServerError, (await CreateSut(stub).GetMainStatusAsync(TestContext.Current.CancellationToken)).Error);
     }
 
     [Fact]
-    public async Task GetMainStatusAsync_MalformedJson_ReturnsNull()
+    public async Task GetMainStatusAsync_MalformedJson_ReportsInvalidResponse()
     {
         var stub = new StubHttpHandler(_ => StubHttpHandler.Json("not json"));
 
-        Assert.Null(await CreateSut(stub).GetMainStatusAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(ApiError.InvalidResponse, (await CreateSut(stub).GetMainStatusAsync(TestContext.Current.CancellationToken)).Error);
     }
 
     // ── PUT endpoints ──────────────────────────────────────────────────────
@@ -153,7 +153,7 @@ public class WafeApiServiceTests
 
         var result = await CreateSut(stub).SetFlowSpeedAsync(150, TestContext.Current.CancellationToken);
 
-        Assert.True(result);
+        Assert.True(result.Ok);
         var put = Assert.Single(stub.Requests);
         Assert.Equal(HttpMethod.Put, put.Method);
         Assert.EndsWith("/api/v1/main/flow-requested", put.Path);
@@ -168,7 +168,7 @@ public class WafeApiServiceTests
     {
         var stub = Ok();
 
-        Assert.False(await CreateSut(stub).SetFlowSpeedAsync(speed, TestContext.Current.CancellationToken));
+        Assert.Equal(ApiError.Rejected, (await CreateSut(stub).SetFlowSpeedAsync(speed, TestContext.Current.CancellationToken)).Error);
         Assert.Empty(stub.Requests);
     }
 
@@ -199,7 +199,7 @@ public class WafeApiServiceTests
     {
         var stub = new StubHttpHandler(_ => StubHttpHandler.Json("""{"modes":["min","auto","nom","boost"],"plan":"boost-0:2:0-0:3:0"}"""));
 
-        var schedule = await CreateSut(stub).GetScheduleAsync(TestContext.Current.CancellationToken);
+        var schedule = (await CreateSut(stub).GetScheduleAsync(TestContext.Current.CancellationToken)).Value;
 
         Assert.NotNull(schedule);
         Assert.Equal(["min", "auto", "nom", "boost"], schedule.Modes);
@@ -212,7 +212,7 @@ public class WafeApiServiceTests
     {
         var stub = Ok();
 
-        Assert.True(await CreateSut(stub).SetSchedulePlanAsync("boost-0:2:0-0:3:0 auto-0:7:0-0:7:30", TestContext.Current.CancellationToken));
+        Assert.True((await CreateSut(stub).SetSchedulePlanAsync("boost-0:2:0-0:3:0 auto-0:7:0-0:7:30", TestContext.Current.CancellationToken)).Ok);
 
         var put = Assert.Single(stub.Requests);
         Assert.Equal(HttpMethod.Put, put.Method);
@@ -225,7 +225,7 @@ public class WafeApiServiceTests
     {
         var stub = Ok();
 
-        Assert.True(await CreateSut(stub).SetUnitNameAsync("Chata", TestContext.Current.CancellationToken));
+        Assert.True((await CreateSut(stub).SetUnitNameAsync("Chata", TestContext.Current.CancellationToken)).Ok);
 
         var put = Assert.Single(stub.Requests);
         Assert.Equal(HttpMethod.Put, put.Method);
@@ -241,7 +241,7 @@ public class WafeApiServiceTests
     {
         var stub = Ok();
 
-        Assert.False(await CreateSut(stub).SetUnitNameAsync(name, TestContext.Current.CancellationToken));
+        Assert.Equal(ApiError.Rejected, (await CreateSut(stub).SetUnitNameAsync(name, TestContext.Current.CancellationToken)).Error);
         Assert.Empty(stub.Requests);
     }
 
@@ -250,6 +250,27 @@ public class WafeApiServiceTests
     {
         var stub = new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.BadRequest));
 
-        Assert.False(await CreateSut(stub).SetBoostAsync(900, TestContext.Current.CancellationToken));
+        Assert.Equal(new ApiResult(ApiError.Rejected, 400), await CreateSut(stub).SetBoostAsync(900, TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task GetEndpoint_NoConnection_ReportsOffline()
+    {
+        var stub = new StubHttpHandler(_ => throw new HttpRequestException(HttpRequestError.ConnectionError, "No route to host"));
+
+        var result = await CreateSut(stub).GetHeaderInfoAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(ApiError.Offline, result.Error);
+        Assert.Null(result.Value);
+    }
+
+    [Fact]
+    public async Task PutEndpoint_ServerError_ReportsServerErrorWithStatus()
+    {
+        var stub = new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.BadGateway));
+
+        var result = await CreateSut(stub).SetSilentModeAsync(true, TestContext.Current.CancellationToken);
+
+        Assert.Equal(new ApiResult(ApiError.ServerError, 502), result);
     }
 }

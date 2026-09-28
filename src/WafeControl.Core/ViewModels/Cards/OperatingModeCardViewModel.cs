@@ -20,6 +20,9 @@ public sealed partial class OperatingModeCardViewModel : CardViewModelBase
         AvailableModes = DefaultModes;
     }
 
+    /// <summary>
+    /// The mode shown as selected: the unit's, or the requested one while a change is on its way.
+    /// </summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsManualMode))]
     [NotifyPropertyChangedFor(nameof(IsIntelligentMode))]
@@ -40,25 +43,25 @@ public sealed partial class OperatingModeCardViewModel : CardViewModelBase
     public bool IsIntelligentMode => SelectedMode == AppConstants.ModeIntelligent;
     public bool IsScheduleMode => SelectedMode == AppConstants.ModeSchedule;
 
+    /// <summary>
+    /// Sends <see cref="SelectedMode"/>. It stays selected while the unit confirms, and goes back to the unit's mode
+    /// if the change fails.
+    /// </summary>
     [RelayCommand(CanExecute = nameof(CanUpdateMode))]
     private async Task UpdateModeAsync()
     {
+        var targetMode = SelectedMode;
+        IsModeChanging = true;
         try
         {
-            App.StatusMessage = Strings.ModeChanging;
-            IsModeChanging = true;
+            var outcome = await RunCommandAsync(
+                onSent => SystemControl.SetAuthorityModeAsync(targetMode, onSent),
+                new CommandTexts(Strings.ModeChanging, string.Format(Strings.ModeChanged, ModeNames.Operating(targetMode)),
+                    Strings.ModeChangeTimedOut, Strings.ModeError),
+                () => ChangeModeAsync(targetMode));
 
-            var targetMode = SelectedMode;
-            var confirmed = await SystemControl.SetAuthorityModeAsync(targetMode);
-
-            App.StatusMessage = confirmed
-                ? string.Format(Strings.ModeChanged, ModeNames.Operating(targetMode))
-                : Strings.ModeChangeTimedOut;
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error updating mode");
-            App.StatusMessage = string.Format(Strings.ModeError, ex.Message);
+            if (outcome.Status == CommandStatus.Failed && SystemControl.CurrentStatus is { } status)
+                SelectedMode = status.Authority;
         }
         finally
         {
@@ -66,7 +69,19 @@ public sealed partial class OperatingModeCardViewModel : CardViewModelBase
         }
     }
 
-    private bool CanUpdateMode() => App.IsAuthenticated && !IsModeChanging;
+    /// <summary>
+    /// Selects <paramref name="mode"/> and sends it.
+    /// </summary>
+    public async Task ChangeModeAsync(string mode)
+    {
+        if (!UpdateModeCommand.CanExecute(null))
+            return;
+
+        SelectedMode = mode;
+        await UpdateModeCommand.ExecuteAsync(null);
+    }
+
+    private bool CanUpdateMode() => App.CanSendCommands && !IsModeChanging;
 
     protected override void OnStatusUpdated(SystemStatus status)
     {

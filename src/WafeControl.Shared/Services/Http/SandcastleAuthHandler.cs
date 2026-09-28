@@ -5,8 +5,9 @@ namespace WafeControl.Shared.Services.Http;
 
 /// <summary>
 /// Attaches the session's Sandcastle-Key to every API request. When the API answers 401/403,
-/// signs in again with the session credentials and retries the request once; if that fails the
-/// session is expired so the UI can ask the user to sign in.
+/// signs in again with the session credentials and retries the request once. If the server refuses the
+/// credentials the session is expired so the UI can ask the user to sign in; if it can't be reached the
+/// session is kept for the next request.
 /// </summary>
 public sealed class SandcastleAuthHandler : DelegatingHandler
 {
@@ -34,11 +35,15 @@ public sealed class SandcastleAuthHandler : DelegatingHandler
         _logger.LogInformation("{Method} {Path} returned {StatusCode}; renewing session",
             request.Method, request.RequestUri?.AbsolutePath, (int)response.StatusCode);
 
-        if (!await TryRenewAsync(keyUsed, cancellationToken))
+        switch (await TryRenewAsync(keyUsed, cancellationToken))
         {
-            _logger.LogWarning("Session renewal failed; session expired");
-            _session.Expire();
-            return response;
+            case false:
+                _logger.LogWarning("Session renewal refused; session expired");
+                _session.Expire();
+                return response;
+            case null:
+                // No answer (network, server): keep the session and try again with the next request.
+                return response;
         }
 
         response.Dispose();
@@ -46,7 +51,8 @@ public sealed class SandcastleAuthHandler : DelegatingHandler
         return await base.SendAsync(request, cancellationToken);
     }
 
-    private async Task<bool> TryRenewAsync(string? staleKey, CancellationToken cancellationToken)
+    /// <returns>True when renewed, false when the server refused the credentials, null when it couldn't be asked.</returns>
+    private async Task<bool?> TryRenewAsync(string? staleKey, CancellationToken cancellationToken)
     {
         await _session.RenewLock.WaitAsync(cancellationToken);
         try
@@ -62,7 +68,7 @@ public sealed class SandcastleAuthHandler : DelegatingHandler
             using var loginResponse = await base.SendAsync(loginRequest, cancellationToken);
 
             if (!SandcastleAuth.TryReadKey(loginResponse, out var key))
-                return false;
+                return (int)loginResponse.StatusCode >= 500 ? null : false;
 
             _session.Renew(key);
             _logger.LogInformation("Session renewed");
@@ -70,8 +76,9 @@ public sealed class SandcastleAuthHandler : DelegatingHandler
         }
         catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
         {
-            _logger.LogError(ex, "Session renewal request failed");
-            return false;
+            // Mostly network trouble, which the next request reports on its own.
+            _logger.LogWarning("Session renewal request failed: {Reason}", ex.Message);
+            return null;
         }
         finally
         {

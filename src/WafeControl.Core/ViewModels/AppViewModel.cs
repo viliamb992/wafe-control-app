@@ -1,13 +1,18 @@
 using System.ComponentModel;
+using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using WafeControl.Core.Configuration;
+using WafeControl.Core.Diagnostics;
 using WafeControl.Core.Localization;
 using WafeControl.Core.Services;
+using WafeControl.Core.Threading;
 using WafeControl.Core.ViewModels.Cards;
+using WafeControl.Core.ViewModels.Schedule;
 using WafeControl.Shared.Models;
+using WafeControl.Shared.Services;
 
 namespace WafeControl.Core.ViewModels;
 
@@ -17,12 +22,18 @@ namespace WafeControl.Core.ViewModels;
 /// </summary>
 public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppContext
 {
+    private static readonly TimeSpan DataStateInterval = TimeSpan.FromSeconds(30);
+
     private readonly IAuthenticationService _authService;
     private readonly ISystemControlService _systemControl;
     private readonly PollingConfiguration _pollingConfig;
+    private readonly INetworkStatus _network;
+    private readonly TimeProvider _time;
     private readonly ILogger<AppViewModel> _logger;
     private readonly SynchronizationContext? _uiContext;
+    private readonly ITimer _dataStateTimer;
     private CancellationTokenSource? _autoRefreshCts;
+    private CancellationTokenSource? _feedbackClearCts;
     private bool _isLoadingUnit;
     private bool _isPaused;
     private bool _disposed;
@@ -31,18 +42,22 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
         IAuthenticationService authService,
         ISystemControlService systemControl,
         IOptions<PollingConfiguration> pollingConfig,
-        ILoggerFactory loggerFactory)
+        ILoggerFactory loggerFactory,
+        INetworkStatus? network = null,
+        TimeProvider? timeProvider = null)
     {
         _authService = authService;
         _systemControl = systemControl;
         _pollingConfig = pollingConfig.Value;
+        _network = network ?? new SystemNetworkStatus();
+        _time = timeProvider ?? TimeProvider.System;
         _logger = loggerFactory.CreateLogger<AppViewModel>();
         _uiContext = SynchronizationContext.Current;
 
         StatusMessage = Strings.AppStatusNotConnected;
 
         Login = new LoginViewModel();
-        Login.SubmitRequested += async (_, _) => await SubmitLoginAsync();
+        Login.SubmitRequested += OnLoginSubmitRequested;
         Login.CancelRequested += (_, _) => CancelLogin();
 
         // Initialize card ViewModels
@@ -55,7 +70,11 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
         // Subscribe to events
         _authService.AuthenticationChanged += OnAuthenticationChanged;
         _systemControl.StatusUpdated += OnStatusUpdated;
+        _network.Changed += OnNetworkChanged;
         OperatingMode.PropertyChanged += OnOperatingModePropertyChanged;
+
+        // "Data 5 min old" moves on even when nothing arrives.
+        _dataStateTimer = _time.CreateTimer(_ => RunOnUiThread(UpdateDataState), null, DataStateInterval, DataStateInterval);
 
         _logger.LogInformation("AppViewModel initialized with polling config: StatusRefresh={StatusRefresh}ms",
             _pollingConfig.StatusRefreshIntervalMs);
@@ -75,15 +94,31 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
 
     #region Properties
 
+    /// <summary>
+    /// Connection progress while signing in ("Connecting to Wafe…"); command results go to <see cref="Feedback"/>.
+    /// </summary>
     [ObservableProperty]
     public partial string StatusMessage { get; set; }
+
+    /// <summary>
+    /// The result of the last user action. Successes clear themselves after a few seconds, warnings and errors a
+    /// little later; progress stays until the result replaces it.
+    /// </summary>
+    [ObservableProperty]
+    public partial Feedback? Feedback { get; set; }
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SubmitLoginCommand))]
     [NotifyCanExecuteChangedFor(nameof(CancelLoginCommand))]
+    [NotifyCanExecuteChangedFor(nameof(TryDemoCommand))]
     public partial bool IsLoggingIn { get; private set; }
 
     public bool IsAuthenticated => _authService.IsAuthenticated;
+
+    /// <summary>
+    /// Signed in to the simulated demo unit.
+    /// </summary>
+    public bool IsDemo => _authService.IsAuthenticated && _authService.IsDemo;
 
     /// <summary>
     /// True while <see cref="StartAsync"/> tries the remembered login; show neither the login form nor the dashboard.
@@ -93,6 +128,11 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
     public partial bool IsStarting { get; private set; }
 
     public LoginViewModel Login { get; }
+
+    /// <summary>
+    /// Who is signed in, for the account row: the email, or "Demo mode".
+    /// </summary>
+    public string AccountName => !IsAuthenticated ? string.Empty : IsDemo ? Strings.DemoBannerTitle : _authService.Username;
 
     public bool IsLoginRequired => !IsAuthenticated && !IsStarting;
 
@@ -116,6 +156,11 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
     /// </summary>
     public DateTimeOffset? LastUpdate =>
         IsAuthenticated && _systemControl.CurrentHeader is { Timestamp: > 0 } header ? header.Time.ToLocalTime() : null;
+
+    /// <summary>
+    /// "Last update: 14:32:05", or empty until the unit's data time is known.
+    /// </summary>
+    public string LastUpdateText => DisplayFormat.LastUpdate(LastUpdate);
 
     /// <summary>
     /// Model, serial number and service contact. Loaded once per sign-in; null until then.
@@ -145,6 +190,105 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
 
     #endregion
 
+    #region Data state
+
+    /// <summary>
+    /// How current the readings are.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanSendCommands), nameof(IsDataCurrent))]
+    public partial DataState DataState { get; private set; }
+
+    /// <summary>
+    /// Signed in and the server reachable: a command can get through.
+    /// </summary>
+    public bool CanSendCommands => IsAuthenticated && DataState is not (DataState.ServerUnreachable or DataState.NoInternet);
+
+    /// <summary>
+    /// The readings on screen are the unit's current ones; otherwise show them dimmed.
+    /// </summary>
+    public bool IsDataCurrent => DataState is DataState.Live or DataState.UnitOffline;
+
+    /// <summary>
+    /// Short text for the connection indicator: "Online", "Offline", "Data 6 min old", "No connection", "Demo".
+    /// </summary>
+    public string DataStateText => DataState switch
+    {
+        DataState.Stale => string.Format(Strings.DataStaleShort, DataAgeMinutes),
+        DataState.UnitOffline => Strings.TitleBarOffline,
+        DataState.ServerUnreachable => Strings.DataNoConnectionShort,
+        DataState.NoInternet => Strings.DataNoInternetShort,
+        _ => IsDemo ? Strings.DemoSubtitle : DisplayFormat.Online(IsSystemOnline),
+    };
+
+    /// <summary>
+    /// Banner title while the data isn't live; null when there's nothing to say.
+    /// </summary>
+    public string? DataBannerTitle => DataState switch
+    {
+        DataState.Stale => Strings.BannerStaleTitle,
+        DataState.UnitOffline => Strings.AppStatusUnitOffline,
+        DataState.ServerUnreachable => Strings.BannerUnreachableTitle,
+        DataState.NoInternet => Strings.BannerNoInternetTitle,
+        _ => null,
+    };
+
+    public string? DataBannerMessage => DataState switch
+    {
+        DataState.Stale => string.Format(Strings.BannerStaleMessage, DataAgeMinutes),
+        DataState.UnitOffline => Strings.BannerUnitOfflineMessage,
+        DataState.ServerUnreachable => string.Format(Strings.BannerUnreachableMessage, DataTimeText),
+        DataState.NoInternet => string.Format(Strings.BannerNoInternetMessage, DataTimeText),
+        _ => null,
+    };
+
+    /// <summary>
+    /// The banner is an error (the unit is gone), not a warning (the data is old).
+    /// </summary>
+    public bool IsDataBannerError => DataState == DataState.UnitOffline;
+
+    private int DataAgeMinutes => LastUpdate is { } time ? Math.Max(1, (int)(_time.GetUtcNow() - time).TotalMinutes) : 0;
+
+    // "14:02" today, with the date otherwise.
+    private string DataTimeText => LastUpdate is { } time
+        ? time.LocalDateTime.Date == _time.GetLocalNow().Date
+            ? time.LocalDateTime.ToString("HH:mm", CultureInfo.CurrentCulture)
+            : ScheduleFormat.DateAndTime(time.LocalDateTime)
+        : ModeNames.NoValue;
+
+    private DataState ComputeDataState()
+    {
+        if (!IsAuthenticated)
+            return DataState.Live;
+
+        var failures = _systemControl.ConsecutiveRefreshFailures;
+        if (!_network.IsAvailable && (failures > 0 || _systemControl.CurrentStatus is null))
+            return DataState.NoInternet;
+        if (failures >= _pollingConfig.UnreachableAfterFailures)
+            return DataState.ServerUnreachable;
+        if (_systemControl.CurrentHeader is { Online: false })
+            return DataState.UnitOffline;
+        if (LastUpdate is { } time && _time.GetUtcNow() - time > TimeSpan.FromSeconds(_pollingConfig.StaleAfterSeconds))
+            return DataState.Stale;
+        return DataState.Live;
+    }
+
+    private void UpdateDataState()
+    {
+        if (_disposed)
+            return;
+
+        DataState = ComputeDataState();
+
+        // The texts also depend on the time and the unit, so raise them every time.
+        OnPropertyChanged(nameof(DataStateText));
+        OnPropertyChanged(nameof(DataBannerTitle));
+        OnPropertyChanged(nameof(DataBannerMessage));
+        OnPropertyChanged(nameof(IsDataBannerError));
+    }
+
+    #endregion
+
     #region Commands
 
     /// <summary>
@@ -156,7 +300,15 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
         StatusMessage = Strings.AppStatusConnecting;
         try
         {
-            if (!await _authService.TryAutoLoginAsync())
+            var result = await _authService.TryAutoLoginAsync();
+            if (result is { Ok: false } failed)
+            {
+                // The form opens with the reason, and the email to try again with.
+                Login.Username = _authService.Username;
+                Login.ErrorMessage = ErrorText.For(failed.Error);
+            }
+
+            if (result is not { Ok: true })
                 StatusMessage = Strings.AppStatusSignInPrompt;
         }
         catch (Exception ex)
@@ -171,28 +323,44 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
     }
 
     /// <summary>
-    /// Signs out and forgets the remembered login.
+    /// Signs out and forgets the remembered login; in demo mode, just leaves the demo.
     /// </summary>
     [RelayCommand(CanExecute = nameof(IsAuthenticated))]
     private async Task SignOutAsync()
     {
-        await _authService.ClearRememberedLoginAsync();
+        if (!_authService.IsDemo)
+            await _authService.ClearRememberedLoginAsync();
+
         _authService.Logout();
         Login.Password = string.Empty;
     }
 
+    /// <summary>
+    /// Opens the demo unit instead of signing in.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanTryDemo))]
+    private void TryDemo()
+    {
+        Login.ErrorMessage = null;
+        _authService.StartDemo();
+    }
+
+    private bool CanTryDemo() => !IsAuthenticated && !IsLoggingIn;
+
+    /// <summary>
+    /// Refreshes at once (F5, pull to refresh) and says so if it fails.
+    /// </summary>
     [RelayCommand(CanExecute = nameof(IsAuthenticated))]
     public async Task RefreshStatusAsync()
     {
-        try
-        {
-            await _systemControl.RefreshStatusAsync();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error refreshing status");
-            StatusMessage = string.Format(Strings.AppStatusRefreshError, ex.Message);
-        }
+        var wasBackingOff = _systemControl.ConsecutiveRefreshFailures >= _pollingConfig.UnreachableAfterFailures;
+
+        await RefreshCoreAsync();
+
+        if (_systemControl.LastRefreshError is not ApiError.None and var error)
+            Feedback = Feedback.Error(string.Format(Strings.AppStatusRefreshError, ErrorText.For(error)));
+        else if (wasBackingOff && !_isPaused)
+            StartAutoRefresh();
     }
 
     /// <summary>
@@ -216,8 +384,8 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
         if (!IsAuthenticated)
             return;
 
-        _ = StartAutoRefreshAsync();
-        await RefreshStatusAsync();
+        StartAutoRefresh();
+        await RefreshCoreAsync();
     }
 
     [RelayCommand(CanExecute = nameof(CanSubmitLogin))]
@@ -225,6 +393,8 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
     {
         if (IsLoggingIn) return;
 
+        // A pasted address often brings a space along.
+        Login.Username = Login.Username.Trim();
         if (string.IsNullOrWhiteSpace(Login.Username) || string.IsNullOrEmpty(Login.Password))
         {
             Login.ErrorMessage = Strings.LoginCredentialsRequired;
@@ -237,17 +407,17 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
             Login.ErrorMessage = null;
             StatusMessage = Strings.AppStatusSigningIn;
 
-            var success = await _authService.LoginAsync(Login.Username, Login.Password, Login.RememberMe);
-            if (!success)
+            var result = await _authService.LoginAsync(Login.Username, Login.Password, Login.RememberMe);
+            if (!result.Ok)
             {
-                Login.ErrorMessage = Strings.LoginInvalidCredentials;
+                Login.ErrorMessage = result.Error == ApiError.Unauthorized ? Strings.LoginInvalidCredentials : ErrorText.For(result.Error);
                 StatusMessage = Strings.AppStatusSignInPrompt;
             }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Sign in failed");
-            Login.ErrorMessage = Strings.LoginFailed;
+            Login.ErrorMessage = Strings.ErrorUnexpected;
             StatusMessage = Strings.AppStatusSignInPrompt;
         }
         finally
@@ -282,54 +452,67 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
             return false;
 
         editor.ErrorMessage = null;
-        bool saved;
+        ApiResult result;
         try
         {
-            saved = await _systemControl.SetUnitNameAsync(editor.NewName);
+            result = await _systemControl.SetUnitNameAsync(editor.NewName);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unit rename failed");
-            saved = false;
+            result = ApiResult.Fail(ApiError.Unexpected);
         }
 
-        if (!saved)
-            editor.ErrorMessage = Strings.UnitNameSaveFailed;
+        if (!result.Ok)
+            editor.ErrorMessage = string.Format(Strings.UnitNameSaveFailed, ErrorText.For(result.Error));
 
-        return saved;
+        return result.Ok;
     }
 
     #endregion
 
     #region Event Handlers
 
+    private void OnLoginSubmitRequested(object? sender, EventArgs e) =>
+        SubmitLoginCommand.ExecuteAsync(null).Forget(_logger, "Sign in");
+
     private void OnAuthenticationChanged(object? sender, bool isAuthenticated)
         => RunOnUiThread(() =>
         {
             OnPropertyChanged(nameof(IsAuthenticated));
+            OnPropertyChanged(nameof(IsDemo));
+            OnPropertyChanged(nameof(AccountName));
             OnPropertyChanged(nameof(IsLoginRequired));
+            OnPropertyChanged(nameof(CanSendCommands));
             OnPropertyChanged(nameof(UnitName));
             OnPropertyChanged(nameof(PortalUnitName));
             OnPropertyChanged(nameof(LastUpdate));
+            OnPropertyChanged(nameof(LastUpdateText));
             RefreshStatusCommand.NotifyCanExecuteChanged();
             SubmitLoginCommand.NotifyCanExecuteChanged();
             SignOutCommand.NotifyCanExecuteChanged();
+            TryDemoCommand.NotifyCanExecuteChanged();
+            CrashReporting.SetScope(IsDemo, unitModel: null);
 
             if (isAuthenticated)
             {
                 StatusMessage = Strings.AppStatusConnected;
-                _ = RefreshStatusAsync();
+                Login.ErrorMessage = null;
+                RefreshCoreAsync().Forget(_logger, "Status refresh");
 
                 // Signed in while in the background (remembered login): polling starts on resume.
                 if (!_isPaused)
-                    _ = StartAutoRefreshAsync();
+                    StartAutoRefresh();
             }
             else
             {
                 StopAutoRefresh();
                 Unit = null;
+                Feedback = null;
                 StatusMessage = Strings.AppStatusDisconnected;
             }
+
+            UpdateDataState();
         });
 
     private void OnStatusUpdated(object? sender, SystemStatus status)
@@ -347,16 +530,20 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
         OnPropertyChanged(nameof(UnitName));
         OnPropertyChanged(nameof(PortalUnitName));
         OnPropertyChanged(nameof(LastUpdate));
+        OnPropertyChanged(nameof(LastUpdateText));
         OnPropertyChanged(nameof(IsSystemOnline));
 
         StatusMessage = _systemControl.IsSystemOnline
             ? Strings.AppStatusUnitOnline
             : Strings.AppStatusUnitOffline;
+        UpdateDataState();
 
         // Also retries after a failed load, on the next status update.
         if (Unit is null)
-            _ = LoadUnitAsync();
+            LoadUnitAsync().Forget(_logger, "Loading unit info");
     }
+
+    private void OnNetworkChanged(object? sender, EventArgs e) => RunOnUiThread(UpdateDataState);
 
     private async Task LoadUnitAsync()
     {
@@ -367,7 +554,10 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
         {
             var unit = await _systemControl.GetSystemInfoAsync();
             if (IsAuthenticated)
+            {
                 Unit = unit;
+                CrashReporting.SetScope(IsDemo, unit?.Unit?.Model);
+            }
         }
         catch (Exception ex)
         {
@@ -385,28 +575,89 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
             OnPropertyChanged(nameof(IsManualMode));
     }
 
-    private async Task StartAutoRefreshAsync()
+    partial void OnFeedbackChanged(Feedback? value)
+    {
+        _feedbackClearCts?.Cancel();
+        _feedbackClearCts?.Dispose();
+        _feedbackClearCts = null;
+        if (value is null || value.Kind == FeedbackKind.Progress)
+            return;
+
+        var delay = value.Kind == FeedbackKind.Success ? TimeSpan.FromSeconds(6)
+            : value.HasAction ? TimeSpan.FromSeconds(30)
+            : TimeSpan.FromSeconds(15);
+        _feedbackClearCts = new CancellationTokenSource();
+        ClearFeedbackLaterAsync(value, delay, _feedbackClearCts.Token).Forget(_logger, "Clearing feedback");
+    }
+
+    private async Task ClearFeedbackLaterAsync(Feedback feedback, TimeSpan delay, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Task.Delay(delay, _time, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        RunOnUiThread(() =>
+        {
+            if (ReferenceEquals(Feedback, feedback))
+                Feedback = null;
+        });
+    }
+
+    #endregion
+
+    #region Polling
+
+    private async Task RefreshCoreAsync()
+    {
+        try
+        {
+            await _systemControl.RefreshStatusAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error refreshing status");
+        }
+
+        RunOnUiThread(UpdateDataState);
+    }
+
+    private void StartAutoRefresh()
     {
         StopAutoRefresh();
         _autoRefreshCts = new CancellationTokenSource();
-        var token = _autoRefreshCts.Token;
+        AutoRefreshLoopAsync(_autoRefreshCts.Token).Forget(_logger, "Auto-refresh");
+    }
 
+    private async Task AutoRefreshLoopAsync(CancellationToken token)
+    {
         try
         {
             while (!token.IsCancellationRequested)
             {
-                await Task.Delay(_pollingConfig.StatusRefreshIntervalMs, token);
-                await RefreshStatusAsync();
+                await Task.Delay(NextPollDelay(), _time, token);
+                await RefreshCoreAsync();
             }
         }
         catch (OperationCanceledException)
         {
             // Expected when stopping
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error in auto-refresh loop");
-        }
+    }
+
+    /// <summary>
+    /// The regular interval, or longer and longer ones while the server can't be reached.
+    /// </summary>
+    internal TimeSpan NextPollDelay()
+    {
+        var beyond = _systemControl.ConsecutiveRefreshFailures - _pollingConfig.UnreachableAfterFailures;
+        var backoff = _pollingConfig.UnreachableBackoffMs;
+        var ms = beyond >= 0 && backoff.Length > 0 ? backoff[Math.Min(beyond, backoff.Length - 1)] : _pollingConfig.StatusRefreshIntervalMs;
+        return TimeSpan.FromMilliseconds(ms);
     }
 
     private void StopAutoRefresh()
@@ -432,9 +683,12 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
 
         _authService.AuthenticationChanged -= OnAuthenticationChanged;
         _systemControl.StatusUpdated -= OnStatusUpdated;
+        _network.Changed -= OnNetworkChanged;
         OperatingMode.PropertyChanged -= OnOperatingModePropertyChanged;
 
+        _dataStateTimer.Dispose();
         StopAutoRefresh();
+        _feedbackClearCts?.Cancel();
 
         SystemControl.Dispose();
         OperatingMode.Dispose();

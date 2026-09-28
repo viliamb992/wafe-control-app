@@ -23,13 +23,13 @@ public class AuthenticationServiceTests
     // ── TryAutoLoginAsync ───────────────────────────────────────────────────
 
     [Fact]
-    public async Task TryAutoLoginAsync_NoStoredCredentials_ReturnsFalse()
+    public async Task TryAutoLoginAsync_NoStoredCredentials_ReturnsNull()
     {
         _store.TryGetAsync(Arg.Any<CancellationToken>()).Returns((ValueTuple<string, string>?)null);
 
         var result = await _sut.TryAutoLoginAsync(TestContext.Current.CancellationToken);
 
-        Assert.False(result);
+        Assert.Null(result);
         await _api.DidNotReceive().AuthenticateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
@@ -37,11 +37,11 @@ public class AuthenticationServiceTests
     public async Task TryAutoLoginAsync_StoredCredentials_ApiSucceeds_ReturnsTrue()
     {
         _store.TryGetAsync(Arg.Any<CancellationToken>()).Returns(("alice", "secret"));
-        _api.AuthenticateAsync("alice", "secret", Arg.Any<CancellationToken>()).Returns(true);
+        _api.AuthenticateAsync("alice", "secret", Arg.Any<CancellationToken>()).Returns(ApiResult.Success);
 
         var result = await _sut.TryAutoLoginAsync(TestContext.Current.CancellationToken);
 
-        Assert.True(result);
+        Assert.True(result?.Ok);
         Assert.True(_sut.IsAuthenticated);
     }
 
@@ -49,11 +49,11 @@ public class AuthenticationServiceTests
     public async Task TryAutoLoginAsync_StoredCredentials_ApiFails_ReturnsFalse()
     {
         _store.TryGetAsync(Arg.Any<CancellationToken>()).Returns(("alice", "wrong"));
-        _api.AuthenticateAsync("alice", "wrong", Arg.Any<CancellationToken>()).Returns(false);
+        _api.AuthenticateAsync("alice", "wrong", Arg.Any<CancellationToken>()).Returns(ApiResult.Fail(ApiError.Unauthorized, 401));
 
         var result = await _sut.TryAutoLoginAsync(TestContext.Current.CancellationToken);
 
-        Assert.False(result);
+        Assert.Equal(ApiError.Unauthorized, result?.Error);
         Assert.False(_sut.IsAuthenticated);
     }
 
@@ -62,7 +62,7 @@ public class AuthenticationServiceTests
     [Fact]
     public async Task LoginAsync_ValidCredentials_RememberMe_SavesCredentials()
     {
-        _api.AuthenticateAsync("alice", "secret", Arg.Any<CancellationToken>()).Returns(true);
+        _api.AuthenticateAsync("alice", "secret", Arg.Any<CancellationToken>()).Returns(ApiResult.Success);
 
         await _sut.LoginAsync("alice", "secret", rememberMe: true, TestContext.Current.CancellationToken);
 
@@ -72,7 +72,7 @@ public class AuthenticationServiceTests
     [Fact]
     public async Task LoginAsync_ValidCredentials_NoRememberMe_DoesNotSaveCredentials()
     {
-        _api.AuthenticateAsync("alice", "secret", Arg.Any<CancellationToken>()).Returns(true);
+        _api.AuthenticateAsync("alice", "secret", Arg.Any<CancellationToken>()).Returns(ApiResult.Success);
 
         await _sut.LoginAsync("alice", "secret", rememberMe: false, TestContext.Current.CancellationToken);
 
@@ -82,7 +82,7 @@ public class AuthenticationServiceTests
     [Fact]
     public async Task LoginAsync_ValidCredentials_SetsIsAuthenticated()
     {
-        _api.AuthenticateAsync("alice", "secret", Arg.Any<CancellationToken>()).Returns(true);
+        _api.AuthenticateAsync("alice", "secret", Arg.Any<CancellationToken>()).Returns(ApiResult.Success);
 
         await _sut.LoginAsync("alice", "secret", rememberMe: false, TestContext.Current.CancellationToken);
 
@@ -92,18 +92,18 @@ public class AuthenticationServiceTests
     [Fact]
     public async Task LoginAsync_InvalidCredentials_ReturnsFalse()
     {
-        _api.AuthenticateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(false);
+        _api.AuthenticateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(ApiResult.Fail(ApiError.Unauthorized, 401));
 
         var result = await _sut.LoginAsync("alice", "wrong", rememberMe: false, TestContext.Current.CancellationToken);
 
-        Assert.False(result);
+        Assert.Equal(ApiError.Unauthorized, result.Error);
         Assert.False(_sut.IsAuthenticated);
     }
 
     [Fact]
     public async Task LoginAsync_InvalidCredentials_DoesNotSaveCredentials()
     {
-        _api.AuthenticateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(false);
+        _api.AuthenticateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(ApiResult.Fail(ApiError.Unauthorized, 401));
 
         await _sut.LoginAsync("alice", "wrong", rememberMe: true, TestContext.Current.CancellationToken);
 
@@ -113,7 +113,7 @@ public class AuthenticationServiceTests
     [Fact]
     public async Task LoginAsync_Success_RaisesAuthenticationChangedWithTrue()
     {
-        _api.AuthenticateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(true);
+        _api.AuthenticateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(ApiResult.Success);
         bool? raised = null;
         _sut.AuthenticationChanged += (_, v) => raised = v;
 
@@ -127,7 +127,7 @@ public class AuthenticationServiceTests
     [Fact]
     public async Task Logout_AfterLogin_SetsIsAuthenticatedFalse()
     {
-        _api.AuthenticateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(true);
+        _api.AuthenticateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(ApiResult.Success);
         await _sut.LoginAsync("alice", "secret", rememberMe: false, TestContext.Current.CancellationToken);
 
         _sut.Logout();
@@ -138,7 +138,7 @@ public class AuthenticationServiceTests
     [Fact]
     public async Task Logout_RaisesAuthenticationChangedWithFalse()
     {
-        _api.AuthenticateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(true);
+        _api.AuthenticateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(ApiResult.Success);
         await _sut.LoginAsync("alice", "secret", rememberMe: false, TestContext.Current.CancellationToken);
 
         bool? raised = null;
@@ -163,7 +163,7 @@ public class AuthenticationServiceTests
     [Fact]
     public async Task SessionExpired_SetsIsAuthenticatedFalse_AndRaisesAuthenticationChanged()
     {
-        _api.AuthenticateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(true);
+        _api.AuthenticateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(ApiResult.Success);
         await _sut.LoginAsync("alice", "secret", rememberMe: false, TestContext.Current.CancellationToken);
         bool? raised = null;
         _sut.AuthenticationChanged += (_, v) => raised = v;
@@ -172,6 +172,46 @@ public class AuthenticationServiceTests
 
         Assert.False(_sut.IsAuthenticated);
         Assert.False(raised);
+    }
+
+    // ── Demo ──────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task StartDemo_SignsInWithoutApiOrCredentialStore()
+    {
+        _sut.StartDemo();
+
+        Assert.True(_sut.IsAuthenticated);
+        Assert.True(_sut.IsDemo);
+        Assert.True(_session.IsDemo);
+        await _api.DidNotReceive().AuthenticateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await _store.DidNotReceive().SaveAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public void Logout_FromDemo_LeavesDemo()
+    {
+        _sut.StartDemo();
+
+        _sut.Logout();
+
+        Assert.False(_sut.IsAuthenticated);
+        Assert.False(_sut.IsDemo);
+        Assert.Equal(string.Empty, _sut.Username);
+    }
+
+    [Fact]
+    public async Task StartDemo_AfterRealSignIn_EndsTheRealSessionFirst()
+    {
+        _api.AuthenticateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(ApiResult.Success);
+        _session.Start("alice", "secret", "k1");
+        await _sut.LoginAsync("alice", "secret", rememberMe: false, TestContext.Current.CancellationToken);
+
+        _sut.StartDemo();
+
+        Assert.True(_sut.IsDemo);
+        Assert.Null(_session.Key);
+        Assert.Null(_session.Credentials);
     }
 
     [Fact]

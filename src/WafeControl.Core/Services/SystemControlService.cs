@@ -12,6 +12,7 @@ public sealed class SystemControlService : ISystemControlService
     private readonly IAuthenticationService _authService;
     private readonly PollingConfiguration _pollingConfig;
     private readonly ILogger<SystemControlService> _logger;
+    private readonly TimeProvider _time;
     private SystemStatus? _currentStatus;
     private HeaderInfo? _currentHeader;
 
@@ -22,12 +23,14 @@ public sealed class SystemControlService : ISystemControlService
         IWafeApiService apiService,
         IAuthenticationService authService,
         IOptions<PollingConfiguration> pollingConfig,
-        ILogger<SystemControlService> logger)
+        ILogger<SystemControlService> logger,
+        TimeProvider? timeProvider = null)
     {
         _apiService = apiService;
         _authService = authService;
         _pollingConfig = pollingConfig.Value;
         _logger = logger;
+        _time = timeProvider ?? TimeProvider.System;
     }
 
     public SystemStatus? CurrentStatus => _currentStatus;
@@ -40,24 +43,29 @@ public sealed class SystemControlService : ISystemControlService
 
     public bool HasSensorData => _currentStatus?.Temperatures?.Any(t => t.HasValue) ?? false;
 
+    public ApiError LastRefreshError { get; private set; }
+
+    public int ConsecutiveRefreshFailures { get; private set; }
+
     public Task<SystemStatus?> RefreshStatusAsync(CancellationToken cancellationToken = default)
         => RefreshAsync(includeHeader: true, cancellationToken);
 
-    public Task<SystemInfo?> GetSystemInfoAsync(CancellationToken cancellationToken = default)
-        => _authService.IsAuthenticated ? _apiService.GetSystemInfoAsync(cancellationToken) : Task.FromResult<SystemInfo?>(null);
+    public async Task<SystemInfo?> GetSystemInfoAsync(CancellationToken cancellationToken = default)
+        => _authService.IsAuthenticated ? (await _apiService.GetSystemInfoAsync(cancellationToken)).Value : null;
 
-    public async Task<bool> SetUnitNameAsync(string name, CancellationToken cancellationToken = default)
+    public async Task<ApiResult> SetUnitNameAsync(string name, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Unit rename to {Name} requested", name);
 
-        if (!await _apiService.SetUnitNameAsync(name, cancellationToken))
+        var result = await _apiService.SetUnitNameAsync(name, cancellationToken);
+        if (!result.Ok)
         {
-            _logger.LogWarning("Unit rename rejected by the API");
-            return false;
+            _logger.LogWarning("Unit rename failed: {Error}", result.Error);
+            return result;
         }
 
         await RefreshStatusAsync(cancellationToken);
-        return true;
+        return result;
     }
 
     private async Task<SystemStatus?> RefreshAsync(bool includeHeader, CancellationToken cancellationToken)
@@ -68,40 +76,47 @@ public sealed class SystemControlService : ISystemControlService
             return _currentStatus;
         }
 
-        var headerTask = includeHeader ? _apiService.GetHeaderInfoAsync(cancellationToken) : Task.FromResult<HeaderInfo?>(null);
+        var headerTask = includeHeader
+            ? _apiService.GetHeaderInfoAsync(cancellationToken)
+            : Task.FromResult<ApiResult<HeaderInfo>>(default);
         var status = await _apiService.GetMainStatusAsync(cancellationToken);
         var header = await headerTask;
 
-        if (header is not null)
-            _currentHeader = header;
+        if (header.Ok)
+            _currentHeader = header.Value;
 
-        if (status is null)
+        if (!status.Ok)
         {
             // Keep the last known status: a transient failure must not look like a state change.
-            _logger.LogDebug("Status refresh returned no data; keeping last known status");
+            LastRefreshError = status.Error == ApiError.None ? ApiError.InvalidResponse : status.Error;
+            ConsecutiveRefreshFailures++;
+            _logger.LogDebug("Status refresh failed ({Error}, {Failures} in a row); keeping last known status",
+                LastRefreshError, ConsecutiveRefreshFailures);
 
             // A new header alone (e.g. the unit went offline) still needs to reach the UI.
-            if (header is not null && _currentStatus is not null)
+            if (header.Ok && _currentStatus is not null)
                 StatusUpdated?.Invoke(this, _currentStatus);
             return _currentStatus;
         }
 
-        _currentStatus = status;
-        StatusUpdated?.Invoke(this, status);
+        LastRefreshError = ApiError.None;
+        ConsecutiveRefreshFailures = 0;
+        _currentStatus = status.Value;
+        StatusUpdated?.Invoke(this, status.Value!);
 
         _logger.LogDebug("Status refreshed - gen: {Gen}, Flow: {Flow}, Mode: {Mode}, Online: {Online}",
-            status.Gen, status.FlowActual, status.Authority, IsSystemOnline);
+            status.Value!.Gen, status.Value.FlowActual, status.Value.Authority, IsSystemOnline);
 
-        return status;
+        return _currentStatus;
     }
 
-    public Task<bool> StartSystemAsync(CancellationToken cancellationToken = default)
-        => ToggleSystemAsync(start: true, cancellationToken);
+    public Task<CommandOutcome> StartSystemAsync(Action? onSent = null, CancellationToken cancellationToken = default)
+        => ToggleSystemAsync(start: true, onSent, cancellationToken);
 
-    public Task<bool> StopSystemAsync(CancellationToken cancellationToken = default)
-        => ToggleSystemAsync(start: false, cancellationToken);
+    public Task<CommandOutcome> StopSystemAsync(Action? onSent = null, CancellationToken cancellationToken = default)
+        => ToggleSystemAsync(start: false, onSent, cancellationToken);
 
-    private async Task<bool> ToggleSystemAsync(bool start, CancellationToken cancellationToken)
+    private async Task<CommandOutcome> ToggleSystemAsync(bool start, Action? onSent, CancellationToken cancellationToken)
     {
         OperationInProgress?.Invoke(this, true);
         try
@@ -111,6 +126,7 @@ public sealed class SystemControlService : ISystemControlService
                 status => status.StopActive,
                 !start,
                 start ? "System start" : "System stop",
+                onSent,
                 cancellationToken);
         }
         finally
@@ -119,66 +135,78 @@ public sealed class SystemControlService : ISystemControlService
         }
     }
 
-    public Task<bool> SetFlowSpeedAsync(int speed, CancellationToken cancellationToken = default)
+    public Task<CommandOutcome> SetFlowSpeedAsync(int speed, Action? onSent = null, CancellationToken cancellationToken = default)
         => SendAndConfirmAsync(
             ct => _apiService.SetFlowSpeedAsync(speed, ct),
             status => status.FlowRequested,
             speed,
             "Flow speed change",
+            onSent,
             cancellationToken);
 
-    public Task<bool> SetAuthorityModeAsync(string mode, CancellationToken cancellationToken = default)
+    public Task<CommandOutcome> SetAuthorityModeAsync(string mode, Action? onSent = null, CancellationToken cancellationToken = default)
         => SendAndConfirmAsync(
             ct => _apiService.SetAuthorityModeAsync(mode, ct),
             status => status.Authority,
             mode,
             "Mode change",
+            onSent,
             cancellationToken);
 
-    public Task<bool> SetSilentModeAsync(bool enabled, CancellationToken cancellationToken = default)
+    public Task<CommandOutcome> SetSilentModeAsync(bool enabled, Action? onSent = null, CancellationToken cancellationToken = default)
         => SendAndConfirmAsync(
             ct => _apiService.SetSilentModeAsync(enabled, ct),
             status => status.SilentActive,
             enabled,
             "Silent mode change",
+            onSent,
             cancellationToken);
 
-    public Task<bool> SetHolidayModeAsync(bool enabled, CancellationToken cancellationToken = default)
+    public Task<CommandOutcome> SetHolidayModeAsync(bool enabled, Action? onSent = null, CancellationToken cancellationToken = default)
         => SendAndConfirmAsync(
             ct => _apiService.SetHolidayModeAsync(enabled, ct),
             status => status.HolidayActive,
             enabled,
             "Holiday mode change",
+            onSent,
             cancellationToken);
 
-    public Task<bool> SetBoostAsync(int seconds, CancellationToken cancellationToken = default)
+    public Task<CommandOutcome> SetBoostAsync(int seconds, Action? onSent = null, CancellationToken cancellationToken = default)
         => SendAndConfirmAsync(
             ct => _apiService.SetBoostAsync(seconds, ct),
             status => status.BoostRemaining,
             seconds,
             "Boost change",
+            onSent,
             cancellationToken);
 
     /// <summary>
-    /// Sends a command, then polls until the API reports the expected value.
-    /// Returns false if the command is rejected or the change is not confirmed before the timeout.
+    /// Sends a command, then polls until the API reports the expected value. A rejected command fails at once;
+    /// one the unit doesn't confirm before the timeout is pending, and stays watched for a while.
     /// </summary>
-    private async Task<bool> SendAndConfirmAsync<T>(
-        Func<CancellationToken, Task<bool>> send,
+    private async Task<CommandOutcome> SendAndConfirmAsync<T>(
+        Func<CancellationToken, Task<ApiResult>> send,
         Func<SystemStatus, T> stateGetter,
         T expectedValue,
         string operationName,
+        Action? onSent,
         CancellationToken cancellationToken)
     {
         _logger.LogInformation("{Operation} to {Value} requested", operationName, expectedValue);
 
-        if (!await send(cancellationToken))
+        var result = await send(cancellationToken);
+        if (!result.Ok)
         {
-            _logger.LogWarning("{Operation} to {Value} rejected by the API", operationName, expectedValue);
-            return false;
+            _logger.LogWarning("{Operation} to {Value} failed: {Error}", operationName, expectedValue, result.Error);
+            return CommandOutcome.Failed(result.Error);
         }
 
-        return await PollForStateChangeAsync(stateGetter, expectedValue, operationName, cancellationToken);
+        onSent?.Invoke();
+
+        if (await PollForStateChangeAsync(stateGetter, expectedValue, operationName, cancellationToken))
+            return CommandOutcome.Confirmed;
+
+        return CommandOutcome.Pending(WatchForLateConfirmation(stateGetter, expectedValue, operationName));
     }
 
     /// <summary>
@@ -193,12 +221,12 @@ public sealed class SystemControlService : ISystemControlService
     {
         var initialGen = _currentStatus?.Gen ?? 0;
         var maxDuration = TimeSpan.FromSeconds(_pollingConfig.StateChangeTimeoutSeconds);
-        var startTime = DateTime.UtcNow;
+        var startTime = _time.GetTimestamp();
         var pollCount = 0;
 
-        while (DateTime.UtcNow - startTime < maxDuration)
+        while (_time.GetElapsedTime(startTime) < maxDuration)
         {
-            await Task.Delay(_pollingConfig.StateChangeIntervalMs, cancellationToken);
+            await Task.Delay(TimeSpan.FromMilliseconds(PollInterval(pollCount)), _time, cancellationToken);
 
             // Only /main carries the changed value; skip the header while polling fast.
             var status = await RefreshAsync(includeHeader: false, cancellationToken);
@@ -209,7 +237,7 @@ public sealed class SystemControlService : ISystemControlService
                 && EqualityComparer<T>.Default.Equals(stateGetter(status), expectedValue))
             {
                 _logger.LogInformation("{Operation} confirmed to {Value} after {Duration}ms ({Polls} polls, gen: {InitialGen} → {CurrentGen})",
-                    operationName, expectedValue, (DateTime.UtcNow - startTime).TotalMilliseconds, pollCount, initialGen, status.Gen);
+                    operationName, expectedValue, _time.GetElapsedTime(startTime).TotalMilliseconds, pollCount, initialGen, status.Gen);
                 return true;
             }
         }
@@ -217,5 +245,43 @@ public sealed class SystemControlService : ISystemControlService
         _logger.LogWarning("{Operation} to {Value} not confirmed after {Duration}s ({Polls} polls)",
             operationName, expectedValue, _pollingConfig.StateChangeTimeoutSeconds, pollCount);
         return false;
+    }
+
+    private int PollInterval(int pollCount) =>
+        pollCount < _pollingConfig.StateChangeInitialIntervalsMs.Length
+            ? _pollingConfig.StateChangeInitialIntervalsMs[pollCount]
+            : _pollingConfig.StateChangeIntervalMs;
+
+    /// <summary>
+    /// After a timeout, watches the regular status updates for the requested value.
+    /// </summary>
+    private Task<bool> WatchForLateConfirmation<T>(Func<SystemStatus, T> stateGetter, T expectedValue, string operationName)
+    {
+        var result = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        ITimer? timer = null;
+
+        void OnStatus(object? sender, SystemStatus status)
+        {
+            if (EqualityComparer<T>.Default.Equals(stateGetter(status), expectedValue))
+                Finish(confirmed: true);
+        }
+
+        void Finish(bool confirmed)
+        {
+            if (!result.TrySetResult(confirmed))
+                return;
+
+            StatusUpdated -= OnStatus;
+            timer?.Dispose();
+            if (confirmed)
+                _logger.LogInformation("{Operation} to {Value} confirmed late", operationName, expectedValue);
+            else
+                _logger.LogWarning("{Operation} to {Value} never confirmed", operationName, expectedValue);
+        }
+
+        timer = _time.CreateTimer(_ => Finish(confirmed: false), null,
+            TimeSpan.FromSeconds(_pollingConfig.LateConfirmationSeconds), Timeout.InfiniteTimeSpan);
+        StatusUpdated += OnStatus;
+        return result.Task;
     }
 }
