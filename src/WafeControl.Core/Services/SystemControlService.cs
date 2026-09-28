@@ -110,13 +110,13 @@ public sealed class SystemControlService : ISystemControlService
         return _currentStatus;
     }
 
-    public Task<CommandOutcome> StartSystemAsync(Action? onSent = null, CancellationToken cancellationToken = default)
-        => ToggleSystemAsync(start: true, onSent, cancellationToken);
+    public Task<CommandOutcome> StartSystemAsync(CancellationToken cancellationToken = default)
+        => ToggleSystemAsync(start: true, cancellationToken);
 
-    public Task<CommandOutcome> StopSystemAsync(Action? onSent = null, CancellationToken cancellationToken = default)
-        => ToggleSystemAsync(start: false, onSent, cancellationToken);
+    public Task<CommandOutcome> StopSystemAsync(CancellationToken cancellationToken = default)
+        => ToggleSystemAsync(start: false, cancellationToken);
 
-    private async Task<CommandOutcome> ToggleSystemAsync(bool start, Action? onSent, CancellationToken cancellationToken)
+    private async Task<CommandOutcome> ToggleSystemAsync(bool start, CancellationToken cancellationToken)
     {
         OperationInProgress?.Invoke(this, true);
         try
@@ -126,8 +126,7 @@ public sealed class SystemControlService : ISystemControlService
                 status => status.StopActive,
                 !start,
                 start ? "System start" : "System stop",
-                onSent,
-                cancellationToken);
+                    cancellationToken);
         }
         finally
         {
@@ -135,49 +134,44 @@ public sealed class SystemControlService : ISystemControlService
         }
     }
 
-    public Task<CommandOutcome> SetFlowSpeedAsync(int speed, Action? onSent = null, CancellationToken cancellationToken = default)
+    public Task<CommandOutcome> SetFlowSpeedAsync(int speed, CancellationToken cancellationToken = default)
         => SendAndConfirmAsync(
             ct => _apiService.SetFlowSpeedAsync(speed, ct),
             status => status.FlowRequested,
             speed,
             "Flow speed change",
-            onSent,
             cancellationToken);
 
-    public Task<CommandOutcome> SetAuthorityModeAsync(string mode, Action? onSent = null, CancellationToken cancellationToken = default)
+    public Task<CommandOutcome> SetAuthorityModeAsync(string mode, CancellationToken cancellationToken = default)
         => SendAndConfirmAsync(
             ct => _apiService.SetAuthorityModeAsync(mode, ct),
             status => status.Authority,
             mode,
             "Mode change",
-            onSent,
             cancellationToken);
 
-    public Task<CommandOutcome> SetSilentModeAsync(bool enabled, Action? onSent = null, CancellationToken cancellationToken = default)
+    public Task<CommandOutcome> SetSilentModeAsync(bool enabled, CancellationToken cancellationToken = default)
         => SendAndConfirmAsync(
             ct => _apiService.SetSilentModeAsync(enabled, ct),
             status => status.SilentActive,
             enabled,
             "Silent mode change",
-            onSent,
             cancellationToken);
 
-    public Task<CommandOutcome> SetHolidayModeAsync(bool enabled, Action? onSent = null, CancellationToken cancellationToken = default)
+    public Task<CommandOutcome> SetHolidayModeAsync(bool enabled, CancellationToken cancellationToken = default)
         => SendAndConfirmAsync(
             ct => _apiService.SetHolidayModeAsync(enabled, ct),
             status => status.HolidayActive,
             enabled,
             "Holiday mode change",
-            onSent,
             cancellationToken);
 
-    public Task<CommandOutcome> SetBoostAsync(int seconds, Action? onSent = null, CancellationToken cancellationToken = default)
+    public Task<CommandOutcome> SetBoostAsync(int seconds, CancellationToken cancellationToken = default)
         => SendAndConfirmAsync(
             ct => _apiService.SetBoostAsync(seconds, ct),
             status => status.BoostRemaining,
             seconds,
             "Boost change",
-            onSent,
             cancellationToken);
 
     /// <summary>
@@ -189,7 +183,6 @@ public sealed class SystemControlService : ISystemControlService
         Func<SystemStatus, T> stateGetter,
         T expectedValue,
         string operationName,
-        Action? onSent,
         CancellationToken cancellationToken)
     {
         _logger.LogInformation("{Operation} to {Value} requested", operationName, expectedValue);
@@ -200,8 +193,6 @@ public sealed class SystemControlService : ISystemControlService
             _logger.LogWarning("{Operation} to {Value} failed: {Error}", operationName, expectedValue, result.Error);
             return CommandOutcome.Failed(result.Error);
         }
-
-        onSent?.Invoke();
 
         if (await PollForStateChangeAsync(stateGetter, expectedValue, operationName, cancellationToken))
             return CommandOutcome.Confirmed;

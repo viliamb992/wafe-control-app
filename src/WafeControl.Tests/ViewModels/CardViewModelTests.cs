@@ -53,13 +53,13 @@ internal sealed class FakeSystemControlService : ISystemControlService
     public CommandOutcome NextOutcome { get; set; } = CommandOutcome.Confirmed;
 
     public Task<SystemInfo?> GetSystemInfoAsync(CancellationToken ct = default) => Task.FromResult(SystemInfo);
-    public Task<CommandOutcome> SetFlowSpeedAsync(int speed, Action? onSent = null, CancellationToken ct = default) => Record($"flow:{speed}", onSent);
-    public Task<CommandOutcome> SetAuthorityModeAsync(string mode, Action? onSent = null, CancellationToken ct = default) => Record($"mode:{mode}", onSent);
-    public Task<CommandOutcome> SetSilentModeAsync(bool enabled, Action? onSent = null, CancellationToken ct = default) => Record($"silent:{enabled}", onSent);
-    public Task<CommandOutcome> SetHolidayModeAsync(bool enabled, Action? onSent = null, CancellationToken ct = default) => Record($"holiday:{enabled}", onSent);
-    public Task<CommandOutcome> SetBoostAsync(int seconds, Action? onSent = null, CancellationToken ct = default) => Record($"boost:{seconds}", onSent);
-    public Task<CommandOutcome> StartSystemAsync(Action? onSent = null, CancellationToken ct = default) => Record("start", onSent);
-    public Task<CommandOutcome> StopSystemAsync(Action? onSent = null, CancellationToken ct = default) => Record("stop", onSent);
+    public Task<CommandOutcome> SetFlowSpeedAsync(int speed, CancellationToken ct = default) => Record($"flow:{speed}");
+    public Task<CommandOutcome> SetAuthorityModeAsync(string mode, CancellationToken ct = default) => Record($"mode:{mode}");
+    public Task<CommandOutcome> SetSilentModeAsync(bool enabled, CancellationToken ct = default) => Record($"silent:{enabled}");
+    public Task<CommandOutcome> SetHolidayModeAsync(bool enabled, CancellationToken ct = default) => Record($"holiday:{enabled}");
+    public Task<CommandOutcome> SetBoostAsync(int seconds, CancellationToken ct = default) => Record($"boost:{seconds}");
+    public Task<CommandOutcome> StartSystemAsync(CancellationToken ct = default) => Record("start");
+    public Task<CommandOutcome> StopSystemAsync(CancellationToken ct = default) => Record("stop");
     public bool AcceptUnitName { get; set; } = true;
     public Task<ApiResult> SetUnitNameAsync(string name, CancellationToken ct = default)
     {
@@ -67,11 +67,9 @@ internal sealed class FakeSystemControlService : ISystemControlService
         return Task.FromResult(AcceptUnitName ? ApiResult.Success : ApiResult.Fail(ApiError.Rejected, 400));
     }
 
-    private Task<CommandOutcome> Record(string command, Action? onSent)
+    private Task<CommandOutcome> Record(string command)
     {
         Commands.Add(command);
-        if (NextOutcome.Status != CommandStatus.Failed)
-            onSent?.Invoke();
         return Task.FromResult(NextOutcome);
     }
 }

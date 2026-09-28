@@ -155,17 +155,11 @@
   <data name="SystemStartedStatus" xml:space="preserve">
     <value>Systém spuštěn</value>
   </data>
-  <data name="SystemStartNotConfirmed" xml:space="preserve">
-    <value>Jednotka zatím nepotvrdila spuštění. Může se ještě spustit.</value>
-  </data>
   <data name="SystemStopping" xml:space="preserve">
     <value>Zastavování systému…</value>
   </data>
   <data name="SystemStoppedStatus" xml:space="preserve">
     <value>Systém zastaven</value>
-  </data>
-  <data name="SystemStopNotConfirmed" xml:space="preserve">
-    <value>Jednotka zatím nepotvrdila zastavení. Může se ještě zastavit.</value>
   </data>
   <data name="SystemToggleError" xml:space="preserve">
     <value>Jednotku se nepodařilo spustit ani zastavit. {0}</value>
@@ -223,9 +217,6 @@
     <value>Režim přepnut: {0}</value>
     <comment>{0} = operating mode name</comment>
   </data>
-  <data name="ModeChangeTimedOut" xml:space="preserve">
-    <value>Jednotka zatím nepotvrdila změnu režimu. Může se ještě projevit.</value>
-  </data>
   <data name="ModeError" xml:space="preserve">
     <value>Režim se nepodařilo změnit. {0}</value>
     <comment>{0} = error message</comment>
@@ -244,10 +235,6 @@
   </data>
   <data name="FlowSet" xml:space="preserve">
     <value>Průtok nastaven na {0} m³/h</value>
-    <comment>{0} = air flow</comment>
-  </data>
-  <data name="FlowNotConfirmed" xml:space="preserve">
-    <value>Jednotka zatím nepotvrdila průtok {0} m³/h. Může se ještě projevit.</value>
     <comment>{0} = air flow</comment>
   </data>
   <data name="FlowError" xml:space="preserve">
@@ -284,9 +271,6 @@
   <data name="BoostStopped" xml:space="preserve">
     <value>Boost vypnut</value>
   </data>
-  <data name="BoostNotConfirmed" xml:space="preserve">
-    <value>Jednotka zatím nepotvrdila boost. Může se ještě projevit.</value>
-  </data>
   <data name="BoostError" xml:space="preserve">
     <value>Boost se nepodařilo změnit. {0}</value>
     <comment>{0} = error message</comment>
@@ -315,12 +299,6 @@
   <data name="SilentOff" xml:space="preserve">
     <value>Tichý režim vypnut</value>
   </data>
-  <data name="SilentOnNotConfirmed" xml:space="preserve">
-    <value>Jednotka zatím nepotvrdila zapnutí tichého režimu. Může se ještě projevit.</value>
-  </data>
-  <data name="SilentOffNotConfirmed" xml:space="preserve">
-    <value>Jednotka zatím nepotvrdila vypnutí tichého režimu. Může se ještě projevit.</value>
-  </data>
   <data name="SilentError" xml:space="preserve">
     <value>Tichý režim se nepodařilo změnit. {0}</value>
     <comment>{0} = error message</comment>
@@ -345,12 +323,6 @@
   </data>
   <data name="HolidayOff" xml:space="preserve">
     <value>Režim dovolené vypnut</value>
-  </data>
-  <data name="HolidayOnNotConfirmed" xml:space="preserve">
-    <value>Jednotka zatím nepotvrdila zapnutí režimu dovolené. Může se ještě projevit.</value>
-  </data>
-  <data name="HolidayOffNotConfirmed" xml:space="preserve">
-    <value>Jednotka zatím nepotvrdila vypnutí režimu dovolené. Může se ještě projevit.</value>
   </data>
   <data name="HolidayError" xml:space="preserve">
     <value>Režim dovolené se nepodařilo změnit. {0}</value>
@@ -635,12 +607,6 @@
   </data>
   <data name="ErrorUnexpected" xml:space="preserve">
     <value>Něco se pokazilo. Pokud se to opakuje, nahlaste problém.</value>
-  </data>
-  <data name="CommandWaiting" xml:space="preserve">
-    <value>Čekám na potvrzení jednotkou…</value>
-  </data>
-  <data name="CommandConfirmedLate" xml:space="preserve">
-    <value>{0} (potvrzeno později než obvykle)</value>
   </data>
   <data name="ButtonRetry" xml:space="preserve">
     <value>Zkusit znovu</value>

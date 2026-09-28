@@ -62,20 +62,31 @@ public class CommandFeedbackTests : CardViewModelTestBase
     }
 
     [Fact]
-    public async Task Pending_WarnsWithRetry_ThenAnnouncesLateConfirmation()
+    public async Task NotConfirmedInTime_SaysNothing_UntilTheUnitConfirms()
     {
         var late = new TaskCompletionSource<bool>();
         SystemControlFake.NextOutcome = CommandOutcome.Pending(late.Task);
 
         await App.BoostMode.SetBoostCommand.ExecuteAsync("900");
 
-        Assert.Equal(FeedbackKind.Warning, App.Feedback?.Kind);
-        Assert.Equal("The unit hasn't confirmed the boost yet. It may still apply.", App.Feedback?.Text);
-        Assert.NotNull(App.Feedback?.Retry);
+        Assert.Null(App.Feedback);
 
         late.SetResult(true);
         await WaitUntil(() => App.Feedback?.Kind == FeedbackKind.Success);
-        Assert.Equal("Boost activated for 15 minutes (confirmed later than usual)", App.Feedback?.Text);
+        Assert.Equal("Boost activated for 15 minutes", App.Feedback?.Text);
+    }
+
+    [Fact]
+    public async Task NeverConfirmed_StaysQuiet()
+    {
+        var late = new TaskCompletionSource<bool>();
+        SystemControlFake.NextOutcome = CommandOutcome.Pending(late.Task);
+        await App.BoostMode.SetBoostCommand.ExecuteAsync("900");
+
+        late.SetResult(false);
+        await Task.Delay(50, TestContext.Current.CancellationToken);
+
+        Assert.Null(App.Feedback);
     }
 
     [Fact]
@@ -104,7 +115,7 @@ public class CommandFeedbackTests : CardViewModelTestBase
     }
 
     [Fact]
-    public async Task Waiting_IsShownOnceTheServerAcceptedTheCommand()
+    public async Task Sending_IsFollowedByTheResult()
     {
         var shown = new List<string?>();
         App.PropertyChanged += (_, e) =>
@@ -115,7 +126,7 @@ public class CommandFeedbackTests : CardViewModelTestBase
 
         await App.BoostMode.SetBoostCommand.ExecuteAsync("0");
 
-        Assert.Equal(["Stopping boost…", "Waiting for the unit to confirm…", "Boost stopped"], shown);
+        Assert.Equal(["Stopping boost…", "Boost stopped"], shown);
     }
 
     private static async Task WaitUntil(Func<bool> condition)

@@ -33,29 +33,12 @@ public class CommandConfirmationTests
     public async Task Rejected_FailsWithTheReason_WithoutWaitingForTheUnit()
     {
         _api.SetBoostAsync(900, Arg.Any<CancellationToken>()).Returns(ApiResult.Fail(ApiError.Offline));
-        var sent = false;
 
-        var outcome = await CreateSut().SetBoostAsync(900, () => sent = true, TestContext.Current.CancellationToken);
+        var outcome = await CreateSut().SetBoostAsync(900, TestContext.Current.CancellationToken);
 
         Assert.Equal(CommandStatus.Failed, outcome.Status);
         Assert.Equal(ApiError.Offline, outcome.Error);
-        Assert.False(sent);
         await _api.DidNotReceive().GetMainStatusAsync(Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task Accepted_ReportsSentBeforeWaiting()
-    {
-        _api.SetBoostAsync(900, Arg.Any<CancellationToken>()).Returns(ApiResult.Success);
-        _api.GetMainStatusAsync(Arg.Any<CancellationToken>()).Returns(Status(1), Status(2, boost: 900));
-        var sut = CreateSut();
-        await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
-        var sent = false;
-
-        var outcome = await sut.SetBoostAsync(900, () => sent = true, TestContext.Current.CancellationToken);
-
-        Assert.True(sent);
-        Assert.Equal(CommandStatus.Confirmed, outcome.Status);
     }
 
     [Fact]
@@ -66,7 +49,7 @@ public class CommandConfirmationTests
         var sut = CreateSut();
         await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
-        var outcome = await sut.SetBoostAsync(900, cancellationToken: TestContext.Current.CancellationToken);
+        var outcome = await sut.SetBoostAsync(900, TestContext.Current.CancellationToken);
         Assert.Equal(CommandStatus.Pending, outcome.Status);
         Assert.False(outcome.LateConfirmation.IsCompleted);
 
@@ -85,7 +68,7 @@ public class CommandConfirmationTests
         var sut = CreateSut(lateConfirmationSeconds: 1);
         await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
-        var outcome = await sut.SetBoostAsync(900, cancellationToken: TestContext.Current.CancellationToken);
+        var outcome = await sut.SetBoostAsync(900, TestContext.Current.CancellationToken);
 
         Assert.False(await outcome.LateConfirmation.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
     }
@@ -98,7 +81,7 @@ public class CommandConfirmationTests
         var sut = CreateSut(initialIntervals: [1]);
         await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
-        var outcome = await sut.SetBoostAsync(900, cancellationToken: TestContext.Current.CancellationToken);
+        var outcome = await sut.SetBoostAsync(900, TestContext.Current.CancellationToken);
 
         Assert.Equal(CommandStatus.Confirmed, outcome.Status);
     }

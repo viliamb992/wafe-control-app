@@ -49,13 +49,12 @@ public interface ISystemControlService
     /// </summary>
     Task<ApiResult> SetUnitNameAsync(string name, CancellationToken cancellationToken = default);
 
-    // Commands: send, then wait until the unit reports the new value. onSent runs once the server accepted the
-    // command, when the wait for the unit begins.
-    Task<CommandOutcome> SetFlowSpeedAsync(int speed, Action? onSent = null, CancellationToken cancellationToken = default);
-    Task<CommandOutcome> SetAuthorityModeAsync(string mode, Action? onSent = null, CancellationToken cancellationToken = default);
-    Task<CommandOutcome> SetSilentModeAsync(bool enabled, Action? onSent = null, CancellationToken cancellationToken = default);
-    Task<CommandOutcome> SetHolidayModeAsync(bool enabled, Action? onSent = null, CancellationToken cancellationToken = default);
-    Task<CommandOutcome> SetBoostAsync(int seconds, Action? onSent = null, CancellationToken cancellationToken = default);
-    Task<CommandOutcome> StartSystemAsync(Action? onSent = null, CancellationToken cancellationToken = default);
-    Task<CommandOutcome> StopSystemAsync(Action? onSent = null, CancellationToken cancellationToken = default);
+    // Commands: send, then wait until the unit reports the new value.
+    Task<CommandOutcome> SetFlowSpeedAsync(int speed, CancellationToken cancellationToken = default);
+    Task<CommandOutcome> SetAuthorityModeAsync(string mode, CancellationToken cancellationToken = default);
+    Task<CommandOutcome> SetSilentModeAsync(bool enabled, CancellationToken cancellationToken = default);
+    Task<CommandOutcome> SetHolidayModeAsync(bool enabled, CancellationToken cancellationToken = default);
+    Task<CommandOutcome> SetBoostAsync(int seconds, CancellationToken cancellationToken = default);
+    Task<CommandOutcome> StartSystemAsync(CancellationToken cancellationToken = default);
+    Task<CommandOutcome> StopSystemAsync(CancellationToken cancellationToken = default);
 }

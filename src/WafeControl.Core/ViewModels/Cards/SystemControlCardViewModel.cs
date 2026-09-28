@@ -37,11 +37,11 @@ public sealed partial class SystemControlCardViewModel : CardViewModelBase
             return;
 
         var texts = start
-            ? new CommandTexts(Strings.SystemStarting, Strings.SystemStartedStatus, Strings.SystemStartNotConfirmed, Strings.SystemToggleError)
-            : new CommandTexts(Strings.SystemStopping, Strings.SystemStoppedStatus, Strings.SystemStopNotConfirmed, Strings.SystemToggleError);
+            ? new CommandTexts(Strings.SystemStarting, Strings.SystemStartedStatus, Strings.SystemToggleError)
+            : new CommandTexts(Strings.SystemStopping, Strings.SystemStoppedStatus, Strings.SystemToggleError);
 
         await RunCommandAsync(
-            onSent => start ? SystemControl.StartSystemAsync(onSent) : SystemControl.StopSystemAsync(onSent),
+            () => start ? SystemControl.StartSystemAsync() : SystemControl.StopSystemAsync(),
             texts,
             () => SetRunningAsync(start));
     }

@@ -8,6 +8,7 @@ Differences from the plan below:
 - **Sign-in help:** go2my.wafe.eu has no password reset (only "change password" with the old one), so instead of a "Forgot password?" link the form says: "Forgot your password or have no account? Your installer or the Wafe service can help." with a link to wafe.eu.
 - **Demo mode on Windows:** one banner in the main window, above whichever screen is open, instead of one per screen. On Android: Overview and Schedule banners and the account row.
 - **Demo faults** are in Windows Debug builds only (Settings → "Demo unit faults").
+- **Command confirmation, simplified after review:** no "Waiting for the unit…" step and no "hasn't confirmed yet" warning (too much clutter). The "sending" text stays until the result; when the unit doesn't confirm in time it just goes away, and a late confirmation shows the normal success message.
 - **"Updated to 1.2.0"** shows in the footer after an update, without a "What's new" link; the notes are in the update flyout before the update and on the GitHub release.
 
 Not verified on a device yet (nothing here could run with your installed 1.1.1 in the tray, and there is no phone attached):

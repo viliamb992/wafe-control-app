@@ -104,7 +104,7 @@ public class SystemControlServiceTests
         var sut = CreateSut(api, auth);
         await sut.RefreshStatusAsync(TestContext.Current.CancellationToken); // prime with gen=1
 
-        var result = await sut.SetFlowSpeedAsync(150, cancellationToken: TestContext.Current.CancellationToken);
+        var result = await sut.SetFlowSpeedAsync(150, TestContext.Current.CancellationToken);
 
         Assert.Equal(CommandStatus.Confirmed, result.Status);
     }
@@ -124,7 +124,7 @@ public class SystemControlServiceTests
         var sut = CreateSut(api, auth, timeoutSeconds: 1);
         await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
-        var result = await sut.SetFlowSpeedAsync(150, cancellationToken: TestContext.Current.CancellationToken);
+        var result = await sut.SetFlowSpeedAsync(150, TestContext.Current.CancellationToken);
 
         Assert.Equal(CommandStatus.Pending, result.Status);
     }
@@ -146,7 +146,7 @@ public class SystemControlServiceTests
         var sut = CreateSut(api, auth);
         await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
-        var result = await sut.SetAuthorityModeAsync("manual", cancellationToken: TestContext.Current.CancellationToken);
+        var result = await sut.SetAuthorityModeAsync("manual", TestContext.Current.CancellationToken);
 
         Assert.Equal(CommandStatus.Confirmed, result.Status);
     }
@@ -168,7 +168,7 @@ public class SystemControlServiceTests
         var sut = CreateSut(api, auth);
         await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
-        var result = await sut.SetSilentModeAsync(true, cancellationToken: TestContext.Current.CancellationToken);
+        var result = await sut.SetSilentModeAsync(true, TestContext.Current.CancellationToken);
 
         Assert.Equal(CommandStatus.Confirmed, result.Status);
     }
@@ -190,7 +190,7 @@ public class SystemControlServiceTests
         var sut = CreateSut(api, auth);
         await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
-        var result = await sut.SetHolidayModeAsync(true, cancellationToken: TestContext.Current.CancellationToken);
+        var result = await sut.SetHolidayModeAsync(true, TestContext.Current.CancellationToken);
 
         Assert.Equal(CommandStatus.Confirmed, result.Status);
     }
@@ -212,7 +212,7 @@ public class SystemControlServiceTests
         var sut = CreateSut(api, auth);
         await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
-        var result = await sut.SetBoostAsync(900, cancellationToken: TestContext.Current.CancellationToken);
+        var result = await sut.SetBoostAsync(900, TestContext.Current.CancellationToken);
 
         Assert.Equal(CommandStatus.Confirmed, result.Status);
     }
@@ -235,7 +235,7 @@ public class SystemControlServiceTests
         var sut = CreateSut(api, auth);
         await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
-        var result = await sut.StartSystemAsync(cancellationToken: TestContext.Current.CancellationToken);
+        var result = await sut.StartSystemAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(CommandStatus.Confirmed, result.Status);
     }
@@ -255,7 +255,7 @@ public class SystemControlServiceTests
         var sut = CreateSut(api, auth);
         await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
-        var result = await sut.StopSystemAsync(cancellationToken: TestContext.Current.CancellationToken);
+        var result = await sut.StopSystemAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(CommandStatus.Confirmed, result.Status);
     }
@@ -275,7 +275,7 @@ public class SystemControlServiceTests
         var sut = CreateSut(api, auth, timeoutSeconds: 1);
         await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
-        var result = await sut.StartSystemAsync(cancellationToken: TestContext.Current.CancellationToken);
+        var result = await sut.StartSystemAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(CommandStatus.Pending, result.Status);
     }
@@ -369,7 +369,7 @@ public class SystemControlServiceTests
         var sut = CreateSut(api, auth);
         await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal(CommandStatus.Confirmed, (await sut.SetFlowSpeedAsync(150, cancellationToken: TestContext.Current.CancellationToken)).Status);
+        Assert.Equal(CommandStatus.Confirmed, (await sut.SetFlowSpeedAsync(150, TestContext.Current.CancellationToken)).Status);
         await api.Received(3).GetMainStatusAsync(Arg.Any<CancellationToken>());
         await api.Received(1).GetHeaderInfoAsync(Arg.Any<CancellationToken>());
     }
@@ -431,7 +431,7 @@ public class SystemControlServiceTests
         var sut = CreateSut(api, auth);
         await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
-        var result = await sut.SetFlowSpeedAsync(150, cancellationToken: TestContext.Current.CancellationToken);
+        var result = await sut.SetFlowSpeedAsync(150, TestContext.Current.CancellationToken);
 
         Assert.Equal(CommandStatus.Failed, result.Status);
         await api.Received(1).GetMainStatusAsync(Arg.Any<CancellationToken>());
@@ -468,7 +468,7 @@ public class SystemControlServiceTests
         var sut = CreateSut(api, auth, timeoutSeconds: 1);
         await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
-        var result = await sut.StopSystemAsync(cancellationToken: TestContext.Current.CancellationToken);
+        var result = await sut.StopSystemAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(CommandStatus.Pending, result.Status);
     }

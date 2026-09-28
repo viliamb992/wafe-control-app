@@ -77,9 +77,14 @@ public sealed class StatusToast : ContentView
 
     private void OnAppPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        // Cleared feedback doesn't hide the toast early: it goes on its own time.
-        if (e.PropertyName == nameof(AppViewModel.Feedback) && _app?.Feedback is { } feedback)
+        if (e.PropertyName != nameof(AppViewModel.Feedback))
+            return;
+
+        // A result goes on its own time; a "sending…" message that's withdrawn (no answer from the unit) goes now.
+        if (_app?.Feedback is { } feedback)
             Dispatcher.Dispatch(() => SafeAsync.Run(() => ShowAsync(feedback)));
+        else if (_shown?.Kind == FeedbackKind.Progress)
+            Dispatcher.Dispatch(() => SafeAsync.Run(HideAsync));
     }
 
     private async Task OnActionAsync()
@@ -134,6 +139,20 @@ public sealed class StatusToast : ContentView
             return;
         }
 
+        await FadeOutAsync(hide);
+    }
+
+    private Task HideAsync()
+    {
+        _hide?.Cancel();
+        var hide = _hide = new CancellationTokenSource();
+        _shown = null;
+        return IsVisible ? FadeOutAsync(hide) : Task.CompletedTask;
+    }
+
+    // Unless something new was shown meanwhile.
+    private async Task FadeOutAsync(CancellationTokenSource hide)
+    {
         await this.FadeToAsync(0, 250, Easing.CubicOut);
         if (!hide.IsCancellationRequested)
         {

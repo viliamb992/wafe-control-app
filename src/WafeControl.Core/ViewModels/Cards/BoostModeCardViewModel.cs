@@ -37,12 +37,11 @@ public sealed partial class BoostModeCardViewModel : CardViewModelBase
 
         var minutes = seconds / 60;
         var texts = seconds > 0
-            ? new CommandTexts(string.Format(Strings.BoostActivating, minutes), string.Format(Strings.BoostActivated, minutes),
-                Strings.BoostNotConfirmed, Strings.BoostError)
-            : new CommandTexts(Strings.BoostStopping, Strings.BoostStopped, Strings.BoostNotConfirmed, Strings.BoostError);
+            ? new CommandTexts(string.Format(Strings.BoostActivating, minutes), string.Format(Strings.BoostActivated, minutes), Strings.BoostError)
+            : new CommandTexts(Strings.BoostStopping, Strings.BoostStopped, Strings.BoostError);
 
         await RunCommandAsync(
-            onSent => SystemControl.SetBoostAsync(seconds, onSent),
+            () => SystemControl.SetBoostAsync(seconds),
             texts,
             () => SetBoostCommand.ExecuteAsync(secondsString));
     }

@@ -76,9 +76,8 @@ public sealed partial class FlowSpeedCardViewModel : CardViewModelBase
         try
         {
             var outcome = await RunCommandAsync(
-                onSent => SystemControl.SetFlowSpeedAsync(targetSpeed, onSent),
-                new CommandTexts(Strings.FlowUpdating, string.Format(Strings.FlowSet, targetSpeed),
-                    string.Format(Strings.FlowNotConfirmed, targetSpeed), Strings.FlowError),
+                () => SystemControl.SetFlowSpeedAsync(targetSpeed),
+                new CommandTexts(Strings.FlowUpdating, string.Format(Strings.FlowSet, targetSpeed), Strings.FlowError),
                 () => SendFlowSpeedAsync(targetSpeed));
 
             // Back to what the unit has.

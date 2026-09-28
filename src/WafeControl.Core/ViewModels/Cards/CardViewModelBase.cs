@@ -10,10 +10,9 @@ using WafeControl.Shared.Services;
 namespace WafeControl.Core.ViewModels.Cards;
 
 /// <summary>
-/// What a command says at each step: while sending, when confirmed, when the unit hasn't confirmed yet, and when it
-/// failed (a format with the reason as {0}).
+/// What a command says: while sending, when confirmed, and when it failed (a format with the reason as {0}).
 /// </summary>
-public sealed record CommandTexts(string Sending, string Confirmed, string Pending, string FailedFormat);
+public sealed record CommandTexts(string Sending, string Confirmed, string FailedFormat);
 
 /// <summary>
 /// Common plumbing for dashboard cards: status updates in, command availability refreshed
@@ -49,17 +48,19 @@ public abstract class CardViewModelBase : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// Sends a command and reports each step in <see cref="IAppContext.Feedback"/>: sending, waiting for the unit,
-    /// then the result, with Retry when trying again can help. A command the unit confirms late is announced then.
+    /// Sends a command and reports it in <see cref="IAppContext.Feedback"/>: "sending" until the unit confirms, then
+    /// the result, with Retry when trying again can help. When the unit doesn't confirm in time the message just
+    /// goes away; if it confirms later, the result is shown then.
     /// </summary>
-    protected async Task<CommandOutcome> RunCommandAsync(Func<Action, Task<CommandOutcome>> send, CommandTexts texts, Func<Task> retry)
+    protected async Task<CommandOutcome> RunCommandAsync(Func<Task<CommandOutcome>> send, CommandTexts texts, Func<Task> retry)
     {
-        App.Feedback = Feedback.Progress(texts.Sending);
+        var sending = Feedback.Progress(texts.Sending);
+        App.Feedback = sending;
 
         CommandOutcome outcome;
         try
         {
-            outcome = await send(() => App.Feedback = Feedback.Progress(Strings.CommandWaiting));
+            outcome = await send();
         }
         catch (Exception ex)
         {
@@ -75,9 +76,9 @@ public abstract class CardViewModelBase : ObservableObject, IDisposable
                 break;
 
             case CommandStatus.Pending:
-                var pending = Feedback.Warning(texts.Pending, retry);
-                App.Feedback = pending;
-                ShowLateConfirmationAsync(outcome.LateConfirmation, pending, texts.Confirmed).Forget(Logger, "Late confirmation");
+                if (ReferenceEquals(App.Feedback, sending))
+                    App.Feedback = null;
+                ShowLateConfirmationAsync(outcome.LateConfirmation, texts.Confirmed).Forget(Logger, "Late confirmation");
                 break;
 
             default:
@@ -92,10 +93,10 @@ public abstract class CardViewModelBase : ObservableObject, IDisposable
     }
 
     // Announced unless something newer is shown by then.
-    private async Task ShowLateConfirmationAsync(Task<bool> lateConfirmation, Feedback pending, string confirmedText)
+    private async Task ShowLateConfirmationAsync(Task<bool> lateConfirmation, string confirmedText)
     {
-        if (await lateConfirmation && (App.Feedback is null || ReferenceEquals(App.Feedback, pending)))
-            App.Feedback = Feedback.Success(string.Format(Strings.CommandConfirmedLate, confirmedText));
+        if (await lateConfirmation && App.Feedback is null)
+            App.Feedback = Feedback.Success(confirmedText);
     }
 
     private void OnSystemStatusUpdated(object? sender, SystemStatus status) => OnStatusUpdated(status);

@@ -55,9 +55,8 @@ public sealed partial class OperatingModeCardViewModel : CardViewModelBase
         try
         {
             var outcome = await RunCommandAsync(
-                onSent => SystemControl.SetAuthorityModeAsync(targetMode, onSent),
-                new CommandTexts(Strings.ModeChanging, string.Format(Strings.ModeChanged, ModeNames.Operating(targetMode)),
-                    Strings.ModeChangeTimedOut, Strings.ModeError),
+                () => SystemControl.SetAuthorityModeAsync(targetMode),
+                new CommandTexts(Strings.ModeChanging, string.Format(Strings.ModeChanged, ModeNames.Operating(targetMode)), Strings.ModeError),
                 () => ChangeModeAsync(targetMode));
 
             if (outcome.Status == CommandStatus.Failed && SystemControl.CurrentStatus is { } status)

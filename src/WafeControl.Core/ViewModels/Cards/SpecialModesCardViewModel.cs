@@ -35,10 +35,10 @@ public sealed partial class SpecialModesCardViewModel : CardViewModelBase
         try
         {
             var outcome = await RunCommandAsync(
-                onSent => SystemControl.SetSilentModeAsync(enabled, onSent),
+                () => SystemControl.SetSilentModeAsync(enabled),
                 enabled
-                    ? new CommandTexts(Strings.SilentEnabling, Strings.SilentOn, Strings.SilentOnNotConfirmed, Strings.SilentError)
-                    : new CommandTexts(Strings.SilentDisabling, Strings.SilentOff, Strings.SilentOffNotConfirmed, Strings.SilentError),
+                    ? new CommandTexts(Strings.SilentEnabling, Strings.SilentOn, Strings.SilentError)
+                    : new CommandTexts(Strings.SilentDisabling, Strings.SilentOff, Strings.SilentError),
                 () => SetSilentModeCommand.ExecuteAsync(enabled));
 
             IsSilentMode = outcome.Status == CommandStatus.Failed ? SystemControl.CurrentStatus?.SilentActive ?? !enabled : enabled;
@@ -59,10 +59,10 @@ public sealed partial class SpecialModesCardViewModel : CardViewModelBase
         try
         {
             var outcome = await RunCommandAsync(
-                onSent => SystemControl.SetHolidayModeAsync(enabled, onSent),
+                () => SystemControl.SetHolidayModeAsync(enabled),
                 enabled
-                    ? new CommandTexts(Strings.HolidayEnabling, Strings.HolidayOn, Strings.HolidayOnNotConfirmed, Strings.HolidayError)
-                    : new CommandTexts(Strings.HolidayDisabling, Strings.HolidayOff, Strings.HolidayOffNotConfirmed, Strings.HolidayError),
+                    ? new CommandTexts(Strings.HolidayEnabling, Strings.HolidayOn, Strings.HolidayError)
+                    : new CommandTexts(Strings.HolidayDisabling, Strings.HolidayOff, Strings.HolidayError),
                 () => SetHolidayModeCommand.ExecuteAsync(enabled));
 
             IsHolidayMode = outcome.Status == CommandStatus.Failed ? SystemControl.CurrentStatus?.HolidayActive ?? !enabled : enabled;

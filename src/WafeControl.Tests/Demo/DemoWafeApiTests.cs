@@ -143,7 +143,7 @@ public class DemoUnitCommandTests
         }), NullLogger<SystemControlService>.Instance);
         await sut.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
-        var outcome = await sut.SetAuthorityModeAsync("manual", cancellationToken: TestContext.Current.CancellationToken);
+        var outcome = await sut.SetAuthorityModeAsync("manual", TestContext.Current.CancellationToken);
 
         Assert.Equal(CommandStatus.Confirmed, outcome.Status);
         Assert.Equal("manual", sut.CurrentStatus?.Authority);
