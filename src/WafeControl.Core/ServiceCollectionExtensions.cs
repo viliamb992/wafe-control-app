@@ -49,6 +49,10 @@ public static class ServiceCollectionExtensions
         apiClient.AddStandardResilienceHandler();
         apiClient.AddHttpMessageHandler<SandcastleAuthHandler>();
 
+        // Published releases, for apps that don't update themselves (Android).
+        services.AddHttpClient(GitHubReleaseFeed.HttpClientName, GitHubReleaseFeed.Configure);
+        services.AddSingleton<IReleaseFeed, GitHubReleaseFeed>();
+
         // Everything talks to the API through the router, which switches to the demo unit in demo mode.
         services.AddSingleton<DemoWafeApi>();
         services.AddSingleton<IWafeApiService, DemoAwareWafeApi>();
@@ -63,6 +67,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ScheduleViewModel>();
         services.AddSingleton<SettingsViewModel>();
         services.AddSingleton<UpdateViewModel>();
+        services.AddSingleton<ReleaseCheckViewModel>();
 
         return services;
     }

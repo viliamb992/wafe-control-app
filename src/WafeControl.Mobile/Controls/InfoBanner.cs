@@ -13,7 +13,7 @@ public enum BannerSeverity
 }
 
 /// <summary>
-/// The mobile InfoBar (DESIGN.md, section 7): severity background and icon, title, message, optional action.
+/// The mobile InfoBar (DESIGN.md, section 7): severity background and icon, title, message, optional action and close.
 /// Hidden while it has neither title nor message.
 /// </summary>
 public sealed class InfoBanner : ContentView
@@ -42,6 +42,15 @@ public sealed class InfoBanner : ContentView
         nameof(ActionCommand), typeof(ICommand), typeof(InfoBanner), null,
         propertyChanged: (bindable, _, value) => ((InfoBanner)bindable)._action.Command = (ICommand?)value);
 
+    public static readonly BindableProperty DismissCommandProperty = BindableProperty.Create(
+        nameof(DismissCommand), typeof(ICommand), typeof(InfoBanner), null,
+        propertyChanged: (bindable, _, value) =>
+        {
+            var banner = (InfoBanner)bindable;
+            banner._dismiss.Command = (ICommand?)value;
+            banner._dismiss.IsVisible = value is not null;
+        });
+
     public static readonly BindableProperty IsShownProperty = BindableProperty.Create(
         nameof(IsShown), typeof(bool), typeof(InfoBanner), true,
         propertyChanged: (bindable, _, _) => ((InfoBanner)bindable).UpdateText());
@@ -51,6 +60,7 @@ public sealed class InfoBanner : ContentView
     private readonly Label _title;
     private readonly Label _message;
     private readonly Button _action;
+    private readonly Button _dismiss;
 
     public InfoBanner()
     {
@@ -60,13 +70,25 @@ public sealed class InfoBanner : ContentView
         _action = new Button { HorizontalOptions = LayoutOptions.Start, Margin = new Thickness(0, 8, 0, 0) };
         _action.Clicked += (_, _) => ActionClicked?.Invoke(this, EventArgs.Empty);
 
+        _dismiss = new Button
+        {
+            Style = Theme.Style("IconButton"),
+            Text = FluentIcons.Dismiss,
+            FontSize = 16,
+            VerticalOptions = LayoutOptions.Start,
+            Margin = new Thickness(0, -10, -12, 0),
+            IsVisible = false,
+        };
+        SemanticProperties.SetDescription(_dismiss, Core.Localization.Strings.ButtonClose);
+
         var grid = new Grid
         {
-            ColumnDefinitions = { new ColumnDefinition(GridLength.Auto), new ColumnDefinition(GridLength.Star) },
+            ColumnDefinitions = { new ColumnDefinition(GridLength.Auto), new ColumnDefinition(GridLength.Star), new ColumnDefinition(GridLength.Auto) },
             ColumnSpacing = 12,
         };
         grid.Add(_icon, 0);
         grid.Add(new VerticalStackLayout { Spacing = 2, Children = { _title, _message, _action } }, 1);
+        grid.Add(_dismiss, 2);
 
         _border = new Border
         {
@@ -118,6 +140,15 @@ public sealed class InfoBanner : ContentView
     {
         get => (ICommand?)GetValue(ActionCommandProperty);
         set => SetValue(ActionCommandProperty, value);
+    }
+
+    /// <summary>
+    /// Shows a close button that runs this command; the banner hides when its text goes away.
+    /// </summary>
+    public ICommand? DismissCommand
+    {
+        get => (ICommand?)GetValue(DismissCommandProperty);
+        set => SetValue(DismissCommandProperty, value);
     }
 
     /// <summary>

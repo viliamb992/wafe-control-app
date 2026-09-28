@@ -54,7 +54,8 @@ Both apps follow one design manual, [docs/DESIGN.md](docs/DESIGN.md): colors, ty
 - 🧭 **Tabs:** Overview, Schedule, Settings. Pull down to refresh; banners for no internet, an unreachable server, old data and an offline unit; command results show as a short message at the bottom, with Retry when it can help.
 - 📊 **Overview:** unit name as the title, online state, running state with Start/Stop (stopping asks first), the sensor tiles, operating mode, flow slider (sends when you let go, with a haptic tick every 10 m³/h), Boost 15/30/60 min with a live countdown, Silent/Holiday switches, filter health.
 - 📅 **Schedule:** one day at a time on a 24-hour timeline with a "now" line. Tap an empty time to add an action, tap an action to edit or delete it (same rules as the Windows grid).
-- ⚙️ **Settings:** language, appearance (system/light/dark), the unit (rename, model, serial number, service contact), sign out, sign-in method (Android), crash reports, about with Report a problem and Share logs.
+- ⬆️ **New versions (Android):** the app is sideloaded, so it looks for a newer `android-v*` release on GitHub at start and when you return to it (at most every 12 hours). A banner on Overview offers Download (the APK; opening it installs over the current version and keeps the login). Closing the banner hides it until the next version. Settings → Updates: check now, what's new, beta versions.
+- ⚙️ **Settings:** language, appearance (system/light/dark), the unit (rename, model, serial number, service contact), sign out, sign-in method (Android), crash reports, updates (Android), about with Report a problem and Share logs.
 
 ## Translations
 
@@ -172,7 +173,7 @@ dotnet publish src/WafeControl.Mobile -f net10.0-android -c Release -o publish -
 
 ## Privacy
 
-The apps talk to go2my.wafe.eu (your unit) and, on Windows, to GitHub (update checks). Nothing else leaves the device unless you agree:
+The apps talk to go2my.wafe.eu (your unit) and to GitHub (update checks; the Android app reads the public releases list, sending only its version in the User-Agent). Nothing else leaves the device unless you agree:
 
 - **Crash reports** are off until you say yes (asked once after the first sign-in; Settings → Send crash reports). They go to [GlitchTip](https://glitchtip.com) and contain the app version, platform, device model, language, whether demo mode is on, the unit model, and the error with its stack trace and the app's last log lines. Never your email, password, unit name or serial number: emails are removed before anything is sent. Development builds never send reports.
 - **Report a problem** sends nothing by itself: it opens a GitHub issue in your browser, or your share sheet, with text you can read first.
@@ -213,7 +214,6 @@ Request bodies must be sent with a `Content-Length`: the server answers chunked 
 
 **📱 Mobile**
 
-- ⬆️ "New version available" banner linking the APK of the latest `android-v*` release (the app is sideloaded, so nothing updates it).
 - ⚡ App shortcuts: Boost 15/30, Stop boost.
 - 🤖 Android: edge-to-edge. iOS: haptics, the Android sign-in methods with Face ID / Touch ID (the Core part is ready: an `IBiometricAuth` for iOS).
 - 🍎 iOS: first run on a Mac (page sheets, safe areas, tab icons, input borders), then an ad hoc `.ipa` from a macOS runner.

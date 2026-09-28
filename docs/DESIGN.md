@@ -184,6 +184,7 @@ both apps:
 | Service | `E779` | `person_support` |
 | Sign-in method | `E928` | `fingerprint` |
 | Explain (?) | `E9CE` | `question_circle` |
+| New version | `E896` | `arrow_download` |
 
 ---
 

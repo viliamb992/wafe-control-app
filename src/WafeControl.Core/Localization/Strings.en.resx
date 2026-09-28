@@ -839,4 +839,7 @@
   <data name="HelpExplain" xml:space="preserve">
     <value>Explain: {0}</value>
   </data>
+  <data name="UpdateApkMessage" xml:space="preserve">
+    <value>Download the APK and open it to install it over this version. Your login and settings stay.</value>
+  </data>
 </root>

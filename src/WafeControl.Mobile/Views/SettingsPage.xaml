@@ -117,6 +117,24 @@
                 </VerticalStackLayout>
             </Border>
 
+            <!-- ── Updates (Android): newer APKs on GitHub; nothing installs them on its own ── -->
+            <Border x:Name="UpdatesCard" Style="{StaticResource Card}" x:DataType="vm:ReleaseCheckViewModel" IsVisible="{Binding IsEnabled}">
+                <VerticalStackLayout Spacing="4">
+                    <controls:SettingRow Icon="{x:Static helpers:FluentIcons.ArrowDownload}" Title="{x:Static loc:Strings.UpdatesTitle}"
+                                         Description="{Binding StatusText}">
+                        <Button Text="{x:Static loc:Strings.UpdateCheckNow}" Command="{Binding CheckCommand}" />
+                    </controls:SettingRow>
+                    <HorizontalStackLayout Spacing="8" Margin="28,0,0,0" IsVisible="{Binding IsAvailable}">
+                        <Button Style="{StaticResource AccentButton}" Text="{x:Static loc:Strings.UpdateDownloadNow}" Command="{Binding DownloadCommand}" />
+                        <Button Style="{StaticResource AccentTextButton}" Text="{x:Static loc:Strings.UpdateWhatsNew}" Command="{Binding OpenReleaseNotesCommand}" />
+                    </HorizontalStackLayout>
+                    <Grid ColumnDefinitions="*,Auto" Margin="36,4,0,0" x:DataType="vm:SettingsViewModel" x:Name="BetaRow">
+                        <Label Text="{x:Static loc:Strings.UpdateBeta}" VerticalOptions="Center" />
+                        <Switch Grid.Column="1" IsToggled="{Binding BetaUpdates}" SemanticProperties.Description="{x:Static loc:Strings.UpdateBeta}" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
             <!-- ── About ───────────────────────────────────────────────── -->
             <Border Style="{StaticResource Card}">
                 <Grid ColumnDefinitions="Auto,*" ColumnSpacing="16" RowDefinitions="Auto,Auto">

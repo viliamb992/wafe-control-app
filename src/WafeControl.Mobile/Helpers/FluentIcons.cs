@@ -12,6 +12,7 @@ public static class FluentIcons
     public const string Add = "\uF10A";
     public const string Airplane = "\uF110";
     public const string ArrowClockwise = "\uF13E";
+    public const string ArrowDownload = "\uF151";
     public const string ArrowExportLtr = "\uE0C8";
     public const string ArrowImport = "\uF15A";
     public const string CalendarLtr = "\uE24F";

@@ -41,7 +41,7 @@ public sealed record UserSettings
     public bool AutoDownloadUpdates { get; init; } = true;
 
     /// <summary>
-    /// Offer pre-release versions too (Windows).
+    /// Offer pre-release versions too.
     /// </summary>
     public bool BetaUpdates { get; init; }
 
@@ -49,6 +49,11 @@ public sealed record UserSettings
     /// The version that ran last, to say "Updated to …" once after an update (Windows).
     /// </summary>
     public string? LastRunVersion { get; init; }
+
+    /// <summary>
+    /// The new version whose banner the user closed, so it isn't shown again until a newer one (Android).
+    /// </summary>
+    public string? DismissedUpdateVersion { get; init; }
 
     /// <summary>
     /// Time of the newest crash already read from the Windows event log, so each is reported once (Windows).

@@ -26,12 +26,13 @@ public partial class DashboardPage : ContentPage
     private bool _syncing;
     private int _lastHapticStep;
 
-    public DashboardPage(AppViewModel app, ScheduleViewModel schedule)
+    public DashboardPage(AppViewModel app, ScheduleViewModel schedule, ReleaseCheckViewModel releases)
     {
         _app = app;
         _schedule = schedule;
         InitializeComponent();
         BindingContext = app;
+        UpdateBanner.BindingContext = releases;
 
         _countdown = Dispatcher.CreateTimer();
         _countdown.Interval = TimeSpan.FromSeconds(1);

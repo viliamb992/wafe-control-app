@@ -25,6 +25,7 @@ ICONS = [
     "add",
     "airplane",
     "arrow_clockwise",
+    "arrow_download",
     "arrow_export_ltr",
     "arrow_import",
     "calendar_ltr",

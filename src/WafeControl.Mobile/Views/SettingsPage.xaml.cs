@@ -7,7 +7,8 @@ using WafeControl.Mobile.Helpers;
 namespace WafeControl.Mobile.Views;
 
 /// <summary>
-/// Settings: language and appearance (also before sign-in), then the unit, the account, sign-in and crash reports.
+/// Settings: language and appearance (also before sign-in), then the unit, the account, sign-in, crash reports
+/// and updates.
 /// Changes apply right away; the language rebuilds the pages (see <see cref="App"/>).
 /// </summary>
 public partial class SettingsPage : ContentPage
@@ -19,7 +20,7 @@ public partial class SettingsPage : ContentPage
     private readonly ILocalizationService _localization;
     private bool _syncing;
 
-    public SettingsPage(SettingsViewModel settings, AppViewModel app, ILocalizationService localization)
+    public SettingsPage(SettingsViewModel settings, AppViewModel app, ReleaseCheckViewModel releases, ILocalizationService localization)
     {
         _settings = settings;
         _app = app;
@@ -28,6 +29,8 @@ public partial class SettingsPage : ContentPage
         BindingContext = settings;
         UnitCard.BindingContext = app;
         AccountCard.BindingContext = app;
+        UpdatesCard.BindingContext = releases;
+        BetaRow.BindingContext = settings;
 
         _syncing = true;
         LanguagePicker.ItemsSource = settings.Languages.Select(l => l.NativeName).ToList();

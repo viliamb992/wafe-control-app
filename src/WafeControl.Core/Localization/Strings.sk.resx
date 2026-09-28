@@ -839,4 +839,7 @@
   <data name="HelpExplain" xml:space="preserve">
     <value>Vysvetliť: {0}</value>
   </data>
+  <data name="UpdateApkMessage" xml:space="preserve">
+    <value>Stiahnite APK a otvorte ho, nainštaluje sa cez túto verziu. Prihlásenie aj nastavenia zostanú.</value>
+  </data>
 </root>

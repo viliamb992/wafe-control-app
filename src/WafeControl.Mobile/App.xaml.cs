@@ -12,15 +12,18 @@ public partial class App : Application
     private readonly IServiceProvider _services;
     private readonly AppViewModel _app;
     private readonly SettingsViewModel _settings;
+    private readonly ReleaseCheckViewModel _releases;
     private readonly ILocalizationService _localization;
     private Window? _window;
     private bool _promptsShowing;
 
-    public App(IServiceProvider services, AppViewModel app, SettingsViewModel settings, ILocalizationService localization)
+    public App(IServiceProvider services, AppViewModel app, SettingsViewModel settings, ReleaseCheckViewModel releases,
+        ILocalizationService localization)
     {
         _services = services;
         _app = app;
         _settings = settings;
+        _releases = releases;
         _localization = localization;
         InitializeComponent();
 
@@ -37,6 +40,12 @@ public partial class App : Application
         RequestedThemeChanged += (_, _) => SystemBars.Apply();
 #endif
         localization.LanguageChanged += OnLanguageChanged;
+
+#if ANDROID
+        // Sideloaded: nothing else tells about a new version.
+        _releases.Enable(ReleaseCheckViewModel.AndroidTagPrefix);
+        _releases.OpenRequested += (_, uri) => SafeAsync.Run(() => Launcher.Default.TryOpenAsync(uri));
+#endif
     }
 
     protected override Window CreateWindow(IActivationState? activationState)
@@ -48,12 +57,29 @@ public partial class App : Application
             await _app.StartAsync();
             if (lastCrash is not null)
                 await ShowCrashNoticeAsync(lastCrash);
+            await CheckForNewVersionAsync();
         });
 
         // No polling in the background; fresh data as soon as the app is back.
         _window.Stopped += (_, _) => _app.Pause();
-        _window.Resumed += (_, _) => SafeAsync.Run(_app.ResumeAsync);
+        _window.Resumed += (_, _) => SafeAsync.Run(async () =>
+        {
+            await _app.ResumeAsync();
+            await CheckForNewVersionAsync();
+        });
         return _window;
+    }
+
+    /// <summary>
+    /// At most every few hours. Debug builds check only from Settings (their version is older than every release).
+    /// </summary>
+    private Task CheckForNewVersionAsync()
+    {
+#if DEBUG
+        return Task.CompletedTask;
+#else
+        return _releases.CheckIfDueAsync();
+#endif
     }
 
     /// <summary>
@@ -130,6 +156,8 @@ public partial class App : Application
             ApplyTheme();
         else if (e.PropertyName is nameof(SettingsViewModel.SignInMethod) or nameof(SettingsViewModel.StaySignedInFor))
             _app.SignInSettingsChanged();
+        else if (e.PropertyName == nameof(SettingsViewModel.BetaUpdates))
+            SafeAsync.Run(_releases.CheckAsync);
     }
 
     private void ApplyTheme()
