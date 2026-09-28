@@ -4,6 +4,8 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
+using WafeControl.Core.Localization;
+using WafeControl.Core.Threading;
 using WafeControl.Core.ViewModels;
 using WafeControl.Core.ViewModels.Cards;
 using WafeControl.Core.ViewModels.Schedule;
@@ -74,8 +76,38 @@ public sealed partial class DashboardView : UserControl
 
         SyncModeItems();
         SyncFlowSlider();
-        _ = Schedule.TrackUnitModeAsync(ViewModel.SystemControl.CurrentAuthority);
+        SafeAsync.Run(() => Schedule.TrackUnitModeAsync(ViewModel.SystemControl.CurrentAuthority));
     }
+
+    // ── Power ────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Starting needs no question; stopping ends ventilation until someone starts it again, so it asks first.
+    /// </summary>
+    private void OnPowerClick(object sender, RoutedEventArgs e) => SafeAsync.Run(async () =>
+    {
+        var system = ViewModel.SystemControl;
+        if (system.IsSystemRunning)
+        {
+            var dialog = new ContentDialog
+            {
+                XamlRoot = XamlRoot,
+                // Dialogs open outside the window's content, so they don't inherit a theme chosen in Settings.
+                RequestedTheme = ActualTheme,
+                Style = (Style)Application.Current.Resources["DefaultContentDialogStyle"],
+                Title = Strings.SystemStopConfirmTitle,
+                Content = Strings.SystemStopConfirmMessage,
+                PrimaryButtonText = Strings.SystemStopConfirm,
+                CloseButtonText = Strings.ButtonCancel,
+                DefaultButton = ContentDialogButton.Close,
+            };
+            if (await dialog.ShowAsync() != ContentDialogResult.Primary)
+                return;
+        }
+
+        if (system.ToggleSystemCommand.CanExecute(null))
+            await system.ToggleSystemCommand.ExecuteAsync(null);
+    });
 
     // ── Next scheduled start ─────────────────────────────────────────────
 
@@ -83,7 +115,7 @@ public sealed partial class DashboardView : UserControl
     private void OnSystemControlPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(SystemControlCardViewModel.CurrentAuthority))
-            _ = Schedule.TrackUnitModeAsync(ViewModel.SystemControl.CurrentAuthority);
+            SafeAsync.Run(() => Schedule.TrackUnitModeAsync(ViewModel.SystemControl.CurrentAuthority));
     }
 
     // ── Operating mode ───────────────────────────────────────────────────
@@ -121,9 +153,8 @@ public sealed partial class DashboardView : UserControl
         if (!_initialized || _syncing || ModeSelector.SelectedItem is not SegmentedItem { Tag: string mode } || mode == OperatingMode.SelectedMode)
             return;
 
-        OperatingMode.SelectedMode = mode;
         if (OperatingMode.UpdateModeCommand.CanExecute(null))
-            OperatingMode.UpdateModeCommand.Execute(null);
+            SafeAsync.Run(() => OperatingMode.ChangeModeAsync(mode));
         else
             SyncModeSelection();
     }

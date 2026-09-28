@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Shapes;
 using WafeControl.Core.Localization;
+using WafeControl.Core.Threading;
 using WafeControl.Core.ViewModels;
 using WafeControl.Core.ViewModels.Schedule;
 using WafeControl.Shared;
@@ -104,22 +105,23 @@ public sealed partial class ScheduleView : UserControl
         }
     }
 
-    private async void OnRangeSelected(object? sender, ScheduleSlotRange range)
+    private void OnRangeSelected(object? sender, ScheduleSlotRange range) => SafeAsync.Run(async () =>
     {
-        await ShowEditorAsync(ViewModel.CreateEntry(range.Day, range.StartMinute, range.EndMinute));
-        WeekGrid.ClearSelection();
-    }
+        try
+        {
+            await ShowEditorAsync(ViewModel.CreateEntry(range.Day, range.StartMinute, range.EndMinute));
+        }
+        finally
+        {
+            WeekGrid.ClearSelection();
+        }
+    });
 
-    private async void OnEntryInvoked(object? sender, ScheduleEntry entry) => await ShowEditorAsync(ViewModel.EditEntry(entry));
+    private void OnEntryInvoked(object? sender, ScheduleEntry entry) => SafeAsync.Run(() => ShowEditorAsync(ViewModel.EditEntry(entry)));
 
     private void OnUseScheduleModeClick(object sender, RoutedEventArgs e)
     {
-        var operatingMode = Main.OperatingMode;
-        if (!operatingMode.UpdateModeCommand.CanExecute(null))
-            return;
-
-        operatingMode.SelectedMode = AppConstants.ModeSchedule;
-        operatingMode.UpdateModeCommand.Execute(null);
+        SafeAsync.Run(() => Main.OperatingMode.ChangeModeAsync(AppConstants.ModeSchedule));
     }
 
     private async Task ShowEditorAsync(ScheduleEntryEditorViewModel editor)
@@ -141,19 +143,37 @@ public sealed partial class ScheduleView : UserControl
         };
 
         // Keep the dialog open until the unit accepted the plan; errors show inside the dialog.
-        dialog.PrimaryButtonClick += async (_, args) =>
+        dialog.PrimaryButtonClick += (_, args) =>
         {
             var deferral = args.GetDeferral();
-            args.Cancel = !await ViewModel.SaveEntryAsync(editor);
-            deferral.Complete();
+            SafeAsync.Run(async () =>
+            {
+                try
+                {
+                    args.Cancel = !await ViewModel.SaveEntryAsync(editor);
+                }
+                finally
+                {
+                    deferral.Complete();
+                }
+            });
         };
-        dialog.SecondaryButtonClick += async (_, args) =>
+        dialog.SecondaryButtonClick += (_, args) =>
         {
             var deferral = args.GetDeferral();
-            args.Cancel = !await ViewModel.DeleteEntryAsync(editor.Original!);
-            if (args.Cancel)
-                editor.ErrorMessage = ViewModel.ErrorMessage;
-            deferral.Complete();
+            SafeAsync.Run(async () =>
+            {
+                try
+                {
+                    args.Cancel = !await ViewModel.DeleteEntryAsync(editor.Original!);
+                    if (args.Cancel)
+                        editor.ErrorMessage = ViewModel.ErrorMessage;
+                }
+                finally
+                {
+                    deferral.Complete();
+                }
+            });
         };
 
         await dialog.ShowAsync();

@@ -1,7 +1,9 @@
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using WafeControl.Core.Localization;
+using WafeControl.Core.ViewModels;
 using WafeControl.Shared;
 using WafeControl.Shared.Models;
 
@@ -31,6 +33,8 @@ public static class Xaml
     public static bool HasText(string? value) => !string.IsNullOrEmpty(value);
 
     public static bool CanAdjustFlow(bool isManualMode, bool isChanging) => isManualMode && !isChanging;
+
+    public static bool CanTogglePower(bool canSendCommands, bool isInProgress) => canSendCommands && !isInProgress;
 
     public static string Temperature(double? value) => DisplayFormat.Temperature(value);
 
@@ -130,6 +134,84 @@ public static class Xaml
     public static Visibility VisibleIfServiceWeb(SystemInfo? info) => VisibleIf(ServiceWebUri(info) is not null);
 
     public static string AboutText(string version) => DisplayFormat.About(version);
+
+    // ── Feedback (footer) ────────────────────────────────────────────────
+
+    public static Visibility VisibleIfFeedback(bool isAuthenticated, Feedback? feedback) => VisibleIf(isAuthenticated && feedback is not null);
+
+    public static Visibility VisibleIfNoFeedback(bool isAuthenticated, Feedback? feedback) => VisibleIf(isAuthenticated && feedback is null);
+
+    public static string FeedbackText(Feedback? feedback) => feedback?.Text ?? string.Empty;
+
+    public static bool IsProgress(Feedback? feedback) => feedback?.Kind == FeedbackKind.Progress;
+
+    public static Visibility VisibleIfFeedbackIcon(Feedback? feedback) => VisibleIf(feedback is { Kind: not FeedbackKind.Progress });
+
+    public static string FeedbackGlyph(Feedback? feedback) => feedback?.Kind switch
+    {
+        FeedbackKind.Success => "",
+        FeedbackKind.Warning => "",
+        FeedbackKind.Error => "",
+        _ => "",
+    };
+
+    public static Brush FeedbackBrush(Feedback? feedback) => Resource<Brush>(feedback?.Kind switch
+    {
+        FeedbackKind.Success => "SystemFillColorSuccessBrush",
+        FeedbackKind.Warning => "SystemFillColorCautionBrush",
+        FeedbackKind.Error => "SystemFillColorCriticalBrush",
+        _ => "TextFillColorSecondaryBrush",
+    });
+
+    public static Visibility VisibleIfRetry(Feedback? feedback) => VisibleIf(feedback?.Retry is not null);
+
+    public static Visibility VisibleIfReport(Feedback? feedback) => VisibleIf(feedback?.OffersReport == true);
+
+    // ── Data state, demo ─────────────────────────────────────────────────
+
+    /// <summary>
+    /// The connection dot: green when live, amber when the data is old, red otherwise; blue in demo mode.
+    /// </summary>
+    public static Brush DataStateBrush(DataState state, bool isOnline, bool isDemo) => Resource<Brush>(state switch
+    {
+        DataState.Stale => "SystemFillColorCautionBrush",
+        DataState.Live when isDemo => "AccentFillColorDefaultBrush",
+        DataState.Live when isOnline => "SystemFillColorSuccessBrush",
+        _ => "SystemFillColorCriticalBrush",
+    });
+
+    public static bool IsOpen(string? title) => !string.IsNullOrEmpty(title);
+
+    public static InfoBarSeverity BannerSeverity(bool isError) => isError ? InfoBarSeverity.Error : InfoBarSeverity.Warning;
+
+    /// <summary>
+    /// Old readings are shown dimmed.
+    /// </summary>
+    public static double DataOpacity(bool isCurrent) => isCurrent ? 1.0 : 0.55;
+
+    public static string SignOutText(bool isDemo) => isDemo ? Strings.DemoLeave : Strings.MenuSignOut;
+
+    /// <summary>
+    /// The unit's name under the title; "Demo" is added in demo mode unless the name already says so.
+    /// </summary>
+    public static string Subtitle(string unitName, bool isDemo) =>
+        !isDemo || unitName.Contains(Strings.DemoSubtitle, StringComparison.OrdinalIgnoreCase) ? unitName
+        : unitName.Length == 0 ? Strings.DemoSubtitle
+        : $"{unitName} · {Strings.DemoSubtitle}";
+
+    /// <summary>
+    /// Developer tools (demo faults) appear in Debug builds only.
+    /// </summary>
+    public static Visibility DebugOnly =>
+#if DEBUG
+        Visibility.Visible;
+#else
+        Visibility.Collapsed;
+#endif
+
+    // ── Updates ──────────────────────────────────────────────────────────
+
+    public static Style UpdateButtonStyle(bool isReady) => Resource<Style>(isReady ? "AccentButtonStyle" : "DefaultButtonStyle");
 
     private static T Resource<T>(string key) => (T)Application.Current.Resources[key];
 }

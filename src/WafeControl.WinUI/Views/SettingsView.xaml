@@ -126,6 +126,58 @@
                 </Grid>
             </Border>
 
+            <!-- ── Crash reports (release builds with a reporting address) ── -->
+            <Border Style="{StaticResource CardStyle}" Padding="16"
+                    Visibility="{x:Bind helpers:Xaml.VisibleIf(ViewModel.IsCrashReportsAvailable)}">
+                <Grid ColumnSpacing="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <FontIcon Glyph="&#xEBE8;" FontSize="20" VerticalAlignment="Center" />
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="{x:Bind loc:Strings.SettingsCrashReports}" Style="{StaticResource BodyTextBlockStyle}" />
+                        <TextBlock Text="{x:Bind loc:Strings.SettingsCrashReportsDescription}" Style="{StaticResource SecondaryTextStyle}"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+                    <ToggleSwitch Grid.Column="2" MinWidth="0" OnContent="" OffContent="" VerticalAlignment="Center"
+                                  AutomationProperties.Name="{x:Bind loc:Strings.SettingsCrashReports}"
+                                  IsOn="{x:Bind ViewModel.CrashReportsEnabled, Mode=TwoWay}" />
+                </Grid>
+            </Border>
+
+            <!-- ── Updates ──────────────────────────────────────────────── -->
+            <Border Style="{StaticResource CardStyle}" Padding="16">
+                <Grid ColumnSpacing="16" RowSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <FontIcon Glyph="&#xE777;" FontSize="20" VerticalAlignment="Center" />
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="{x:Bind loc:Strings.UpdatesTitle}" Style="{StaticResource BodyTextBlockStyle}" />
+                        <TextBlock Text="{x:Bind Updates.StatusText, Mode=OneWay}" Style="{StaticResource SecondaryTextStyle}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <Button Grid.Column="2" VerticalAlignment="Center" Content="{x:Bind loc:Strings.UpdateCheckNow}"
+                            Command="{x:Bind Updates.CheckCommand}"
+                            Visibility="{x:Bind helpers:Xaml.VisibleIf(Updates.IsSupported)}" />
+
+                    <StackPanel Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
+                                Visibility="{x:Bind helpers:Xaml.VisibleIf(Updates.IsSupported)}">
+                        <CheckBox Content="{x:Bind loc:Strings.UpdateAutoDownload}" IsChecked="{x:Bind ViewModel.AutoDownloadUpdates, Mode=TwoWay}" />
+                        <CheckBox Content="{x:Bind loc:Strings.UpdateBeta}" IsChecked="{x:Bind ViewModel.BetaUpdates, Mode=TwoWay}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
             <!-- ── Unit: name, model, serial number, service contact (after sign-in) ── -->
             <Border Style="{StaticResource CardStyle}" Padding="16"
                     Visibility="{x:Bind helpers:Xaml.VisibleIfNotNull(Main.Unit), Mode=OneWay}">
@@ -195,9 +247,27 @@
                         <TextBlock Style="{StaticResource SecondaryTextStyle}" IsTextSelectionEnabled="True"
                                    Text="{x:Bind helpers:Xaml.AboutText(ViewModel.Version)}" />
                     </StackPanel>
-                    <HyperlinkButton Grid.Column="2" VerticalAlignment="Center" Content="{x:Bind loc:Strings.SettingsProjectLink}"
-                                     NavigateUri="https://github.com/viliamb992/wafe-control-app" />
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                        <HyperlinkButton Content="{x:Bind loc:Strings.ReportProblem}" Click="OnReportProblemClick" />
+                        <HyperlinkButton Content="{x:Bind loc:Strings.SettingsProjectLink}"
+                                         NavigateUri="https://github.com/viliamb992/wafe-control-app" />
+                    </StackPanel>
                 </Grid>
+            </Border>
+
+            <!-- ── Debug builds only: problems the demo unit simulates ─────── -->
+            <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{x:Bind helpers:Xaml.DebugOnly}">
+                <StackPanel Spacing="4">
+                    <TextBlock Text="Demo unit faults (Debug build)" Style="{StaticResource BodyTextBlockStyle}" />
+                    <TextBlock Text="Sign in with the demo, then pick what goes wrong." Style="{StaticResource SecondaryTextStyle}" />
+                    <StackPanel x:Name="DemoFaultChoices" Margin="0,4,0,0" />
+                    <TextBlock Text="Crash the app, to test crash handling and reports:" Margin="0,8,0,0" Style="{StaticResource SecondaryTextStyle}" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="UI thread" Click="OnCrashUiThreadClick" />
+                        <Button Content="Background thread" Click="OnCrashBackgroundClick" />
+                        <Button Content="Native (fail fast)" Click="OnCrashNativeClick" />
+                    </StackPanel>
+                </StackPanel>
             </Border>
         </StackPanel>
     </ScrollViewer>
