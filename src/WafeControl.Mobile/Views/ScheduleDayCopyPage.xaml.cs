@@ -1,4 +1,5 @@
 using WafeControl.Core.Localization;
+using WafeControl.Core.Threading;
 using WafeControl.Core.ViewModels.Schedule;
 using WafeControl.Mobile.Helpers;
 
@@ -58,7 +59,9 @@ public partial class ScheduleDayCopyPage : ContentPage
         }
     }
 
-    private async void OnCopyClicked(object? sender, EventArgs e)
+    private void OnCopyClicked(object? sender, EventArgs e) => SafeAsync.Run(CopyAsync);
+
+    private async Task CopyAsync()
     {
         SetBusy(true);
         try
@@ -72,7 +75,7 @@ public partial class ScheduleDayCopyPage : ContentPage
         }
     }
 
-    private async void OnCancelClicked(object? sender, EventArgs e) => await Navigation.PopModalAsync();
+    private void OnCancelClicked(object? sender, EventArgs e) => SafeAsync.Run(() => Navigation.PopModalAsync());
 
     private void SetBusy(bool busy)
     {

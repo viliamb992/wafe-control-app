@@ -37,32 +37,55 @@ internal sealed class FakeSystemControlService : ISystemControlService
         StatusUpdated?.Invoke(this, status);
     }
 
+    public ApiError LastRefreshError { get; set; }
+    public int ConsecutiveRefreshFailures { get; set; }
+
     public int Refreshes { get; private set; }
     public Task<SystemStatus?> RefreshStatusAsync(CancellationToken ct = default)
     {
         Refreshes++;
         return Task.FromResult<SystemStatus?>(null);
     }
+
+    /// <summary>
+    /// What every command returns; confirmed unless a test says otherwise.
+    /// </summary>
+    public CommandOutcome NextOutcome { get; set; } = CommandOutcome.Confirmed;
+
     public Task<SystemInfo?> GetSystemInfoAsync(CancellationToken ct = default) => Task.FromResult(SystemInfo);
-    public Task<bool> SetFlowSpeedAsync(int speed, CancellationToken ct = default) => Record($"flow:{speed}");
-    public Task<bool> SetAuthorityModeAsync(string mode, CancellationToken ct = default) => Record($"mode:{mode}");
-    public Task<bool> SetSilentModeAsync(bool enabled, CancellationToken ct = default) => Record($"silent:{enabled}");
-    public Task<bool> SetHolidayModeAsync(bool enabled, CancellationToken ct = default) => Record($"holiday:{enabled}");
-    public Task<bool> SetBoostAsync(int seconds, CancellationToken ct = default) => Record($"boost:{seconds}");
-    public Task<bool> StartSystemAsync(CancellationToken ct = default) => Record("start");
-    public Task<bool> StopSystemAsync(CancellationToken ct = default) => Record("stop");
+    public Task<CommandOutcome> SetFlowSpeedAsync(int speed, Action? onSent = null, CancellationToken ct = default) => Record($"flow:{speed}", onSent);
+    public Task<CommandOutcome> SetAuthorityModeAsync(string mode, Action? onSent = null, CancellationToken ct = default) => Record($"mode:{mode}", onSent);
+    public Task<CommandOutcome> SetSilentModeAsync(bool enabled, Action? onSent = null, CancellationToken ct = default) => Record($"silent:{enabled}", onSent);
+    public Task<CommandOutcome> SetHolidayModeAsync(bool enabled, Action? onSent = null, CancellationToken ct = default) => Record($"holiday:{enabled}", onSent);
+    public Task<CommandOutcome> SetBoostAsync(int seconds, Action? onSent = null, CancellationToken ct = default) => Record($"boost:{seconds}", onSent);
+    public Task<CommandOutcome> StartSystemAsync(Action? onSent = null, CancellationToken ct = default) => Record("start", onSent);
+    public Task<CommandOutcome> StopSystemAsync(Action? onSent = null, CancellationToken ct = default) => Record("stop", onSent);
     public bool AcceptUnitName { get; set; } = true;
-    public Task<bool> SetUnitNameAsync(string name, CancellationToken ct = default)
+    public Task<ApiResult> SetUnitNameAsync(string name, CancellationToken ct = default)
     {
         Commands.Add($"name:{name}");
-        return Task.FromResult(AcceptUnitName);
+        return Task.FromResult(AcceptUnitName ? ApiResult.Success : ApiResult.Fail(ApiError.Rejected, 400));
     }
 
-    private Task<bool> Record(string command)
+    private Task<CommandOutcome> Record(string command, Action? onSent)
     {
         Commands.Add(command);
-        return Task.FromResult(true);
+        if (NextOutcome.Status != CommandStatus.Failed)
+            onSent?.Invoke();
+        return Task.FromResult(NextOutcome);
     }
+}
+
+/// <summary>
+/// The device always has a network, so tests don't depend on the machine's.
+/// </summary>
+internal sealed class FakeNetworkStatus : INetworkStatus
+{
+    public bool IsAvailable { get; set; } = true;
+
+    public event EventHandler? Changed;
+
+    public void Raise() => Changed?.Invoke(this, EventArgs.Empty);
 }
 
 /// <summary>
@@ -85,8 +108,12 @@ public abstract class CardViewModelTestBase : IDisposable
             StateChangeIntervalMs = 10,
             StateChangeTimeoutSeconds = 2
         });
-        App = new AppViewModel(authService, _systemControl, config, NullLoggerFactory.Instance);
+        App = new AppViewModel(authService, _systemControl, config, NullLoggerFactory.Instance, Network);
     }
+
+    private protected FakeNetworkStatus Network { get; } = new();
+
+    private protected FakeSystemControlService SystemControlFake => _systemControl;
 
     protected IAuthenticationService AuthService => _authService;
 
@@ -399,7 +426,7 @@ public class AppViewModelLifecycleTests : CardViewModelTestBase
     [Fact]
     public async Task StartAsync_WhileAutoLoginRuns_HidesLoginForm()
     {
-        var autoLogin = new TaskCompletionSource<bool>();
+        var autoLogin = new TaskCompletionSource<ApiResult?>();
         AuthService.TryAutoLoginAsync(Arg.Any<CancellationToken>()).Returns(autoLogin.Task);
 
         var start = App.StartAsync();
@@ -407,7 +434,7 @@ public class AppViewModelLifecycleTests : CardViewModelTestBase
         Assert.True(App.IsStarting);
         Assert.False(App.IsLoginRequired);
 
-        autoLogin.SetResult(false);
+        autoLogin.SetResult(null);
         await start;
 
         Assert.False(App.IsStarting);
@@ -418,7 +445,7 @@ public class AppViewModelLifecycleTests : CardViewModelTestBase
     [Fact]
     public async Task StartAsync_AutoLoginThrows_ShowsLoginForm()
     {
-        AuthService.TryAutoLoginAsync(Arg.Any<CancellationToken>()).Returns<bool>(_ => throw new HttpRequestException("offline"));
+        AuthService.TryAutoLoginAsync(Arg.Any<CancellationToken>()).Returns<ApiResult?>(_ => throw new HttpRequestException("offline"));
 
         await App.StartAsync();
 
@@ -587,7 +614,7 @@ public class AppViewModelUnitTests : CardViewModelTestBase
 
         Assert.False(await App.SaveUnitNameAsync(editor));
 
-        Assert.Equal("The name couldn't be saved. Please try again.", editor.ErrorMessage);
+        Assert.Equal("The name couldn't be saved. The Wafe server refused the change.", editor.ErrorMessage);
     }
 
     [Fact]

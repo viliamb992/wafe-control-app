@@ -13,7 +13,7 @@
     <ApplicationIcon>Assets\app-icon.ico</ApplicationIcon>
 
     <!-- Unpackaged, self-contained Windows App SDK: runs as a plain exe (`dotnet run`), no runtime installer.
-         Distributed with an Inno Setup installer (installer/WafeControl.iss) instead of MSIX. -->
+         Distributed with Velopack (per-user Setup.exe and background updates, see release.yml) instead of MSIX. -->
     <WindowsPackageType>None</WindowsPackageType>
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <EnableMsixTooling>true</EnableMsixTooling>
@@ -47,10 +47,19 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" />
     <PackageReference Include="Microsoft.WindowsAppSDK" />
+    <PackageReference Include="Sentry.Serilog" />
     <PackageReference Include="Serilog" />
     <PackageReference Include="Serilog.Extensions.Logging" />
     <PackageReference Include="Serilog.Sinks.File" />
+    <PackageReference Include="System.Diagnostics.EventLog" />
     <PackageReference Include="System.Security.Cryptography.ProtectedData" />
+    <PackageReference Include="Velopack" />
+  </ItemGroup>
+
+  <!-- Crash reports go to GlitchTip only from release builds: the workflow passes -p:CrashReportsDsn=… from a secret.
+       Local and pull request builds have none, so nothing is reported from development. -->
+  <ItemGroup Condition="'$(CrashReportsDsn)' != ''">
+    <AssemblyMetadata Include="CrashReportsDsn" Value="$(CrashReportsDsn)" />
   </ItemGroup>
 
   <ItemGroup>

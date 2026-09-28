@@ -70,12 +70,24 @@
                 </VerticalStackLayout>
             </Border>
 
-            <!-- ── Account (after sign-in) ─────────────────────────────── -->
+            <!-- ── Account (after sign-in); in demo mode, the way to a real sign-in ── -->
             <Border x:Name="AccountCard" Style="{StaticResource Card}" x:DataType="vm:AppViewModel" IsVisible="{Binding IsAuthenticated}">
                 <controls:SettingRow Icon="{x:Static helpers:FluentIcons.Person}" Title="{x:Static loc:Strings.SettingsAccount}"
-                                     Description="{Binding Login.Username}">
-                    <Button Text="{x:Static loc:Strings.MenuSignOut}" Command="{Binding SignOutCommand}" />
+                                     Description="{Binding AccountName}">
+                    <Button Text="{Binding IsDemo, Converter={x:Static helpers:Converters.SignOutText}}" Command="{Binding SignOutCommand}" />
                 </controls:SettingRow>
+            </Border>
+
+            <!-- ── Crash reports (release builds with a reporting address) ── -->
+            <Border Style="{StaticResource Card}" IsVisible="{Binding IsCrashReportsAvailable}">
+                <VerticalStackLayout Spacing="4">
+                    <controls:SettingRow Icon="{x:Static helpers:FluentIcons.Warning}" Title="{x:Static loc:Strings.SettingsCrashReports}"
+                                         Description="{x:Static loc:Strings.SettingsCrashReportsDescription}">
+                        <Switch IsToggled="{Binding CrashReportsEnabled}" SemanticProperties.Description="{x:Static loc:Strings.SettingsCrashReports}" />
+                    </controls:SettingRow>
+                    <Label Text="{x:Static loc:Strings.SettingsCrashReportsRestart}" Style="{StaticResource SecondaryCaption}" Margin="36,0,0,0"
+                           IsVisible="{Binding ShowsCrashReportsRestartHint}" />
+                </VerticalStackLayout>
             </Border>
 
             <!-- ── About ───────────────────────────────────────────────── -->
@@ -86,8 +98,14 @@
                         <Label Text="{x:Static loc:Strings.SettingsAbout}" />
                         <Label Text="{Binding Version, Converter={x:Static helpers:Converters.About}}" Style="{StaticResource SecondaryCaption}" />
                     </VerticalStackLayout>
-                    <Button Grid.Row="1" Grid.Column="1" Style="{StaticResource AccentTextButton}" Padding="0" HorizontalOptions="Start"
-                            Text="{x:Static loc:Strings.SettingsProjectLink}" Clicked="OnProjectClicked" />
+                    <VerticalStackLayout x:Name="AboutActions" Grid.Row="1" Grid.Column="1" Spacing="0">
+                        <Button Style="{StaticResource AccentTextButton}" Padding="0" HorizontalOptions="Start"
+                                Text="{x:Static loc:Strings.ReportProblem}" Clicked="OnReportProblemClicked" />
+                        <Button Style="{StaticResource AccentTextButton}" Padding="0" HorizontalOptions="Start"
+                                Text="{x:Static loc:Strings.SettingsShareLogs}" Clicked="OnShareLogsClicked" />
+                        <Button Style="{StaticResource AccentTextButton}" Padding="0" HorizontalOptions="Start"
+                                Text="{x:Static loc:Strings.SettingsProjectLink}" Clicked="OnProjectClicked" />
+                    </VerticalStackLayout>
                 </Grid>
             </Border>
         </VerticalStackLayout>

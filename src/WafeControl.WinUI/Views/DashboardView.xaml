@@ -16,7 +16,23 @@
     </UserControl.Resources>
 
     <Grid>
-        <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- ── Old or missing data: say so, and how old ────────────────── -->
+        <InfoBar MaxWidth="1052" Margin="24,0,24,8" IsClosable="False"
+                 IsOpen="{x:Bind helpers:Xaml.IsOpen(ViewModel.DataBannerTitle), Mode=OneWay}"
+                 Severity="{x:Bind helpers:Xaml.BannerSeverity(ViewModel.IsDataBannerError), Mode=OneWay}"
+                 Title="{x:Bind ViewModel.DataBannerTitle, Mode=OneWay}"
+                 Message="{x:Bind ViewModel.DataBannerMessage, Mode=OneWay}">
+            <InfoBar.ActionButton>
+                <Button Content="{x:Bind loc:Strings.TitleBarRefresh}" Command="{x:Bind ViewModel.RefreshStatusCommand}" />
+            </InfoBar.ActionButton>
+        </InfoBar>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <Grid x:Name="CardGrid" MaxWidth="1100" Padding="24,8,24,24" ColumnSpacing="16" RowSpacing="16">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -68,7 +84,8 @@
                                        Visibility="{x:Bind helpers:Xaml.VisibleIfAndNot(ViewModel.IsSystemOnline, ViewModel.HasSensorData), Mode=OneWay}" />
                         </StackPanel>
 
-                        <Button Grid.Column="2" MinWidth="140" Height="36" Command="{x:Bind ViewModel.SystemControl.ToggleSystemCommand}">
+                        <Button Grid.Column="2" MinWidth="140" Height="36" Click="OnPowerClick"
+                                IsEnabled="{x:Bind helpers:Xaml.CanTogglePower(ViewModel.CanSendCommands, ViewModel.SystemControl.IsOperationInProgress), Mode=OneWay}">
                             <Grid>
                                 <StackPanel Orientation="Horizontal" Spacing="8"
                                             Visibility="{x:Bind helpers:Xaml.CollapsedIf(ViewModel.SystemControl.IsOperationInProgress), Mode=OneWay}">
@@ -82,7 +99,8 @@
                 </Border>
 
                 <!-- ── Sensors (humidity only on units that report it) ──────── -->
-                <controls:TilePanel x:Name="SensorTiles" Grid.Row="1" Grid.ColumnSpan="2" MinItemWidth="160" Spacing="12">
+                <controls:TilePanel x:Name="SensorTiles" Grid.Row="1" Grid.ColumnSpan="2" MinItemWidth="160" Spacing="12"
+                                    Opacity="{x:Bind helpers:Xaml.DataOpacity(ViewModel.IsDataCurrent), Mode=OneWay}">
                     <Border Style="{StaticResource TileStyle}">
                         <StackPanel Spacing="4">
                             <StackPanel Orientation="Horizontal" Spacing="8">

@@ -3,6 +3,9 @@ using System.Runtime.InteropServices;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.Windows.AppLifecycle;
+using Velopack;
+using WafeControl.Core.Diagnostics;
+using WafeControl.WinUI.Services;
 
 namespace WafeControl.WinUI;
 
@@ -17,6 +20,21 @@ public static partial class Program
     [STAThread]
     private static int Main(string[] args)
     {
+        // First: the installer and updater start the app with special arguments, handled here and exited.
+        VelopackApp.Build()
+            .OnBeforeUninstallFastCallback(_ => RegistryStartupRegistration.RemoveEntries())
+            .Run();
+
+        // Crashes anywhere from here on leave a log entry and a marker for the next start.
+        LegacyInstallMigration.MoveLogs(App.LogDirectory);
+        CrashHandler.Initialize(App.LogDirectory);
+        AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+        {
+            if (e.ExceptionObject is Exception exception)
+                CrashHandler.OnFatal(exception, "AppDomain");
+        };
+        TaskScheduler.UnobservedTaskException += CrashHandler.OnUnobservedTask;
+
         WinRT.ComWrappersSupport.InitializeComWrappers();
 
         if (RedirectToRunningInstance())

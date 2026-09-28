@@ -14,6 +14,9 @@ public sealed class RegistryStartupRegistration : IStartupRegistration
     internal const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
     internal const string ValueName = "WafeControl";
 
+    // The entry's name up to 1.0.1 (LegacyInstallMigration renames it).
+    private const string LegacyValueName = "WafeRecuperation";
+
     // Where Task Manager → Startup apps records its on/off switch; first byte odd = disabled, missing = enabled.
     internal const string ApprovedKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run";
 
@@ -40,6 +43,28 @@ public sealed class RegistryStartupRegistration : IStartupRegistration
 
             using var approved = Registry.CurrentUser.OpenSubKey(ApprovedKeyPath);
             return approved?.GetValue(ValueName) is not byte[] { Length: > 0 } state || state[0] % 2 == 0;
+        }
+    }
+
+    /// <summary>
+    /// Removes the Start with Windows entry (and the one used up to 1.0.1). Runs from the uninstaller hook, before
+    /// logging exists, so it never throws.
+    /// </summary>
+    public static void RemoveEntries()
+    {
+        foreach (var name in new[] { ValueName, LegacyValueName })
+        {
+            try
+            {
+                using (var key = Registry.CurrentUser.OpenSubKey(RunKeyPath, writable: true))
+                    key?.DeleteValue(name, throwOnMissingValue: false);
+                using (var approved = Registry.CurrentUser.OpenSubKey(ApprovedKeyPath, writable: true))
+                    approved?.DeleteValue(name, throwOnMissingValue: false);
+            }
+            catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or IOException)
+            {
+                // Left behind; Windows shows it as a startup app that can't be found.
+            }
         }
     }
 

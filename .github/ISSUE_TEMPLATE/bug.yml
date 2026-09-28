@@ -1,0 +1,55 @@
+# "Report a problem" in the apps opens this form with app-version, platform, crash-id and diagnostics filled in
+# from the URL (?app-version=…); keep those ids in sync with ProblemReport.IssueUrl.
+name: Report a problem
+description: Something doesn't work or the app closed unexpectedly.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Please don't paste your email, password or the unit's serial number.
+        The app's log files help a lot: Windows ⋯ → Open log folder (drag the newest file here); Android Settings → Share logs.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: If it happens again, how?
+      placeholder: |
+        1. Open the Schedule
+        2. Add an action on Sunday 23:30–01:00
+        3. …
+  - type: input
+    id: app-version
+    attributes:
+      label: App version
+      placeholder: 1.2.0
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - windows
+        - android
+        - ios
+    validations:
+      required: true
+  - type: input
+    id: crash-id
+    attributes:
+      label: Crash report ID
+      description: Filled in by the app when a crash report was sent.
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics
+      description: Filled in by the app (version, device, language, last crash).
+      render: text

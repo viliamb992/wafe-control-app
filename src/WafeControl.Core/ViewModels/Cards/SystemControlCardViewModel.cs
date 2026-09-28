@@ -25,32 +25,28 @@ public sealed partial class SystemControlCardViewModel : CardViewModelBase
     public string SystemToggleButtonText => IsSystemRunning ? Strings.SystemStop : Strings.SystemStart;
     public string CurrentAuthority => SystemControl.CurrentStatus?.Authority ?? string.Empty;
 
+    /// <summary>
+    /// Stops a running unit, starts a stopped one. The views ask before stopping.
+    /// </summary>
     [RelayCommand(CanExecute = nameof(CanToggleSystem))]
-    private async Task ToggleSystemAsync()
+    private Task ToggleSystemAsync() => SetRunningAsync(!IsSystemRunning);
+
+    private async Task SetRunningAsync(bool start)
     {
-        try
-        {
-            if (IsSystemRunning)
-            {
-                App.StatusMessage = Strings.SystemStopping;
-                var confirmed = await SystemControl.StopSystemAsync();
-                App.StatusMessage = confirmed ? Strings.SystemStoppedStatus : Strings.SystemStopNotConfirmed;
-            }
-            else
-            {
-                App.StatusMessage = Strings.SystemStarting;
-                var confirmed = await SystemControl.StartSystemAsync();
-                App.StatusMessage = confirmed ? Strings.SystemStartedStatus : Strings.SystemStartNotConfirmed;
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error toggling system");
-            App.StatusMessage = string.Format(Strings.SystemToggleError, ex.Message);
-        }
+        if (!CanToggleSystem())
+            return;
+
+        var texts = start
+            ? new CommandTexts(Strings.SystemStarting, Strings.SystemStartedStatus, Strings.SystemStartNotConfirmed, Strings.SystemToggleError)
+            : new CommandTexts(Strings.SystemStopping, Strings.SystemStoppedStatus, Strings.SystemStopNotConfirmed, Strings.SystemToggleError);
+
+        await RunCommandAsync(
+            onSent => start ? SystemControl.StartSystemAsync(onSent) : SystemControl.StopSystemAsync(onSent),
+            texts,
+            () => SetRunningAsync(start));
     }
 
-    private bool CanToggleSystem() => App.IsAuthenticated && !IsOperationInProgress;
+    private bool CanToggleSystem() => App.CanSendCommands && !IsOperationInProgress;
 
     private void OnOperationInProgressChanged(object? sender, bool inProgress) => IsOperationInProgress = inProgress;
 

@@ -9,6 +9,7 @@ public sealed class WafeSession
     private readonly Lock _gate = new();
     private string? _key;
     private (string Username, string Password)? _credentials;
+    private bool _isDemo;
 
     /// <summary>
     /// Raised when the session could not be renewed (e.g. the password was changed); the user must sign in again.
@@ -34,12 +35,34 @@ public sealed class WafeSession
         get { lock (_gate) return _credentials; }
     }
 
+    /// <summary>
+    /// True while the simulated demo unit is used instead of the Wafe API; nothing goes over the network.
+    /// </summary>
+    public bool IsDemo
+    {
+        get { lock (_gate) return _isDemo; }
+    }
+
     public void Start(string username, string password, string key)
     {
         lock (_gate)
         {
             _credentials = (username, password);
             _key = key;
+            _isDemo = false;
+        }
+    }
+
+    /// <summary>
+    /// Switches every API call to the demo unit until <see cref="Clear"/>.
+    /// </summary>
+    public void StartDemo()
+    {
+        lock (_gate)
+        {
+            _credentials = null;
+            _key = null;
+            _isDemo = true;
         }
     }
 
@@ -54,6 +77,7 @@ public sealed class WafeSession
         {
             _credentials = null;
             _key = null;
+            _isDemo = false;
         }
     }
 

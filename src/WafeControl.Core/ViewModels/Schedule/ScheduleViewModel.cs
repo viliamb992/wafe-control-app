@@ -130,10 +130,10 @@ public sealed partial class ScheduleViewModel : ObservableObject
         ErrorMessage = null;
         try
         {
-            var response = await _apiService.GetScheduleAsync();
-            if (response is null)
+            var result = await _apiService.GetScheduleAsync();
+            if (result.Value is not { } response)
             {
-                ErrorMessage = Strings.ScheduleLoadFailed;
+                ErrorMessage = string.Format(Strings.ScheduleLoadFailed, ErrorText.For(result.Error));
                 return;
             }
 
@@ -151,7 +151,7 @@ public sealed partial class ScheduleViewModel : ObservableObject
         catch (Exception ex)
         {
             _logger.LogError(ex, "Loading the schedule failed");
-            ErrorMessage = Strings.ScheduleLoadFailed;
+            ErrorMessage = string.Format(Strings.ScheduleLoadFailed, Strings.ErrorUnexpected);
         }
         finally
         {
@@ -264,19 +264,20 @@ public sealed partial class ScheduleViewModel : ObservableObject
         try
         {
             _logger.LogInformation("Saving schedule plan with {Count} entries", entries.Count);
-            if (await _apiService.SetSchedulePlanAsync(plan))
+            var result = await _apiService.SetSchedulePlanAsync(plan);
+            if (result.Ok)
             {
                 Entries = entries;
                 return true;
             }
 
-            ErrorMessage = Strings.ScheduleSaveFailed;
+            ErrorMessage = string.Format(Strings.ScheduleSaveFailed, ErrorText.For(result.Error));
             return false;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Saving the schedule failed");
-            ErrorMessage = Strings.ScheduleSaveFailed;
+            ErrorMessage = string.Format(Strings.ScheduleSaveFailed, Strings.ErrorUnexpected);
             return false;
         }
         finally

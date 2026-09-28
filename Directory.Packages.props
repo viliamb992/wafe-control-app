@@ -18,9 +18,19 @@
     <PackageVersion Include="H.NotifyIcon.WinUI" Version="2.4.1" />
     <PackageVersion Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2705" />
     <PackageVersion Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
+    <!-- Reads WinUI crashes that bypass .NET from the Application event log (NativeCrashDetector). -->
+    <PackageVersion Include="System.Diagnostics.EventLog" Version="10.0.12" />
+    <!-- Installer and background updates from GitHub Releases. -->
+    <PackageVersion Include="Velopack" Version="1.2.158" />
   </ItemGroup>
   <ItemGroup Label="MAUI">
     <PackageVersion Include="Microsoft.Maui.Controls" Version="10.0.110" />
+  </ItemGroup>
+  <!-- ── Crash reports (Sentry SDK, sent to GlitchTip) ────────────────── -->
+  <ItemGroup Label="Crash reports">
+    <PackageVersion Include="Sentry" Version="6.11.1" />
+    <PackageVersion Include="Sentry.Maui" Version="6.11.1" />
+    <PackageVersion Include="Sentry.Serilog" Version="6.11.1" />
   </ItemGroup>
   <!-- ── MVVM ────────────────────────────────────────────────────────── -->
   <ItemGroup Label="MVVM">
@@ -49,8 +59,14 @@
   <ItemGroup Label="Testing">
     <!-- Code coverage for dotnet test (Microsoft.Testing.Platform extension). -->
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.11.2" />
+    <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="10.10.0" />
     <PackageVersion Include="NSubstitute" Version="6.2.0" />
     <!-- Runs on Microsoft.Testing.Platform v2 (see global.json); no VSTest packages needed. -->
     <PackageVersion Include="xunit.v3" Version="4.0.1" />
+  </ItemGroup>
+  <!-- ── Analyzers (every project) ─────────────────────────────────────── -->
+  <ItemGroup Label="Analyzers">
+    <!-- Only the async void / unobserved task rules are on; see .editorconfig. -->
+    <GlobalPackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="18.7.23" />
   </ItemGroup>
 </Project>

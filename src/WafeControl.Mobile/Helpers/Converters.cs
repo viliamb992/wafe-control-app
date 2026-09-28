@@ -41,6 +41,13 @@ public static class Converters
 
     public static IValueConverter Online { get; } = Create<bool>(DisplayFormat.Online);
 
+    /// <summary>
+    /// Old readings are shown dimmed.
+    /// </summary>
+    public static IValueConverter DataOpacity { get; } = Create<bool>(v => v ? 1.0 : 0.55);
+
+    public static IValueConverter SignOutText { get; } = Create<bool>(v => v ? Strings.DemoSignIn : Strings.MenuSignOut);
+
     public static IValueConverter LastUpdate { get; } = Create<DateTimeOffset?>(DisplayFormat.LastUpdate);
 
     public static IValueConverter NextStart { get; } = Create<DateTime?>(DisplayFormat.NextStart);

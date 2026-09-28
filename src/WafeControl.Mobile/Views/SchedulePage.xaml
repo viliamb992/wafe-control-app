@@ -28,6 +28,9 @@
                 <Label Text="{x:Static loc:Strings.ScheduleTouchHint}" Style="{StaticResource SecondaryBody}" />
 
                 <!-- ── Notices ─────────────────────────────────────────── -->
+                <controls:InfoBanner x:Name="DemoBanner" Severity="Informational" IsShown="False"
+                                     Title="{x:Static loc:Strings.DemoBannerTitle}" Message="{x:Static loc:Strings.DemoBannerMessage}"
+                                     ActionText="{x:Static loc:Strings.DemoSignIn}" />
                 <controls:InfoBanner x:Name="ModeOffBanner" Severity="Informational" IsShown="False"
                                      Title="{x:Static loc:Strings.ScheduleModeOffTitle}" Message="{x:Static loc:Strings.ScheduleModeOffMessage}"
                                      ActionText="{x:Static loc:Strings.ScheduleUseScheduleMode}" ActionClicked="OnUseScheduleModeClicked" />

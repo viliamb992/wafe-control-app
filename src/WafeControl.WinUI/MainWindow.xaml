@@ -13,39 +13,94 @@
         <MicaBackdrop />
     </Window.SystemBackdrop>
 
-    <Grid>
+    <Grid x:Name="Root">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <TitleBar x:Name="AppTitleBar" Title="WAFE Control" Subtitle="{x:Bind ViewModel.UnitName, Mode=OneWay}" IsPaneToggleButtonVisible="False"
+        <TitleBar x:Name="AppTitleBar" Title="WAFE Control" Subtitle="{x:Bind helpers:Xaml.Subtitle(ViewModel.UnitName, ViewModel.IsDemo), Mode=OneWay}" IsPaneToggleButtonVisible="False"
                   IsBackButtonVisible="{x:Bind helpers:Xaml.Either(Schedule.IsOpen, Settings.IsOpen), Mode=OneWay}" BackRequested="OnTitleBarBackRequested">
             <TitleBar.IconSource>
                 <ImageIconSource ImageSource="ms-appx:///Assets/app-icon.ico" />
             </TitleBar.IconSource>
+
+            <!-- ── Update: downloading, then "Restart to update" ───────── -->
+            <TitleBar.RightHeader>
+                <Button x:Name="UpdateButton" Margin="0,0,8,0" Padding="10,4" VerticalAlignment="Center"
+                        Style="{x:Bind helpers:Xaml.UpdateButtonStyle(Updates.IsReady), Mode=OneWay}"
+                        Visibility="{x:Bind helpers:Xaml.VisibleIf(Updates.IsButtonVisible), Mode=OneWay}"
+                        AutomationProperties.Name="{x:Bind Updates.ButtonText, Mode=OneWay}">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <ProgressRing Width="14" Height="14" IsActive="{x:Bind Updates.IsDownloading, Mode=OneWay}"
+                                      Visibility="{x:Bind helpers:Xaml.VisibleIf(Updates.IsDownloading), Mode=OneWay}" />
+                        <FontIcon Glyph="&#xE777;" FontSize="14" Visibility="{x:Bind helpers:Xaml.CollapsedIf(Updates.IsDownloading), Mode=OneWay}" />
+                        <TextBlock Text="{x:Bind Updates.ButtonText, Mode=OneWay}" />
+                    </StackPanel>
+                    <Button.Flyout>
+                        <Flyout Placement="BottomEdgeAlignedRight">
+                            <StackPanel Width="320" Spacing="12">
+                                <TextBlock Text="{x:Bind Updates.Title, Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                <ScrollViewer MaxHeight="220" VerticalScrollBarVisibility="Auto"
+                                              Visibility="{x:Bind helpers:Xaml.VisibleIf(Updates.HasReleaseNotes), Mode=OneWay}">
+                                    <TextBlock Text="{x:Bind Updates.ReleaseNotes, Mode=OneWay}" TextWrapping="Wrap" IsTextSelectionEnabled="True"
+                                               Style="{StaticResource BodyTextBlockStyle}" />
+                                </ScrollViewer>
+                                <Button HorizontalAlignment="Right" Style="{StaticResource AccentButtonStyle}"
+                                        Content="{x:Bind Updates.PrimaryText, Mode=OneWay}" Command="{x:Bind Updates.PrimaryCommand}"
+                                        IsEnabled="{x:Bind helpers:Xaml.Not(Updates.IsDownloading), Mode=OneWay}" />
+                            </StackPanel>
+                        </Flyout>
+                    </Button.Flyout>
+                </Button>
+            </TitleBar.RightHeader>
         </TitleBar>
 
-        <!-- ── Footer: status message left, connection + actions + version right ── -->
-        <Grid Grid.Row="2" Padding="24,4,16,4" ColumnSpacing="16" BorderThickness="0,1,0,0"
+        <!-- ── Demo mode: on every screen, with the way out ─────────────── -->
+        <InfoBar Grid.Row="1" Margin="24,0,24,8" MaxWidth="1052" Severity="Informational" IsClosable="False"
+                 IsOpen="{x:Bind ViewModel.IsDemo, Mode=OneWay}"
+                 Title="{x:Bind loc:Strings.DemoBannerTitle}" Message="{x:Bind loc:Strings.DemoBannerMessage}">
+            <InfoBar.ActionButton>
+                <Button Content="{x:Bind loc:Strings.DemoSignIn}" Command="{x:Bind ViewModel.SignOutCommand}" />
+            </InfoBar.ActionButton>
+        </InfoBar>
+
+        <!-- ── Footer: feedback or last update left, connection + actions + version right ── -->
+        <Grid Grid.Row="3" Padding="24,4,16,4" ColumnSpacing="16" BorderThickness="0,1,0,0"
               BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
+            <!-- The result of the last action, with Retry or Report when they can help. -->
+            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center"
+                        Visibility="{x:Bind helpers:Xaml.VisibleIfFeedback(ViewModel.IsAuthenticated, ViewModel.Feedback), Mode=OneWay}">
+                <ProgressRing Width="14" Height="14" IsActive="{x:Bind helpers:Xaml.IsProgress(ViewModel.Feedback), Mode=OneWay}" />
+                <FontIcon FontSize="14" Glyph="{x:Bind helpers:Xaml.FeedbackGlyph(ViewModel.Feedback), Mode=OneWay}"
+                          Foreground="{x:Bind helpers:Xaml.FeedbackBrush(ViewModel.Feedback), Mode=OneWay}"
+                          Visibility="{x:Bind helpers:Xaml.VisibleIfFeedbackIcon(ViewModel.Feedback), Mode=OneWay}" />
+                <TextBlock Style="{StaticResource SecondaryTextStyle}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
+                           Text="{x:Bind helpers:Xaml.FeedbackText(ViewModel.Feedback), Mode=OneWay}"
+                           ToolTipService.ToolTip="{x:Bind helpers:Xaml.FeedbackText(ViewModel.Feedback), Mode=OneWay}" />
+                <HyperlinkButton Padding="4,0" Content="{x:Bind loc:Strings.ButtonRetry}" Click="OnRetryClick"
+                                 Visibility="{x:Bind helpers:Xaml.VisibleIfRetry(ViewModel.Feedback), Mode=OneWay}" />
+                <HyperlinkButton Padding="4,0" Content="{x:Bind loc:Strings.ReportProblem}" Click="OnReportProblemClick"
+                                 Visibility="{x:Bind helpers:Xaml.VisibleIfReport(ViewModel.Feedback), Mode=OneWay}" />
+            </StackPanel>
             <TextBlock Style="{StaticResource SecondaryTextStyle}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
-                       Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}"
-                       Visibility="{x:Bind helpers:Xaml.VisibleIf(ViewModel.IsAuthenticated), Mode=OneWay}" />
+                       Text="{x:Bind ViewModel.LastUpdateText, Mode=OneWay}"
+                       Visibility="{x:Bind helpers:Xaml.VisibleIfNoFeedback(ViewModel.IsAuthenticated, ViewModel.Feedback), Mode=OneWay}" />
 
             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
                 <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="0,0,8,0"
                             ToolTipService.ToolTip="{x:Bind helpers:Xaml.ConnectionToolTip(ViewModel.LastUpdate), Mode=OneWay}"
                             Visibility="{x:Bind helpers:Xaml.VisibleIf(ViewModel.IsAuthenticated), Mode=OneWay}">
-                    <Ellipse Width="8" Height="8" Fill="{x:Bind helpers:Xaml.OnlineBrush(ViewModel.IsSystemOnline), Mode=OneWay}" />
+                    <Ellipse Width="8" Height="8" Fill="{x:Bind helpers:Xaml.DataStateBrush(ViewModel.DataState, ViewModel.IsSystemOnline, ViewModel.IsDemo), Mode=OneWay}" />
                     <TextBlock Style="{StaticResource CaptionTextBlockStyle}" VerticalAlignment="Center"
-                               Text="{x:Bind helpers:Xaml.OnlineText(ViewModel.IsSystemOnline), Mode=OneWay}" />
+                               Text="{x:Bind ViewModel.DataStateText, Mode=OneWay}" />
                 </StackPanel>
                 <Button Style="{StaticResource TitleBarButtonStyle}" Command="{x:Bind ViewModel.RefreshStatusCommand}"
                         ToolTipService.ToolTip="{x:Bind loc:Strings.TitleBarRefreshTooltip}" AutomationProperties.Name="{x:Bind loc:Strings.TitleBarRefresh}"
@@ -61,17 +116,22 @@
                     <FontIcon Glyph="&#xE713;" FontSize="14" />
                 </Button>
                 <Button Style="{StaticResource TitleBarButtonStyle}"
-                        ToolTipService.ToolTip="{x:Bind loc:Strings.TitleBarMore}" AutomationProperties.Name="{x:Bind loc:Strings.TitleBarMore}"
-                        Visibility="{x:Bind helpers:Xaml.VisibleIf(ViewModel.IsAuthenticated), Mode=OneWay}">
+                        ToolTipService.ToolTip="{x:Bind loc:Strings.TitleBarMore}" AutomationProperties.Name="{x:Bind loc:Strings.TitleBarMore}">
                     <FontIcon Glyph="&#xE712;" FontSize="14" />
                     <Button.Flyout>
                         <MenuFlyout Placement="TopEdgeAlignedRight">
+                            <MenuFlyoutItem Text="{x:Bind loc:Strings.ReportProblem}" Click="OnReportProblemClick">
+                                <MenuFlyoutItem.Icon>
+                                    <FontIcon Glyph="&#xEBE8;" />
+                                </MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
                             <MenuFlyoutItem Text="{x:Bind loc:Strings.MenuOpenLogFolder}" Click="OnOpenLogFolderClick">
                                 <MenuFlyoutItem.Icon>
                                     <FontIcon Glyph="&#xE838;" />
                                 </MenuFlyoutItem.Icon>
                             </MenuFlyoutItem>
-                            <MenuFlyoutItem Text="{x:Bind loc:Strings.MenuSignOut}" Command="{x:Bind ViewModel.SignOutCommand}" />
+                            <MenuFlyoutItem Text="{x:Bind helpers:Xaml.SignOutText(ViewModel.IsDemo), Mode=OneWay}" Command="{x:Bind ViewModel.SignOutCommand}"
+                                            Visibility="{x:Bind helpers:Xaml.VisibleIf(ViewModel.IsAuthenticated), Mode=OneWay}" />
                             <MenuFlyoutSeparator />
                             <MenuFlyoutItem Text="{x:Bind loc:Strings.MenuExit}" Command="{x:Bind ExitCommand}" />
                         </MenuFlyout>
@@ -85,28 +145,28 @@
         </Grid>
 
         <!-- Connecting: auto-login with the remembered credentials -->
-        <StackPanel Grid.Row="1" Spacing="16" HorizontalAlignment="Center" VerticalAlignment="Center"
+        <StackPanel Grid.Row="2" Spacing="16" HorizontalAlignment="Center" VerticalAlignment="Center"
                     Visibility="{x:Bind helpers:Xaml.VisibleIfAndNot(ViewModel.IsStarting, Settings.IsOpen), Mode=OneWay}">
             <ProgressRing IsActive="{x:Bind ViewModel.IsStarting, Mode=OneWay}" Width="48" Height="48" />
             <TextBlock Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}" Style="{StaticResource BodyTextBlockStyle}"
                        HorizontalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
         </StackPanel>
 
-        <views:LoginView x:Name="LoginView" Grid.Row="1"
+        <views:LoginView x:Name="LoginView" Grid.Row="2"
                          Visibility="{x:Bind helpers:Xaml.VisibleIfAndNot(ViewModel.IsLoginRequired, Settings.IsOpen), Mode=OneWay}" />
 
-        <views:DashboardView x:Name="DashboardView" Grid.Row="1"
+        <views:DashboardView x:Name="DashboardView" Grid.Row="2"
                              Visibility="{x:Bind helpers:Xaml.VisibleIfAndNeither(ViewModel.IsAuthenticated, Schedule.IsOpen, Settings.IsOpen), Mode=OneWay}" />
 
-        <views:ScheduleView x:Name="ScheduleView" Grid.Row="1"
+        <views:ScheduleView x:Name="ScheduleView" Grid.Row="2"
                             Visibility="{x:Bind helpers:Xaml.VisibleIfBothAndNot(ViewModel.IsAuthenticated, Schedule.IsOpen, Settings.IsOpen), Mode=OneWay}" />
 
         <!-- Settings cover whichever screen was open; Back returns to it. -->
-        <views:SettingsView x:Name="SettingsView" Grid.Row="1"
+        <views:SettingsView x:Name="SettingsView" Grid.Row="2"
                             Visibility="{x:Bind helpers:Xaml.VisibleIf(Settings.IsOpen), Mode=OneWay}" />
 
         <!-- Tray icon: closing the window hides it here; left click brings it back. -->
-        <tb:TaskbarIcon x:Name="TrayIcon" Grid.Row="1"
+        <tb:TaskbarIcon x:Name="TrayIcon" Grid.Row="2"
                         ToolTipText="WAFE Control"
                         NoLeftClickDelay="True"
                         LeftClickCommand="{x:Bind ShowWindowCommand}"
@@ -114,6 +174,8 @@
             <tb:TaskbarIcon.ContextFlyout>
                 <MenuFlyout AreOpenCloseAnimationsEnabled="False">
                     <MenuFlyoutItem Text="{x:Bind loc:Strings.TrayOpen}" Command="{x:Bind ShowWindowCommand}" />
+                    <MenuFlyoutItem Text="{x:Bind loc:Strings.UpdateRestart}" Command="{x:Bind Updates.PrimaryCommand}"
+                                    Visibility="{x:Bind helpers:Xaml.VisibleIf(Updates.IsReady), Mode=OneWay}" />
                     <MenuFlyoutSeparator />
                     <MenuFlyoutItem Text="{x:Bind loc:Strings.TrayBoost15}" Command="{x:Bind ViewModel.BoostMode.SetBoostCommand}" CommandParameter="900" />
                     <MenuFlyoutItem Text="{x:Bind loc:Strings.TrayBoost30}" Command="{x:Bind ViewModel.BoostMode.SetBoostCommand}" CommandParameter="1800" />

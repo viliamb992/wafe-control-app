@@ -41,7 +41,7 @@
     <value>Jednotka je offline</value>
   </data>
   <data name="AppStatusRefreshError" xml:space="preserve">
-    <value>Chyba při obnovení: {0}</value>
+    <value>Obnovení se nezdařilo. {0}</value>
     <comment>{0} = error message</comment>
   </data>
   <data name="TitleBarConnection" xml:space="preserve">
@@ -99,7 +99,7 @@
     <value>Přihlášení</value>
   </data>
   <data name="LoginDescription" xml:space="preserve">
-    <value>Použijte svůj účet Wafe (go2my.wafe.eu).</value>
+    <value>Přihlaste se e-mailem a heslem, které používáte ve webové aplikaci Wafe (go2my.wafe.eu).</value>
   </data>
   <data name="LoginEmail" xml:space="preserve">
     <value>E-mail</value>
@@ -156,7 +156,7 @@
     <value>Systém spuštěn</value>
   </data>
   <data name="SystemStartNotConfirmed" xml:space="preserve">
-    <value>Příkaz ke spuštění odeslán (nepotvrzeno)</value>
+    <value>Jednotka zatím nepotvrdila spuštění. Může se ještě spustit.</value>
   </data>
   <data name="SystemStopping" xml:space="preserve">
     <value>Zastavování systému…</value>
@@ -165,10 +165,10 @@
     <value>Systém zastaven</value>
   </data>
   <data name="SystemStopNotConfirmed" xml:space="preserve">
-    <value>Příkaz k zastavení odeslán (nepotvrzeno)</value>
+    <value>Jednotka zatím nepotvrdila zastavení. Může se ještě zastavit.</value>
   </data>
   <data name="SystemToggleError" xml:space="preserve">
-    <value>Chyba při spuštění nebo zastavení: {0}</value>
+    <value>Jednotku se nepodařilo spustit ani zastavit. {0}</value>
     <comment>{0} = error message</comment>
   </data>
   <data name="SensorOutdoor" xml:space="preserve">
@@ -224,10 +224,10 @@
     <comment>{0} = operating mode name</comment>
   </data>
   <data name="ModeChangeTimedOut" xml:space="preserve">
-    <value>Změna režimu nebyla včas potvrzena. Zkontrolujte stav.</value>
+    <value>Jednotka zatím nepotvrdila změnu režimu. Může se ještě projevit.</value>
   </data>
   <data name="ModeError" xml:space="preserve">
-    <value>Chyba při změně režimu: {0}</value>
+    <value>Režim se nepodařilo změnit. {0}</value>
     <comment>{0} = error message</comment>
   </data>
   <data name="FlowRateLabel" xml:space="preserve">
@@ -247,11 +247,11 @@
     <comment>{0} = air flow</comment>
   </data>
   <data name="FlowNotConfirmed" xml:space="preserve">
-    <value>Příkaz k nastavení průtoku {0} m³/h odeslán (nepotvrzeno)</value>
+    <value>Jednotka zatím nepotvrdila průtok {0} m³/h. Může se ještě projevit.</value>
     <comment>{0} = air flow</comment>
   </data>
   <data name="FlowError" xml:space="preserve">
-    <value>Chyba při nastavení průtoku: {0}</value>
+    <value>Průtok se nepodařilo změnit. {0}</value>
     <comment>{0} = error message</comment>
   </data>
   <data name="BoostTitle" xml:space="preserve">
@@ -285,10 +285,10 @@
     <value>Boost vypnut</value>
   </data>
   <data name="BoostNotConfirmed" xml:space="preserve">
-    <value>Příkaz pro boost odeslán (nepotvrzeno)</value>
+    <value>Jednotka zatím nepotvrdila boost. Může se ještě projevit.</value>
   </data>
   <data name="BoostError" xml:space="preserve">
-    <value>Chyba boostu: {0}</value>
+    <value>Boost se nepodařilo změnit. {0}</value>
     <comment>{0} = error message</comment>
   </data>
   <data name="ModesTitle" xml:space="preserve">
@@ -316,13 +316,13 @@
     <value>Tichý režim vypnut</value>
   </data>
   <data name="SilentOnNotConfirmed" xml:space="preserve">
-    <value>Příkaz k zapnutí tichého režimu odeslán (nepotvrzeno)</value>
+    <value>Jednotka zatím nepotvrdila zapnutí tichého režimu. Může se ještě projevit.</value>
   </data>
   <data name="SilentOffNotConfirmed" xml:space="preserve">
-    <value>Příkaz k vypnutí tichého režimu odeslán (nepotvrzeno)</value>
+    <value>Jednotka zatím nepotvrdila vypnutí tichého režimu. Může se ještě projevit.</value>
   </data>
   <data name="SilentError" xml:space="preserve">
-    <value>Chyba tichého režimu: {0}</value>
+    <value>Tichý režim se nepodařilo změnit. {0}</value>
     <comment>{0} = error message</comment>
   </data>
   <data name="HolidayTitle" xml:space="preserve">
@@ -347,13 +347,13 @@
     <value>Režim dovolené vypnut</value>
   </data>
   <data name="HolidayOnNotConfirmed" xml:space="preserve">
-    <value>Příkaz k zapnutí režimu dovolené odeslán (nepotvrzeno)</value>
+    <value>Jednotka zatím nepotvrdila zapnutí režimu dovolené. Může se ještě projevit.</value>
   </data>
   <data name="HolidayOffNotConfirmed" xml:space="preserve">
-    <value>Příkaz k vypnutí režimu dovolené odeslán (nepotvrzeno)</value>
+    <value>Jednotka zatím nepotvrdila vypnutí režimu dovolené. Může se ještě projevit.</value>
   </data>
   <data name="HolidayError" xml:space="preserve">
-    <value>Chyba režimu dovolené: {0}</value>
+    <value>Režim dovolené se nepodařilo změnit. {0}</value>
     <comment>{0} = error message</comment>
   </data>
   <data name="FiltersTitle" xml:space="preserve">
@@ -435,7 +435,7 @@
     <comment>Seven comma-separated abbreviations, Monday first</comment>
   </data>
   <data name="ScheduleLoadFailed" xml:space="preserve">
-    <value>Plán se nepodařilo načíst.</value>
+    <value>Plán se nepodařilo načíst. {0}</value>
   </data>
   <data name="ScheduleReadOnly" xml:space="preserve">
     <value>Plán obsahuje položky, kterým tato aplikace nerozumí. Zobrazuje se jen pro čtení, aby se neztratily.</value>
@@ -448,7 +448,7 @@
     <comment>{0} = maximum number of actions</comment>
   </data>
   <data name="ScheduleSaveFailed" xml:space="preserve">
-    <value>Plán se nepodařilo uložit. Zkuste to znovu.</value>
+    <value>Plán se nepodařilo uložit. {0}</value>
   </data>
   <data name="ScheduleChooseMode" xml:space="preserve">
     <value>Vyberte režim.</value>
@@ -545,7 +545,7 @@
     <comment>{0} = maximum number of characters</comment>
   </data>
   <data name="UnitNameSaveFailed" xml:space="preserve">
-    <value>Název se nepodařilo uložit. Zkuste to znovu.</value>
+    <value>Název se nepodařilo uložit. {0}</value>
   </data>
   <data name="ButtonAdd" xml:space="preserve">
     <value>Přidat</value>
@@ -581,7 +581,7 @@
     <value>Žádné připojení k internetu</value>
   </data>
   <data name="BannerNoInternetMessage" xml:space="preserve">
-    <value>Hodnoty nemusí být aktuální. Aplikace se připojí sama.</value>
+    <value>Zobrazují se data z {0}. Aplikace se připojí sama.</value>
   </data>
   <data name="BannerUnitOfflineMessage" xml:space="preserve">
     <value>Jednotka není připojena k portálu Wafe. Zkontrolujte její napájení a síť.</value>
@@ -614,5 +614,206 @@
   </data>
   <data name="ButtonCopy" xml:space="preserve">
     <value>Kopírovat</value>
+  </data>
+  <data name="ErrorOffline" xml:space="preserve">
+    <value>Nelze se připojit k serveru Wafe. Zkontrolujte připojení k internetu.</value>
+  </data>
+  <data name="ErrorTimeout" xml:space="preserve">
+    <value>Server Wafe neodpověděl včas. Zkuste to znovu.</value>
+  </data>
+  <data name="ErrorUnauthorized" xml:space="preserve">
+    <value>Přihlášení vypršelo. Přihlaste se znovu.</value>
+  </data>
+  <data name="ErrorRejected" xml:space="preserve">
+    <value>Server Wafe změnu odmítl.</value>
+  </data>
+  <data name="ErrorServer" xml:space="preserve">
+    <value>Server Wafe má momentálně potíže. Zkuste to později.</value>
+  </data>
+  <data name="ErrorInvalidResponse" xml:space="preserve">
+    <value>Server Wafe odpověděl neočekávaně. Aplikace možná potřebuje aktualizaci.</value>
+  </data>
+  <data name="ErrorUnexpected" xml:space="preserve">
+    <value>Něco se pokazilo. Pokud se to opakuje, nahlaste problém.</value>
+  </data>
+  <data name="CommandWaiting" xml:space="preserve">
+    <value>Čekám na potvrzení jednotkou…</value>
+  </data>
+  <data name="CommandConfirmedLate" xml:space="preserve">
+    <value>{0} (potvrzeno později než obvykle)</value>
+  </data>
+  <data name="ButtonRetry" xml:space="preserve">
+    <value>Zkusit znovu</value>
+  </data>
+  <data name="ButtonClose" xml:space="preserve">
+    <value>Zavřít</value>
+  </data>
+  <data name="DataStaleShort" xml:space="preserve">
+    <value>Data {0} min stará</value>
+  </data>
+  <data name="DataNoConnectionShort" xml:space="preserve">
+    <value>Bez spojení</value>
+  </data>
+  <data name="DataNoInternetShort" xml:space="preserve">
+    <value>Bez internetu</value>
+  </data>
+  <data name="BannerStaleTitle" xml:space="preserve">
+    <value>Data mohou být zastaralá</value>
+  </data>
+  <data name="BannerStaleMessage" xml:space="preserve">
+    <value>Poslední aktualizace od jednotky před {0} min.</value>
+  </data>
+  <data name="BannerUnreachableTitle" xml:space="preserve">
+    <value>Server Wafe je nedostupný</value>
+  </data>
+  <data name="BannerUnreachableMessage" xml:space="preserve">
+    <value>Zobrazují se data z {0}. Aplikace to zkouší znovu.</value>
+  </data>
+  <data name="DemoTry" xml:space="preserve">
+    <value>Vyzkoušet demo</value>
+  </data>
+  <data name="DemoTryDescription" xml:space="preserve">
+    <value>Nemáte jednotku Wafe? Vyzkoušejte aplikaci se simulovanou jednotkou.</value>
+  </data>
+  <data name="DemoBannerTitle" xml:space="preserve">
+    <value>Ukázkový režim</value>
+  </data>
+  <data name="DemoBannerMessage" xml:space="preserve">
+    <value>Toto je simulovaná jednotka, nic se neposílá do skutečného zařízení.</value>
+  </data>
+  <data name="DemoSignIn" xml:space="preserve">
+    <value>Přihlásit se vlastním účtem</value>
+  </data>
+  <data name="DemoLeave" xml:space="preserve">
+    <value>Ukončit demo</value>
+  </data>
+  <data name="DemoSubtitle" xml:space="preserve">
+    <value>Demo</value>
+  </data>
+  <data name="LoginRememberMeHint" xml:space="preserve">
+    <value>Uloženo šifrovaně jen v tomto zařízení.</value>
+  </data>
+  <data name="LoginCapsLock" xml:space="preserve">
+    <value>Je zapnutý Caps Lock.</value>
+  </data>
+  <data name="LoginShowPassword" xml:space="preserve">
+    <value>Zobrazit</value>
+  </data>
+  <data name="LoginHidePassword" xml:space="preserve">
+    <value>Skrýt</value>
+  </data>
+  <data name="LoginUnofficial" xml:space="preserve">
+    <value>Neoficiální aplikace · není spojena se společností WAFE s.r.o.</value>
+  </data>
+  <data name="ReportProblem" xml:space="preserve">
+    <value>Nahlásit problém</value>
+  </data>
+  <data name="ReportDialogMessage" xml:space="preserve">
+    <value>Popište, co se stalo, v hlášení na GitHubu; verzi aplikace a zařízení doplní aplikace. Bez účtu na GitHubu pošlete diagnostiku a soubor s protokolem jinou cestou.</value>
+  </data>
+  <data name="ReportOpenGitHub" xml:space="preserve">
+    <value>Otevřít hlášení na GitHubu</value>
+  </data>
+  <data name="ReportCopyDiagnostics" xml:space="preserve">
+    <value>Kopírovat diagnostiku</value>
+  </data>
+  <data name="ReportCopied" xml:space="preserve">
+    <value>Diagnostika zkopírována.</value>
+  </data>
+  <data name="ReportShare" xml:space="preserve">
+    <value>Sdílet protokoly a diagnostiku</value>
+  </data>
+  <data name="ReportLogsHint" xml:space="preserve">
+    <value>Přiložte nejnovější soubor ze složky s protokoly.</value>
+  </data>
+  <data name="CrashDialogTitle" xml:space="preserve">
+    <value>Aplikace se neočekávaně ukončila</value>
+  </data>
+  <data name="CrashDialogMessage" xml:space="preserve">
+    <value>Aplikace WAFE Control se minule neočekávaně ukončila. Nahlášením pomůžete problém opravit.</value>
+  </data>
+  <data name="CrashDialogReportSent" xml:space="preserve">
+    <value>Hlášení o pádu bylo odesláno automaticky.</value>
+  </data>
+  <data name="CrashConsentTitle" xml:space="preserve">
+    <value>Odesílat hlášení o pádech?</value>
+  </data>
+  <data name="CrashConsentMessage" xml:space="preserve">
+    <value>Když aplikace spadne nebo narazí na chybu, může odeslat anonymní hlášení: verzi aplikace, typ zařízení a podrobnosti o chybě. Nikdy váš e-mail, heslo ani výrobní číslo jednotky. Změnit to můžete v Nastavení.</value>
+  </data>
+  <data name="CrashConsentSend" xml:space="preserve">
+    <value>Odesílat</value>
+  </data>
+  <data name="CrashConsentDontSend" xml:space="preserve">
+    <value>Neodesílat</value>
+  </data>
+  <data name="SettingsCrashReports" xml:space="preserve">
+    <value>Odesílat hlášení o pádech</value>
+  </data>
+  <data name="SettingsCrashReportsDescription" xml:space="preserve">
+    <value>Anonymně: verze aplikace, zařízení a podrobnosti o chybě.</value>
+  </data>
+  <data name="SettingsCrashReportsRestart" xml:space="preserve">
+    <value>Zapnutí se projeví při dalším spuštění aplikace.</value>
+  </data>
+  <data name="SettingsShareLogs" xml:space="preserve">
+    <value>Sdílet protokoly</value>
+  </data>
+  <data name="UpdatesTitle" xml:space="preserve">
+    <value>Aktualizace</value>
+  </data>
+  <data name="UpdateDownloading" xml:space="preserve">
+    <value>Stahuji aktualizaci {0} %</value>
+  </data>
+  <data name="UpdateRestart" xml:space="preserve">
+    <value>Restartovat a aktualizovat</value>
+  </data>
+  <data name="UpdateAvailable" xml:space="preserve">
+    <value>Aktualizovat</value>
+  </data>
+  <data name="UpdateReadyTitle" xml:space="preserve">
+    <value>Verze {0} je připravena</value>
+  </data>
+  <data name="UpdateAvailableTitle" xml:space="preserve">
+    <value>Je dostupná verze {0}</value>
+  </data>
+  <data name="UpdateRestartNow" xml:space="preserve">
+    <value>Restartovat</value>
+  </data>
+  <data name="UpdateDownloadNow" xml:space="preserve">
+    <value>Stáhnout</value>
+  </data>
+  <data name="UpdateUpToDate" xml:space="preserve">
+    <value>Aktuální · zkontrolováno {0}</value>
+  </data>
+  <data name="UpdateChecking" xml:space="preserve">
+    <value>Kontroluji aktualizace…</value>
+  </data>
+  <data name="UpdateCheckFailed" xml:space="preserve">
+    <value>Aktualizace se nepodařilo zkontrolovat.</value>
+  </data>
+  <data name="UpdateCheckNow" xml:space="preserve">
+    <value>Zkontrolovat</value>
+  </data>
+  <data name="UpdateAutoDownload" xml:space="preserve">
+    <value>Stahovat aktualizace automaticky</value>
+  </data>
+  <data name="UpdateBeta" xml:space="preserve">
+    <value>Dostávat beta verze</value>
+  </data>
+  <data name="UpdatedTo" xml:space="preserve">
+    <value>Aktualizováno na verzi {0}.</value>
+  </data>
+  <data name="UpdateWhatsNew" xml:space="preserve">
+    <value>Co je nového</value>
+  </data>
+  <data name="TrayUpdateReady" xml:space="preserve">
+    <value>Aktualizace připravena</value>
+  </data>
+  <data name="UpdateNotInstalled" xml:space="preserve">
+    <value>Aktualizace fungují jen v nainstalované aplikaci.</value>
+  </data>
+  <data name="LoginHelp" xml:space="preserve">
+    <value>Zapomněli jste heslo nebo nemáte účet? Pomůže vám montážní firma nebo servis Wafe.</value>
   </data>
 </root>

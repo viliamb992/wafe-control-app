@@ -31,26 +31,20 @@ public sealed partial class SpecialModesCardViewModel : CardViewModelBase
     [RelayCommand(CanExecute = nameof(CanSetSilentMode))]
     private async Task SetSilentModeAsync(bool enabled)
     {
+        IsSilentModeChanging = true;
         try
         {
-            App.StatusMessage = enabled ? Strings.SilentEnabling : Strings.SilentDisabling;
-            IsSilentModeChanging = true;
+            var outcome = await RunCommandAsync(
+                onSent => SystemControl.SetSilentModeAsync(enabled, onSent),
+                enabled
+                    ? new CommandTexts(Strings.SilentEnabling, Strings.SilentOn, Strings.SilentOnNotConfirmed, Strings.SilentError)
+                    : new CommandTexts(Strings.SilentDisabling, Strings.SilentOff, Strings.SilentOffNotConfirmed, Strings.SilentError),
+                () => SetSilentModeCommand.ExecuteAsync(enabled));
 
-            var confirmed = await SystemControl.SetSilentModeAsync(enabled);
+            IsSilentMode = outcome.Status == CommandStatus.Failed ? SystemControl.CurrentStatus?.SilentActive ?? !enabled : enabled;
 
-            IsSilentMode = enabled;
-            App.StatusMessage = (enabled, confirmed) switch
-            {
-                (true, true) => Strings.SilentOn,
-                (false, true) => Strings.SilentOff,
-                (true, false) => Strings.SilentOnNotConfirmed,
-                (false, false) => Strings.SilentOffNotConfirmed,
-            };
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error setting silent mode");
-            App.StatusMessage = string.Format(Strings.SilentError, ex.Message);
+            // The switch was flipped by the user; after a failure it must follow the unit even if the value didn't change.
+            OnPropertyChanged(nameof(IsSilentMode));
         }
         finally
         {
@@ -61,26 +55,18 @@ public sealed partial class SpecialModesCardViewModel : CardViewModelBase
     [RelayCommand(CanExecute = nameof(CanSetHolidayMode))]
     private async Task SetHolidayModeAsync(bool enabled)
     {
+        IsHolidayModeChanging = true;
         try
         {
-            App.StatusMessage = enabled ? Strings.HolidayEnabling : Strings.HolidayDisabling;
-            IsHolidayModeChanging = true;
+            var outcome = await RunCommandAsync(
+                onSent => SystemControl.SetHolidayModeAsync(enabled, onSent),
+                enabled
+                    ? new CommandTexts(Strings.HolidayEnabling, Strings.HolidayOn, Strings.HolidayOnNotConfirmed, Strings.HolidayError)
+                    : new CommandTexts(Strings.HolidayDisabling, Strings.HolidayOff, Strings.HolidayOffNotConfirmed, Strings.HolidayError),
+                () => SetHolidayModeCommand.ExecuteAsync(enabled));
 
-            var confirmed = await SystemControl.SetHolidayModeAsync(enabled);
-
-            IsHolidayMode = enabled;
-            App.StatusMessage = (enabled, confirmed) switch
-            {
-                (true, true) => Strings.HolidayOn,
-                (false, true) => Strings.HolidayOff,
-                (true, false) => Strings.HolidayOnNotConfirmed,
-                (false, false) => Strings.HolidayOffNotConfirmed,
-            };
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error setting holiday mode");
-            App.StatusMessage = string.Format(Strings.HolidayError, ex.Message);
+            IsHolidayMode = outcome.Status == CommandStatus.Failed ? SystemControl.CurrentStatus?.HolidayActive ?? !enabled : enabled;
+            OnPropertyChanged(nameof(IsHolidayMode));
         }
         finally
         {
@@ -88,9 +74,9 @@ public sealed partial class SpecialModesCardViewModel : CardViewModelBase
         }
     }
 
-    private bool CanSetSilentMode() => App.IsAuthenticated && !IsSilentModeChanging;
+    private bool CanSetSilentMode() => App.CanSendCommands && !IsSilentModeChanging;
 
-    private bool CanSetHolidayMode() => App.IsAuthenticated && !IsHolidayModeChanging;
+    private bool CanSetHolidayMode() => App.CanSendCommands && !IsHolidayModeChanging;
 
     protected override void OnStatusUpdated(SystemStatus status)
     {

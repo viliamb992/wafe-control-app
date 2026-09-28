@@ -33,10 +33,12 @@
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
   </PropertyGroup>
 
-  <!-- Release: full trimming; R8 shrinks the Java side on Android. -->
+  <!-- Release: full trimming; R8 shrinks the Java side on Android. The PDBs are kept (not shipped in the APK) so a
+       crash report's stack can be matched to source lines by hand; the release workflow keeps them as an artifact. -->
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <TrimMode>full</TrimMode>
     <AndroidLinkTool>r8</AndroidLinkTool>
+    <DebugType>portable</DebugType>
   </PropertyGroup>
 
   <ItemGroup>
@@ -50,6 +52,14 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" />
     <PackageReference Include="Microsoft.Maui.Controls" />
+    <PackageReference Include="Sentry.Maui" />
+    <PackageReference Include="Serilog.Extensions.Logging" />
+  </ItemGroup>
+
+  <!-- Crash reports go to GlitchTip only from release builds: the workflow passes -p:CrashReportsDsn=… from a secret.
+       Local and pull request builds have none, so nothing is reported from development. -->
+  <ItemGroup Condition="'$(CrashReportsDsn)' != ''">
+    <AssemblyMetadata Include="CrashReportsDsn" Value="$(CrashReportsDsn)" />
   </ItemGroup>
 
   <ItemGroup>

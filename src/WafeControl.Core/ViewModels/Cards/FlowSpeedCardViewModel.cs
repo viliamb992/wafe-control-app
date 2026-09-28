@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using WafeControl.Core.Localization;
 using WafeControl.Core.Services;
+using WafeControl.Core.Threading;
 using WafeControl.Shared;
 using WafeControl.Shared.Models;
 
@@ -51,14 +52,14 @@ public sealed partial class FlowSpeedCardViewModel : CardViewModelBase
             if (SetProperty(ref _isDragging, value) && !value && CanSendFlowSpeed)
             {
                 CancelDebounce();
-                _ = UpdateFlowSpeedAsync();
+                UpdateFlowSpeedAsync().Forget(Logger, "Flow speed update");
             }
         }
     }
 
     public string FlowSpeedText => $"{FlowSpeed} m³/h";
 
-    private bool CanSendFlowSpeed => App.IsManualMode && App.IsAuthenticated;
+    private bool CanSendFlowSpeed => App.IsManualMode && App.CanSendCommands;
 
     [RelayCommand(CanExecute = nameof(CanUpdateFlowSpeed))]
     private async Task UpdateFlowSpeedAsync()
@@ -66,26 +67,23 @@ public sealed partial class FlowSpeedCardViewModel : CardViewModelBase
         if (!App.IsManualMode)
         {
             Logger.LogWarning("UpdateFlowSpeedAsync aborted - not in Manual mode");
-            App.StatusMessage = Strings.FlowManualOnly;
+            App.Feedback = Feedback.Warning(Strings.FlowManualOnly);
             return;
         }
 
+        var targetSpeed = FlowSpeed;
+        IsChanging = true;
         try
         {
-            App.StatusMessage = Strings.FlowUpdating;
-            IsChanging = true;
+            var outcome = await RunCommandAsync(
+                onSent => SystemControl.SetFlowSpeedAsync(targetSpeed, onSent),
+                new CommandTexts(Strings.FlowUpdating, string.Format(Strings.FlowSet, targetSpeed),
+                    string.Format(Strings.FlowNotConfirmed, targetSpeed), Strings.FlowError),
+                () => SendFlowSpeedAsync(targetSpeed));
 
-            var targetSpeed = FlowSpeed;
-            var confirmed = await SystemControl.SetFlowSpeedAsync(targetSpeed);
-
-            App.StatusMessage = confirmed
-                ? string.Format(Strings.FlowSet, targetSpeed)
-                : string.Format(Strings.FlowNotConfirmed, targetSpeed);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error updating flow speed");
-            App.StatusMessage = string.Format(Strings.FlowError, ex.Message);
+            // Back to what the unit has.
+            if (outcome.Status == CommandStatus.Failed && SystemControl.CurrentStatus is { } status)
+                FlowSpeed = status.FlowRequested;
         }
         finally
         {
@@ -93,13 +91,22 @@ public sealed partial class FlowSpeedCardViewModel : CardViewModelBase
         }
     }
 
-    private bool CanUpdateFlowSpeed() => App.IsAuthenticated && App.IsManualMode && !IsChanging;
+    private async Task SendFlowSpeedAsync(int speed)
+    {
+        if (!UpdateFlowSpeedCommand.CanExecute(null))
+            return;
+
+        FlowSpeed = speed;
+        await UpdateFlowSpeedCommand.ExecuteAsync(null);
+    }
+
+    private bool CanUpdateFlowSpeed() => App.CanSendCommands && App.IsManualMode && !IsChanging;
 
     private void ScheduleDebouncedUpdate()
     {
         CancelDebounce();
         _debounceCts = new CancellationTokenSource();
-        _ = DebounceFlowSpeedUpdateAsync(_debounceCts.Token);
+        DebounceFlowSpeedUpdateAsync(_debounceCts.Token).Forget(Logger, "Flow speed update");
     }
 
     private async Task DebounceFlowSpeedUpdateAsync(CancellationToken cancellationToken)

@@ -1,10 +1,12 @@
 using WafeControl.Core.Localization;
+using WafeControl.Core.Threading;
 using WafeControl.Core.ViewModels;
+using WafeControl.Mobile.Helpers;
 
 namespace WafeControl.Mobile.Views;
 
 /// <summary>
-/// Settings: language and appearance (also before sign-in), then the unit and the account.
+/// Settings: language and appearance (also before sign-in), then the unit, the account and crash reports.
 /// Changes apply right away; the language rebuilds the pages (see <see cref="App"/>).
 /// </summary>
 public partial class SettingsPage : ContentPage
@@ -13,12 +15,14 @@ public partial class SettingsPage : ContentPage
 
     private readonly SettingsViewModel _settings;
     private readonly AppViewModel _app;
+    private readonly ILocalizationService _localization;
     private bool _syncing;
 
-    public SettingsPage(SettingsViewModel settings, AppViewModel app)
+    public SettingsPage(SettingsViewModel settings, AppViewModel app, ILocalizationService localization)
     {
         _settings = settings;
         _app = app;
+        _localization = localization;
         InitializeComponent();
         BindingContext = settings;
         UnitCard.BindingContext = app;
@@ -30,6 +34,13 @@ public partial class SettingsPage : ContentPage
         for (var i = 0; i < ThemeChoices.Count; i++)
             ((RadioButton)ThemeChoices[i]).IsChecked = i == settings.ThemeIndex;
         _syncing = false;
+
+#if DEBUG
+        // Debug builds: crash on purpose, to test crash handling and reports.
+        var crash = new Button { Text = "Crash (test)", Style = Theme.Style("AccentTextButton"), Padding = new Thickness(0), HorizontalOptions = LayoutOptions.Start };
+        crash.Clicked += (_, _) => throw new InvalidOperationException("Test crash (Settings, Debug build)");
+        AboutActions.Add(crash);
+#endif
     }
 
     protected override void OnNavigatedTo(NavigatedToEventArgs args)
@@ -40,7 +51,7 @@ public partial class SettingsPage : ContentPage
         BackButton.IsVisible = Navigation.NavigationStack.Count > 1;
     }
 
-    private async void OnBackClicked(object? sender, EventArgs e) => await Navigation.PopAsync();
+    private void OnBackClicked(object? sender, EventArgs e) => SafeAsync.Run(() => Navigation.PopAsync());
 
     private void OnLanguageChanged(object? sender, EventArgs e)
     {
@@ -54,17 +65,21 @@ public partial class SettingsPage : ContentPage
             _settings.ThemeIndex = ThemeChoices.IndexOf((RadioButton)sender!);
     }
 
-    private async void OnRenameClicked(object? sender, EventArgs e)
+    private void OnRenameClicked(object? sender, EventArgs e) => SafeAsync.Run(async () =>
     {
         if (Navigation.ModalStack.Count == 0)
             await Navigation.PushModalAsync(new UnitNamePage(_app, _app.EditUnitName()));
-    }
+    });
 
-    private async void OnServiceMailClicked(object? sender, EventArgs e) => await OpenAsync(DisplayFormat.ServiceMailUri(_app.Unit));
+    private void OnServiceMailClicked(object? sender, EventArgs e) => SafeAsync.Run(() => OpenAsync(DisplayFormat.ServiceMailUri(_app.Unit)));
 
-    private async void OnServiceWebClicked(object? sender, EventArgs e) => await OpenAsync(DisplayFormat.ServiceWebUri(_app.Unit));
+    private void OnServiceWebClicked(object? sender, EventArgs e) => SafeAsync.Run(() => OpenAsync(DisplayFormat.ServiceWebUri(_app.Unit)));
 
-    private async void OnProjectClicked(object? sender, EventArgs e) => await OpenAsync(new Uri(ProjectUrl));
+    private void OnProjectClicked(object? sender, EventArgs e) => SafeAsync.Run(() => OpenAsync(new Uri(ProjectUrl)));
+
+    private void OnReportProblemClicked(object? sender, EventArgs e) => SafeAsync.Run(() => ProblemReporting.ReportAsync(this, _app, _localization));
+
+    private void OnShareLogsClicked(object? sender, EventArgs e) => SafeAsync.Run(() => ProblemReporting.ShareAsync(Strings.SettingsShareLogs));
 
     private static async Task OpenAsync(Uri? uri)
     {

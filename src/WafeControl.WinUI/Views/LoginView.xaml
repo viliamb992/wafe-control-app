@@ -7,39 +7,66 @@
     xmlns:loc="using:WafeControl.Core.Localization">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <Border Style="{StaticResource CardStyle}" Width="400" Padding="32" Margin="16"
-                HorizontalAlignment="Center" VerticalAlignment="Center">
-            <StackPanel Spacing="16">
-                <Image Source="ms-appx:///Assets/app-icon.ico" Width="48" Height="48" HorizontalAlignment="Left" />
+        <StackPanel Width="400" Margin="16" Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Border Style="{StaticResource CardStyle}" Padding="32">
+                <StackPanel Spacing="16">
+                    <Image Source="ms-appx:///Assets/app-icon.ico" Width="48" Height="48" HorizontalAlignment="Left" />
 
-                <StackPanel Spacing="4">
-                    <TextBlock Text="{x:Bind loc:Strings.LoginTitle}" Style="{StaticResource TitleTextBlockStyle}" />
-                    <TextBlock Text="{x:Bind loc:Strings.LoginDescription}" TextWrapping="Wrap"
-                               Style="{StaticResource BodyTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="{x:Bind loc:Strings.LoginTitle}" Style="{StaticResource TitleTextBlockStyle}" />
+                        <TextBlock Text="{x:Bind loc:Strings.LoginDescription}" TextWrapping="Wrap"
+                                   Style="{StaticResource BodyTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+
+                    <TextBox x:Name="UsernameBox" Header="{x:Bind loc:Strings.LoginEmail}" InputScope="EmailSmtpAddress" IsSpellCheckEnabled="False"
+                             Text="{x:Bind ViewModel.Login.Username, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <StackPanel Spacing="4">
+                        <PasswordBox Header="{x:Bind loc:Strings.LoginPassword}" KeyDown="OnPasswordKeyDown" KeyUp="OnPasswordKeyUp"
+                                     GotFocus="OnPasswordFocusChanged" LostFocus="OnPasswordFocusChanged"
+                                     Password="{x:Bind ViewModel.Login.Password, Mode=TwoWay}" />
+                        <StackPanel x:Name="CapsLockHint" Orientation="Horizontal" Spacing="6" Visibility="Collapsed">
+                            <FontIcon Glyph="&#xE7BA;" FontSize="12" Foreground="{ThemeResource SystemFillColorCautionBrush}" />
+                            <TextBlock Text="{x:Bind loc:Strings.LoginCapsLock}" Style="{StaticResource SecondaryTextStyle}" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <StackPanel>
+                        <CheckBox Content="{x:Bind loc:Strings.LoginRememberMe}" IsChecked="{x:Bind ViewModel.Login.RememberMe, Mode=TwoWay}" />
+                        <TextBlock Margin="28,-4,0,0" Text="{x:Bind loc:Strings.LoginRememberMeHint}" Style="{StaticResource SecondaryTextStyle}" />
+                    </StackPanel>
+
+                    <InfoBar Severity="Error" IsClosable="False"
+                             IsOpen="{x:Bind helpers:Xaml.HasText(ViewModel.Login.ErrorMessage), Mode=OneWay}"
+                             Message="{x:Bind ViewModel.Login.ErrorMessage, Mode=OneWay}" />
+
+                    <Button Style="{StaticResource AccentButtonStyle}" HorizontalAlignment="Stretch" Height="36"
+                            Command="{x:Bind ViewModel.SubmitLoginCommand}">
+                        <Grid>
+                            <TextBlock Text="{x:Bind loc:Strings.LoginSubmit}"
+                                       Visibility="{x:Bind helpers:Xaml.CollapsedIf(ViewModel.IsLoggingIn), Mode=OneWay}" />
+                            <ProgressRing Width="16" Height="16" IsActive="{x:Bind ViewModel.IsLoggingIn, Mode=OneWay}"
+                                          Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
+                        </Grid>
+                    </Button>
+
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="{x:Bind loc:Strings.LoginHelp}" TextWrapping="Wrap" Style="{StaticResource SecondaryTextStyle}" />
+                        <HyperlinkButton Padding="0" Content="wafe.eu" NavigateUri="https://wafe.eu/" />
+                    </StackPanel>
+
+                    <Border Height="1" Background="{ThemeResource DividerStrokeColorDefaultBrush}" />
+
+                    <!-- No unit, or just curious: a simulated one. -->
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="{x:Bind loc:Strings.DemoTryDescription}" TextWrapping="Wrap" Style="{StaticResource BodyTextBlockStyle}" />
+                        <Button HorizontalAlignment="Stretch" Content="{x:Bind loc:Strings.DemoTry}" Command="{x:Bind ViewModel.TryDemoCommand}" />
+                    </StackPanel>
                 </StackPanel>
+            </Border>
 
-                <TextBox x:Name="UsernameBox" Header="{x:Bind loc:Strings.LoginEmail}" InputScope="EmailSmtpAddress" IsSpellCheckEnabled="False"
-                         Text="{x:Bind ViewModel.Login.Username, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-
-                <PasswordBox Header="{x:Bind loc:Strings.LoginPassword}" KeyDown="OnPasswordKeyDown"
-                             Password="{x:Bind ViewModel.Login.Password, Mode=TwoWay}" />
-
-                <CheckBox Content="{x:Bind loc:Strings.LoginRememberMe}" IsChecked="{x:Bind ViewModel.Login.RememberMe, Mode=TwoWay}" />
-
-                <InfoBar Severity="Error" IsClosable="False"
-                         IsOpen="{x:Bind helpers:Xaml.HasText(ViewModel.Login.ErrorMessage), Mode=OneWay}"
-                         Message="{x:Bind ViewModel.Login.ErrorMessage, Mode=OneWay}" />
-
-                <Button Style="{StaticResource AccentButtonStyle}" HorizontalAlignment="Stretch" Height="36"
-                        Command="{x:Bind ViewModel.SubmitLoginCommand}">
-                    <Grid>
-                        <TextBlock Text="{x:Bind loc:Strings.LoginSubmit}"
-                                   Visibility="{x:Bind helpers:Xaml.CollapsedIf(ViewModel.IsLoggingIn), Mode=OneWay}" />
-                        <ProgressRing Width="16" Height="16" IsActive="{x:Bind ViewModel.IsLoggingIn, Mode=OneWay}"
-                                      Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
-                    </Grid>
-                </Button>
-            </StackPanel>
-        </Border>
+            <TextBlock HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"
+                       Text="{x:Bind loc:Strings.LoginUnofficial}" Style="{StaticResource SecondaryTextStyle}" />
+        </StackPanel>
     </ScrollViewer>
 </UserControl>

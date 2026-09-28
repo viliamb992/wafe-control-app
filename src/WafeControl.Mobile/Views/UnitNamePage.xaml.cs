@@ -1,3 +1,4 @@
+using WafeControl.Core.Threading;
 using WafeControl.Core.ViewModels;
 
 namespace WafeControl.Mobile.Views;
@@ -28,7 +29,9 @@ public partial class UnitNamePage : ContentPage
         NameEntry.SelectionLength = _editor.Name.Length;
     }
 
-    private async void OnSaveClicked(object? sender, EventArgs e)
+    private void OnSaveClicked(object? sender, EventArgs e) => SafeAsync.Run(SaveAsync);
+
+    private async Task SaveAsync()
     {
         if (!_editor.CanSave || Busy.IsVisible)
             return;
@@ -47,5 +50,5 @@ public partial class UnitNamePage : ContentPage
         }
     }
 
-    private async void OnCancelClicked(object? sender, EventArgs e) => await Navigation.PopModalAsync();
+    private void OnCancelClicked(object? sender, EventArgs e) => SafeAsync.Run(() => Navigation.PopModalAsync());
 }

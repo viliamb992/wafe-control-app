@@ -17,7 +17,7 @@ public class ScheduleViewModelTests
 
     public ScheduleViewModelTests()
     {
-        _api.SetSchedulePlanAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(true);
+        _api.SetSchedulePlanAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(ApiResult.Success);
         _sut = new ScheduleViewModel(_api, NullLogger<ScheduleViewModel>.Instance, _time);
     }
 
@@ -134,13 +134,13 @@ public class ScheduleViewModelTests
     public async Task SaveEntry_ServerRejects_KeepsEntriesAndReportsError()
     {
         await LoadAsync();
-        _api.SetSchedulePlanAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(false);
+        _api.SetSchedulePlanAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(ApiResult.Fail(ApiError.ServerError, 500));
         var editor = _sut.CreateEntry(day: 1, startMinute: 600, endMinute: 630);
 
         Assert.False(await _sut.SaveEntryAsync(editor));
 
         Assert.Equal(4, _sut.Entries.Count);
-        Assert.Equal("Couldn't save the schedule. Please try again.", editor.ErrorMessage);
+        Assert.Equal("Couldn't save the schedule. The Wafe server has a problem right now. Try again later.", editor.ErrorMessage);
     }
 
     [Fact]
@@ -165,7 +165,7 @@ public class ScheduleViewModelTests
 
         Assert.False(_sut.IsLoaded);
         Assert.False(_sut.CanAddEntry);
-        Assert.Equal("Couldn't load the schedule.", _sut.ErrorMessage);
+        Assert.Equal("Couldn't load the schedule. The Wafe server answered in an unexpected way. The app may need an update.", _sut.ErrorMessage);
     }
 
     [Fact]
@@ -280,14 +280,14 @@ public class ScheduleViewModelTests
     public async Task CopyDay_ServerRejects_KeepsEntriesAndReportsError()
     {
         await LoadAsync();
-        _api.SetSchedulePlanAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(false);
+        _api.SetSchedulePlanAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(ApiResult.Fail(ApiError.ServerError, 500));
         var copy = _sut.CopyDay(0);
         copy.Days.Single(d => d.Day == 1).IsSelected = true;
 
         Assert.False(await _sut.CopyDayAsync(copy));
 
         Assert.Equal(4, _sut.Entries.Count);
-        Assert.Equal("Couldn't save the schedule. Please try again.", copy.ErrorMessage);
+        Assert.Equal("Couldn't save the schedule. The Wafe server has a problem right now. Try again later.", copy.ErrorMessage);
     }
 
     [Fact]

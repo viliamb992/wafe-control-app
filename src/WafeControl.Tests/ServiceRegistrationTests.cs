@@ -33,7 +33,7 @@ public class ServiceRegistrationTests
         var auth = provider.GetRequiredService<IAuthenticationService>();
         var systemControl = provider.GetRequiredService<ISystemControlService>();
 
-        Assert.True(await auth.LoginAsync("alice", "secret", rememberMe: false, TestContext.Current.CancellationToken));
+        Assert.True((await auth.LoginAsync("alice", "secret", rememberMe: false, TestContext.Current.CancellationToken)).Ok);
         var status = await systemControl.RefreshStatusAsync(TestContext.Current.CancellationToken);
 
         Assert.NotNull(status);

@@ -50,21 +50,29 @@
                         <VerticalStackLayout Spacing="4">
                             <Label Text="{x:Static loc:Strings.LoginPassword}" Style="{StaticResource SecondaryCaption}" />
                             <Border Style="{StaticResource InputBox}">
-                                <Entry x:Name="PasswordEntry" IsPassword="True" ReturnType="Go"
-                                       ReturnCommand="{Binding SubmitLoginCommand}"
-                                       SemanticProperties.Description="{x:Static loc:Strings.LoginPassword}"
-                                       Text="{Binding Login.Password}" />
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <Entry x:Name="PasswordEntry" IsPassword="True" ReturnType="Go"
+                                           ReturnCommand="{Binding SubmitLoginCommand}"
+                                           SemanticProperties.Description="{x:Static loc:Strings.LoginPassword}"
+                                           Text="{Binding Login.Password}" />
+                                    <!-- Seeing the password beats a second wrong try. -->
+                                    <Button x:Name="ShowPasswordButton" Grid.Column="1" Style="{StaticResource AccentTextButton}" Padding="8,0"
+                                            Text="{x:Static loc:Strings.LoginShowPassword}" Clicked="OnShowPasswordClicked" />
+                                </Grid>
                             </Border>
                         </VerticalStackLayout>
 
-                        <HorizontalStackLayout Spacing="4" Margin="-8,0,0,0">
-                            <CheckBox x:Name="RememberBox" IsChecked="{Binding Login.RememberMe}" VerticalOptions="Center" />
-                            <Label Text="{x:Static loc:Strings.LoginRememberMe}" VerticalOptions="Center">
-                                <Label.GestureRecognizers>
-                                    <TapGestureRecognizer Tapped="OnRememberTapped" />
-                                </Label.GestureRecognizers>
-                            </Label>
-                        </HorizontalStackLayout>
+                        <VerticalStackLayout Spacing="0">
+                            <HorizontalStackLayout Spacing="4" Margin="-8,0,0,0">
+                                <CheckBox x:Name="RememberBox" IsChecked="{Binding Login.RememberMe}" VerticalOptions="Center" />
+                                <Label Text="{x:Static loc:Strings.LoginRememberMe}" VerticalOptions="Center">
+                                    <Label.GestureRecognizers>
+                                        <TapGestureRecognizer Tapped="OnRememberTapped" />
+                                    </Label.GestureRecognizers>
+                                </Label>
+                            </HorizontalStackLayout>
+                            <Label Text="{x:Static loc:Strings.LoginRememberMeHint}" Style="{StaticResource SecondaryCaption}" Margin="32,-4,0,0" />
+                        </VerticalStackLayout>
 
                         <controls:InfoBanner Severity="Error" Message="{Binding Login.ErrorMessage}" />
 
@@ -81,8 +89,24 @@
                                                WidthRequest="20" HeightRequest="20"
                                                Color="{AppThemeBinding Light={StaticResource TextOnAccentLight}, Dark={StaticResource TextOnAccentDark}}" />
                         </Grid>
+
+                        <VerticalStackLayout Spacing="0">
+                            <Label Text="{x:Static loc:Strings.LoginHelp}" Style="{StaticResource SecondaryCaption}" />
+                            <Button Style="{StaticResource AccentTextButton}" Padding="0" HorizontalOptions="Start"
+                                    Text="wafe.eu" Clicked="OnWafeClicked" />
+                        </VerticalStackLayout>
                     </VerticalStackLayout>
                 </Border>
+
+                <!-- No unit, or just curious: a simulated one. -->
+                <Border Style="{StaticResource Card}">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="{x:Static loc:Strings.DemoTryDescription}" />
+                        <Button Text="{x:Static loc:Strings.DemoTry}" Command="{Binding TryDemoCommand}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Label Text="{x:Static loc:Strings.LoginUnofficial}" Style="{StaticResource SecondaryCaption}" HorizontalTextAlignment="Center" />
             </VerticalStackLayout>
         </ScrollView>
     </Grid>
