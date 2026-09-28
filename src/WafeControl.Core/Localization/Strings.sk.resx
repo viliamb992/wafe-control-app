@@ -755,4 +755,88 @@
   <data name="LoginHelp" xml:space="preserve">
     <value>Zabudli ste heslo alebo nemáte účet? Pomôže vám montážna firma alebo servis Wafe.</value>
   </data>
+  <data name="SettingsSignIn" xml:space="preserve">
+    <value>Prihlásenie</value>
+  </data>
+  <data name="SettingsSignInDescription" xml:space="preserve">
+    <value>Ako vás aplikácia prihlási, keď ju otvoríte.</value>
+  </data>
+  <data name="SettingsSignInStay" xml:space="preserve">
+    <value>Zostať prihlásený</value>
+  </data>
+  <data name="SettingsSignInDuration" xml:space="preserve">
+    <value>Ako dlho zostať prihlásený</value>
+  </data>
+  <data name="SettingsSignInBiometric" xml:space="preserve">
+    <value>Odtlačok prsta alebo tvár</value>
+  </data>
+  <data name="SettingsSignInBiometricUnavailable" xml:space="preserve">
+    <value>Najprv si v nastaveniach Androidu nastavte odtlačok prsta alebo tvár.</value>
+  </data>
+  <data name="SettingsSignInBiometricNoHardware" xml:space="preserve">
+    <value>Tento telefón nemá snímač odtlačku prsta ani tváre.</value>
+  </data>
+  <data name="SignInDays1" xml:space="preserve">
+    <value>1 deň</value>
+  </data>
+  <data name="SignInDays14" xml:space="preserve">
+    <value>14 dní</value>
+  </data>
+  <data name="SignInDays30" xml:space="preserve">
+    <value>30 dní</value>
+  </data>
+  <data name="SignInDays90" xml:space="preserve">
+    <value>90 dní</value>
+  </data>
+  <data name="LoginStaySignedInFor" xml:space="preserve">
+    <value>Zostať prihlásený {0}</value>
+  </data>
+  <data name="LoginBiometricNextTime" xml:space="preserve">
+    <value>Nabudúce sa prihlásiť odtlačkom prsta alebo tvárou</value>
+  </data>
+  <data name="LoginExpired" xml:space="preserve">
+    <value>Platnosť prihlásenia ({0}) vypršala. Zadajte znova heslo.</value>
+  </data>
+  <data name="LoginBiometricLockedOut" xml:space="preserve">
+    <value>Príliš veľa pokusov. Zadajte heslo.</value>
+  </data>
+  <data name="LoginBiometricRemoved" xml:space="preserve">
+    <value>Odtlačok prsta ani tvár už v tomto telefóne nie sú nastavené. Zadajte heslo.</value>
+  </data>
+  <data name="BiometricPromptTitle" xml:space="preserve">
+    <value>Prihlásenie do WAFE Control</value>
+  </data>
+  <data name="BiometricPromptSubtitle" xml:space="preserve">
+    <value>Potvrďte, že ste to vy</value>
+  </data>
+  <data name="BiometricUsePassword" xml:space="preserve">
+    <value>Použiť heslo</value>
+  </data>
+  <data name="BiometricOfferTitle" xml:space="preserve">
+    <value>Prihlasovať sa odtlačkom prsta alebo tvárou?</value>
+  </data>
+  <data name="BiometricOfferMessage" xml:space="preserve">
+    <value>Pri každom otvorení aplikácie si telefón vyžiada odtlačok prsta alebo tvár namiesto toho, aby vás nechal prihlásených na určitý čas. Kedykoľvek to môžete zmeniť v Nastaveniach → Prihlásenie.</value>
+  </data>
+  <data name="BiometricOfferAccept" xml:space="preserve">
+    <value>Použiť odtlačok alebo tvár</value>
+  </data>
+  <data name="BiometricOfferDecline" xml:space="preserve">
+    <value>Teraz nie</value>
+  </data>
+  <data name="BiometricTurnedOn" xml:space="preserve">
+    <value>Prihlasovanie odtlačkom prsta alebo tvárou je zapnuté.</value>
+  </data>
+  <data name="HelpSignInStay" xml:space="preserve">
+    <value>Aplikácia sa otvorí hneď, bez pýtania. Po zvolenom čase od posledného zadania hesla sa na heslo opýta znova. Dovtedy ju otvorí každý, kto odomkne váš telefón.</value>
+  </data>
+  <data name="HelpSignInBiometric" xml:space="preserve">
+    <value>Pri každom otvorení aplikácie a po návrate do nej po 5 minútach si telefón vyžiada odtlačok prsta alebo tvár. Časový limit nie je. Ak vás nerozpozná, prihláste sa heslom.</value>
+  </data>
+  <data name="HelpRememberLogin" xml:space="preserve">
+    <value>Heslo sa uloží šifrovane len v tomto telefóne, aby vás aplikácia nabudúce prihlásila. Ako (na určitý čas alebo odtlačkom prsta či tvárou), zvolíte v Nastaveniach → Prihlásenie. Nezačiarknuté: nič sa neuloží a heslo zadáte zakaždým.</value>
+  </data>
+  <data name="HelpExplain" xml:space="preserve">
+    <value>Vysvetliť: {0}</value>
+  </data>
 </root>

@@ -54,6 +54,46 @@ public sealed record UserSettings
     /// Time of the newest crash already read from the Windows event log, so each is reported once (Windows).
     /// </summary>
     public DateTimeOffset? LastSeenCrashEventTime { get; init; }
+
+    /// <summary>
+    /// How a remembered login is used when the app opens (Android).
+    /// </summary>
+    public SignInMethod SignInMethod { get; init; }
+
+    /// <summary>
+    /// How long <see cref="SignInMethod.StaySignedIn"/> lasts after the password was typed; null = no limit
+    /// (Windows and iOS).
+    /// </summary>
+    public SignInDuration? StaySignedInFor { get; init; }
+
+    /// <summary>
+    /// The one-time "Sign in with fingerprint or face?" question was answered (Android).
+    /// </summary>
+    public bool BiometricOfferAnswered { get; init; }
+}
+
+public enum SignInMethod
+{
+    /// <summary>
+    /// Sign in without asking, until <see cref="UserSettings.StaySignedInFor"/> has passed.
+    /// </summary>
+    StaySignedIn,
+
+    /// <summary>
+    /// The phone's fingerprint or face unlocks the remembered login each time the app opens.
+    /// </summary>
+    Biometric,
+}
+
+/// <summary>
+/// How long a remembered login lasts; the value is the number of days.
+/// </summary>
+public enum SignInDuration
+{
+    OneDay = 1,
+    TwoWeeks = 14,
+    ThirtyDays = 30,
+    NinetyDays = 90,
 }
 
 public enum AppTheme

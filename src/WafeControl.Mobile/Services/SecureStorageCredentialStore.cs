@@ -1,17 +1,20 @@
+using System.Globalization;
 using Microsoft.Extensions.Logging;
 using WafeControl.Core.Services;
 
 namespace WafeControl.Mobile.Services;
 
 /// <summary>
-/// Remembers the login in the platform's secure storage: Android Keystore, iOS Keychain.
+/// Remembers the login in the platform's secure storage: Android Keystore, iOS Keychain. The time the password
+/// was typed is kept next to it, for the time limit.
 /// </summary>
 public sealed class SecureStorageCredentialStore(ILogger<SecureStorageCredentialStore> logger) : ICredentialStore
 {
     private const string UsernameKey = "wafe.username";
     private const string PasswordKey = "wafe.password";
+    private const string SavedAtKey = "wafe.saved-at";
 
-    public async Task<(string Username, string Password)?> TryGetAsync(CancellationToken cancellationToken = default)
+    public async Task<StoredLogin?> TryGetAsync(CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
         try
@@ -21,7 +24,12 @@ public sealed class SecureStorageCredentialStore(ILogger<SecureStorageCredential
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrEmpty(password))
                 return null;
 
-            return (username, password);
+            // Missing for a login saved by an earlier version.
+            var savedAtText = await SecureStorage.Default.GetAsync(SavedAtKey);
+            DateTimeOffset? savedAt = DateTimeOffset.TryParse(savedAtText, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var time)
+                ? time
+                : null;
+            return new StoredLogin(username, password, savedAt);
         }
         catch (Exception ex)
         {
@@ -32,11 +40,15 @@ public sealed class SecureStorageCredentialStore(ILogger<SecureStorageCredential
         }
     }
 
-    public async Task SaveAsync(string username, string password, CancellationToken cancellationToken = default)
+    public async Task SaveAsync(StoredLogin login, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        await SecureStorage.Default.SetAsync(UsernameKey, username);
-        await SecureStorage.Default.SetAsync(PasswordKey, password);
+        await SecureStorage.Default.SetAsync(UsernameKey, login.Username);
+        await SecureStorage.Default.SetAsync(PasswordKey, login.Password);
+        if (login.SavedAt is { } savedAt)
+            await SecureStorage.Default.SetAsync(SavedAtKey, savedAt.ToString("O", CultureInfo.InvariantCulture));
+        else
+            SecureStorage.Default.Remove(SavedAtKey);
     }
 
     public Task ClearAsync(CancellationToken cancellationToken = default)
@@ -44,6 +56,7 @@ public sealed class SecureStorageCredentialStore(ILogger<SecureStorageCredential
         cancellationToken.ThrowIfCancellationRequested();
         SecureStorage.Default.Remove(UsernameKey);
         SecureStorage.Default.Remove(PasswordKey);
+        SecureStorage.Default.Remove(SavedAtKey);
         return Task.CompletedTask;
     }
 }

@@ -62,17 +62,17 @@
                             </Border>
                         </VerticalStackLayout>
 
-                        <VerticalStackLayout Spacing="0">
-                            <HorizontalStackLayout Spacing="4" Margin="-8,0,0,0">
-                                <CheckBox x:Name="RememberBox" IsChecked="{Binding Login.RememberMe}" VerticalOptions="Center" />
-                                <Label Text="{x:Static loc:Strings.LoginRememberMe}" VerticalOptions="Center">
-                                    <Label.GestureRecognizers>
-                                        <TapGestureRecognizer Tapped="OnRememberTapped" />
-                                    </Label.GestureRecognizers>
-                                </Label>
-                            </HorizontalStackLayout>
-                            <Label Text="{x:Static loc:Strings.LoginRememberMeHint}" Style="{StaticResource SecondaryCaption}" Margin="32,-4,0,0" />
-                        </VerticalStackLayout>
+                        <!-- "Stay signed in for 30 days" or "… with fingerprint or face"; the (?) says where it's saved -->
+                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="4" Margin="-8,0,-12,0">
+                            <CheckBox x:Name="RememberBox" IsChecked="{Binding Login.RememberMe}" VerticalOptions="Center" />
+                            <Label Grid.Column="1" Text="{Binding RememberMeText}" VerticalOptions="Center" LineBreakMode="WordWrap">
+                                <Label.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnRememberTapped" />
+                                </Label.GestureRecognizers>
+                            </Label>
+                            <controls:HelpTip Grid.Column="2" Tip="{x:Static loc:Strings.HelpRememberLogin}"
+                                              Subject="{Binding RememberMeText}" />
+                        </Grid>
 
                         <controls:InfoBanner Severity="Error" Message="{Binding Login.ErrorMessage}" />
 

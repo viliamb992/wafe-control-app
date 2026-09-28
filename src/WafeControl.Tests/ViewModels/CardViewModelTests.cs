@@ -424,7 +424,7 @@ public class AppViewModelLifecycleTests : CardViewModelTestBase
     [Fact]
     public async Task StartAsync_WhileAutoLoginRuns_HidesLoginForm()
     {
-        var autoLogin = new TaskCompletionSource<ApiResult?>();
+        var autoLogin = new TaskCompletionSource<AutoLoginResult>();
         AuthService.TryAutoLoginAsync(Arg.Any<CancellationToken>()).Returns(autoLogin.Task);
 
         var start = App.StartAsync();
@@ -432,7 +432,7 @@ public class AppViewModelLifecycleTests : CardViewModelTestBase
         Assert.True(App.IsStarting);
         Assert.False(App.IsLoginRequired);
 
-        autoLogin.SetResult(null);
+        autoLogin.SetResult(AutoLoginResult.None);
         await start;
 
         Assert.False(App.IsStarting);
@@ -443,7 +443,7 @@ public class AppViewModelLifecycleTests : CardViewModelTestBase
     [Fact]
     public async Task StartAsync_AutoLoginThrows_ShowsLoginForm()
     {
-        AuthService.TryAutoLoginAsync(Arg.Any<CancellationToken>()).Returns<ApiResult?>(_ => throw new HttpRequestException("offline"));
+        AuthService.TryAutoLoginAsync(Arg.Any<CancellationToken>()).Returns<AutoLoginResult>(_ => throw new HttpRequestException("offline"));
 
         await App.StartAsync();
 

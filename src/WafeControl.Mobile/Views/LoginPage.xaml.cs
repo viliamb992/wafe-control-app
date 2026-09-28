@@ -14,6 +14,14 @@ public partial class LoginPage : ContentPage
         BindingContext = app;
     }
 
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+#if ANDROID
+        HelpBubble.Dismiss();
+#endif
+    }
+
     private void OnUsernameCompleted(object? sender, EventArgs e) => PasswordEntry.Focus();
 
     private void OnRememberTapped(object? sender, TappedEventArgs e) => RememberBox.IsChecked = !RememberBox.IsChecked;

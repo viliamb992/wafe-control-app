@@ -1,4 +1,5 @@
 using WafeControl.Core.Localization;
+using WafeControl.Core.Services;
 using WafeControl.Core.Threading;
 using WafeControl.Core.ViewModels;
 using WafeControl.Mobile.Helpers;
@@ -6,7 +7,7 @@ using WafeControl.Mobile.Helpers;
 namespace WafeControl.Mobile.Views;
 
 /// <summary>
-/// Settings: language and appearance (also before sign-in), then the unit, the account and crash reports.
+/// Settings: language and appearance (also before sign-in), then the unit, the account, sign-in and crash reports.
 /// Changes apply right away; the language rebuilds the pages (see <see cref="App"/>).
 /// </summary>
 public partial class SettingsPage : ContentPage
@@ -33,7 +34,10 @@ public partial class SettingsPage : ContentPage
         LanguagePicker.SelectedIndex = IndexOf(settings.Languages, settings.SelectedLanguage);
         for (var i = 0; i < ThemeChoices.Count; i++)
             ((RadioButton)ThemeChoices[i]).IsChecked = i == settings.ThemeIndex;
+        DurationPicker.ItemsSource = settings.Durations.Select(DisplayFormat.SignInDuration).ToList();
+        DurationPicker.SelectedIndex = settings.StaySignedInForIndex;
         _syncing = false;
+        SyncSignInMethod();
 
 #if DEBUG
         // Debug builds: crash on purpose, to test crash handling and reports.
@@ -51,6 +55,22 @@ public partial class SettingsPage : ContentPage
         BackButton.IsVisible = Navigation.NavigationStack.Count > 1;
     }
 
+    protected override void OnAppearing()
+    {
+        base.OnAppearing();
+
+        // A fingerprint may have been added in Android settings meanwhile.
+        _settings.RefreshBiometricAvailability();
+    }
+
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+#if ANDROID
+        HelpBubble.Dismiss();
+#endif
+    }
+
     private void OnBackClicked(object? sender, EventArgs e) => SafeAsync.Run(() => Navigation.PopAsync());
 
     private void OnLanguageChanged(object? sender, EventArgs e)
@@ -63,6 +83,42 @@ public partial class SettingsPage : ContentPage
     {
         if (!_syncing && e.Value)
             _settings.ThemeIndex = ThemeChoices.IndexOf((RadioButton)sender!);
+    }
+
+    private void OnDurationChanged(object? sender, EventArgs e)
+    {
+        if (!_syncing)
+            _settings.StaySignedInForIndex = DurationPicker.SelectedIndex;
+    }
+
+    /// <summary>
+    /// Both ways the fingerprint or face is checked first; when it doesn't pass, the choice goes back.
+    /// </summary>
+    private void OnSignInMethodChecked(object? sender, CheckedChangedEventArgs e)
+    {
+        if (_syncing || !e.Value)
+            return;
+
+        var method = sender == BiometricChoice ? SignInMethod.Biometric : SignInMethod.StaySignedIn;
+        SafeAsync.Run(async () =>
+        {
+            try
+            {
+                await _settings.SetSignInMethodAsync(method);
+            }
+            finally
+            {
+                SyncSignInMethod();
+            }
+        });
+    }
+
+    private void SyncSignInMethod()
+    {
+        _syncing = true;
+        StayChoice.IsChecked = _settings.SignInMethod == SignInMethod.StaySignedIn;
+        BiometricChoice.IsChecked = _settings.SignInMethod == SignInMethod.Biometric;
+        _syncing = false;
     }
 
     private void OnRenameClicked(object? sender, EventArgs e) => SafeAsync.Run(async () =>

@@ -782,4 +782,88 @@
   <data name="LoginHelp" xml:space="preserve">
     <value>Zapomněli jste heslo nebo nemáte účet? Pomůže vám montážní firma nebo servis Wafe.</value>
   </data>
+  <data name="SettingsSignIn" xml:space="preserve">
+    <value>Přihlášení</value>
+  </data>
+  <data name="SettingsSignInDescription" xml:space="preserve">
+    <value>Jak vás aplikace přihlásí, když ji otevřete.</value>
+  </data>
+  <data name="SettingsSignInStay" xml:space="preserve">
+    <value>Zůstat přihlášen</value>
+  </data>
+  <data name="SettingsSignInDuration" xml:space="preserve">
+    <value>Jak dlouho zůstat přihlášen</value>
+  </data>
+  <data name="SettingsSignInBiometric" xml:space="preserve">
+    <value>Otisk prstu nebo obličej</value>
+  </data>
+  <data name="SettingsSignInBiometricUnavailable" xml:space="preserve">
+    <value>Nejdřív si v nastavení Androidu nastavte otisk prstu nebo obličej.</value>
+  </data>
+  <data name="SettingsSignInBiometricNoHardware" xml:space="preserve">
+    <value>Tento telefon nemá snímač otisku prstu ani obličeje.</value>
+  </data>
+  <data name="SignInDays1" xml:space="preserve">
+    <value>1 den</value>
+  </data>
+  <data name="SignInDays14" xml:space="preserve">
+    <value>14 dní</value>
+  </data>
+  <data name="SignInDays30" xml:space="preserve">
+    <value>30 dní</value>
+  </data>
+  <data name="SignInDays90" xml:space="preserve">
+    <value>90 dní</value>
+  </data>
+  <data name="LoginStaySignedInFor" xml:space="preserve">
+    <value>Zůstat přihlášen {0}</value>
+  </data>
+  <data name="LoginBiometricNextTime" xml:space="preserve">
+    <value>Příště se přihlásit otiskem prstu nebo obličejem</value>
+  </data>
+  <data name="LoginExpired" xml:space="preserve">
+    <value>Platnost přihlášení ({0}) vypršela. Zadejte znovu heslo.</value>
+  </data>
+  <data name="LoginBiometricLockedOut" xml:space="preserve">
+    <value>Příliš mnoho pokusů. Zadejte heslo.</value>
+  </data>
+  <data name="LoginBiometricRemoved" xml:space="preserve">
+    <value>Otisk prstu ani obličej už v tomto telefonu nejsou nastavené. Zadejte heslo.</value>
+  </data>
+  <data name="BiometricPromptTitle" xml:space="preserve">
+    <value>Přihlášení do WAFE Control</value>
+  </data>
+  <data name="BiometricPromptSubtitle" xml:space="preserve">
+    <value>Potvrďte, že jste to vy</value>
+  </data>
+  <data name="BiometricUsePassword" xml:space="preserve">
+    <value>Použít heslo</value>
+  </data>
+  <data name="BiometricOfferTitle" xml:space="preserve">
+    <value>Přihlašovat otiskem prstu nebo obličejem?</value>
+  </data>
+  <data name="BiometricOfferMessage" xml:space="preserve">
+    <value>Při každém otevření aplikace si telefon vyžádá otisk prstu nebo obličej, místo aby vás nechal přihlášené po určitou dobu. Kdykoli to můžete změnit v Nastavení → Přihlášení.</value>
+  </data>
+  <data name="BiometricOfferAccept" xml:space="preserve">
+    <value>Použít otisk nebo obličej</value>
+  </data>
+  <data name="BiometricOfferDecline" xml:space="preserve">
+    <value>Teď ne</value>
+  </data>
+  <data name="BiometricTurnedOn" xml:space="preserve">
+    <value>Přihlašování otiskem prstu nebo obličejem je zapnuté.</value>
+  </data>
+  <data name="HelpSignInStay" xml:space="preserve">
+    <value>Aplikace se otevře hned, bez ptaní. Po zvolené době od posledního zadání hesla se na heslo zeptá znovu. Do té doby ji otevře každý, kdo odemkne váš telefon.</value>
+  </data>
+  <data name="HelpSignInBiometric" xml:space="preserve">
+    <value>Při každém otevření aplikace a po návratu do ní po 5 minutách si telefon vyžádá otisk prstu nebo obličej. Časový limit není. Když vás nerozpozná, přihlaste se heslem.</value>
+  </data>
+  <data name="HelpRememberLogin" xml:space="preserve">
+    <value>Heslo se uloží šifrovaně jen v tomto telefonu, aby vás aplikace příště přihlásila. Jak (na určitou dobu, nebo otiskem prstu či obličejem), zvolíte v Nastavení → Přihlášení. Nezaškrtnuté: nic se neuloží a heslo zadáte pokaždé.</value>
+  </data>
+  <data name="HelpExplain" xml:space="preserve">
+    <value>Vysvětlit: {0}</value>
+  </data>
 </root>

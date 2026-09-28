@@ -14,7 +14,7 @@ public partial class App : Application
     private readonly SettingsViewModel _settings;
     private readonly ILocalizationService _localization;
     private Window? _window;
-    private bool _consentAsked;
+    private bool _promptsShowing;
 
     public App(IServiceProvider services, AppViewModel app, SettingsViewModel settings, ILocalizationService localization)
     {
@@ -75,30 +75,61 @@ public partial class App : Application
             await ProblemReporting.ReportAsync(page, _app, _localization);
     }
 
-    // Once, after the first real sign-in.
+    // After a real sign-in: the fingerprint or face offer, then the crash-report question, never both on screen.
     private void OnAppPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName != nameof(AppViewModel.IsAuthenticated) || !_app.IsAuthenticated || _app.IsDemo
-            || _consentAsked || !_settings.NeedsCrashReportConsent)
+        if (e.PropertyName != nameof(AppViewModel.IsAuthenticated) || !_app.IsAuthenticated || _app.IsDemo || _promptsShowing
+            || !(_settings.NeedsBiometricOffer || _settings.NeedsCrashReportConsent))
             return;
 
-        _consentAsked = true;
+        _promptsShowing = true;
         Dispatcher.Dispatch(() => SafeAsync.Run(async () =>
         {
-            if (CurrentPage is not { } page)
-                return;
-
-            var send = await page.DisplayAlertAsync(Strings.CrashConsentTitle,
-                $"{Strings.CrashConsentMessage}\n\n{Strings.SettingsCrashReportsRestart}",
-                Strings.CrashConsentSend, Strings.CrashConsentDontSend);
-            _settings.AnswerCrashReportConsent(send);
+            try
+            {
+                await OfferBiometricAsync();
+                await AskCrashReportConsentAsync();
+            }
+            finally
+            {
+                _promptsShowing = false;
+            }
         }));
+    }
+
+    private async Task OfferBiometricAsync()
+    {
+        if (!_settings.NeedsBiometricOffer || CurrentPage is not { } page)
+            return;
+
+        if (!await page.DisplayAlertAsync(Strings.BiometricOfferTitle, Strings.BiometricOfferMessage,
+                Strings.BiometricOfferAccept, Strings.BiometricOfferDecline))
+        {
+            _settings.DeclineBiometricOffer();
+            return;
+        }
+
+        if (await _settings.AcceptBiometricOfferAsync())
+            _app.Feedback = Feedback.Success(Strings.BiometricTurnedOn);
+    }
+
+    private async Task AskCrashReportConsentAsync()
+    {
+        if (!_settings.NeedsCrashReportConsent || CurrentPage is not { } page)
+            return;
+
+        var send = await page.DisplayAlertAsync(Strings.CrashConsentTitle,
+            $"{Strings.CrashConsentMessage}\n\n{Strings.SettingsCrashReportsRestart}",
+            Strings.CrashConsentSend, Strings.CrashConsentDontSend);
+        _settings.AnswerCrashReportConsent(send);
     }
 
     private void OnSettingsPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(SettingsViewModel.Theme))
             ApplyTheme();
+        else if (e.PropertyName is nameof(SettingsViewModel.SignInMethod) or nameof(SettingsViewModel.StaySignedInFor))
+            _app.SignInSettingsChanged();
     }
 
     private void ApplyTheme()
