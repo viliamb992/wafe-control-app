@@ -74,6 +74,9 @@ public static class MauiProgram
         builder.Services.AddSingleton(Connectivity.Current);
         builder.Services.AddSingleton<INetworkStatus, MauiNetworkStatus>();
         builder.Services.AddSingleton<ICrashReports>(new MobileCrashReports(CrashReporting.ReadDsn(typeof(MauiProgram).Assembly)));
+#if ANDROID
+        builder.Services.AddSingleton<IBiometricAuth, AndroidBiometricAuth>();
+#endif
 
         builder.Services.AddTransient<LoginPage>();
         builder.Services.AddTransient<DashboardPage>();

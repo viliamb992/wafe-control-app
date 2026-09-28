@@ -755,4 +755,91 @@
   <data name="LoginHelp" xml:space="preserve">
     <value>Forgot your password or have no account? Your installer or the Wafe service can help.</value>
   </data>
+  <data name="SettingsSignIn" xml:space="preserve">
+    <value>Sign-in</value>
+  </data>
+  <data name="SettingsSignInDescription" xml:space="preserve">
+    <value>How the app signs you in when you open it.</value>
+  </data>
+  <data name="SettingsSignInStay" xml:space="preserve">
+    <value>Stay signed in</value>
+  </data>
+  <data name="SettingsSignInDuration" xml:space="preserve">
+    <value>How long to stay signed in</value>
+  </data>
+  <data name="SettingsSignInBiometric" xml:space="preserve">
+    <value>Fingerprint or face</value>
+  </data>
+  <data name="SettingsSignInBiometricUnavailable" xml:space="preserve">
+    <value>Set up a fingerprint or face in Android settings first.</value>
+  </data>
+  <data name="SettingsSignInBiometricNoHardware" xml:space="preserve">
+    <value>This phone has no fingerprint or face sensor.</value>
+  </data>
+  <data name="SignInDays1" xml:space="preserve">
+    <value>1 day</value>
+  </data>
+  <data name="SignInDays14" xml:space="preserve">
+    <value>14 days</value>
+  </data>
+  <data name="SignInDays30" xml:space="preserve">
+    <value>30 days</value>
+  </data>
+  <data name="SignInDays90" xml:space="preserve">
+    <value>90 days</value>
+  </data>
+  <data name="LoginStaySignedInFor" xml:space="preserve">
+    <value>Stay signed in for {0}</value>
+  </data>
+  <data name="LoginBiometricNextTime" xml:space="preserve">
+    <value>Sign in with fingerprint or face next time</value>
+  </data>
+  <data name="LoginExpired" xml:space="preserve">
+    <value>Your sign-in expired after {0}. Enter your password again.</value>
+  </data>
+  <data name="LoginBiometricLockedOut" xml:space="preserve">
+    <value>Too many attempts. Enter your password.</value>
+  </data>
+  <data name="LoginBiometricRemoved" xml:space="preserve">
+    <value>Fingerprint or face is no longer set up on this phone. Enter your password.</value>
+  </data>
+  <data name="BiometricPromptTitle" xml:space="preserve">
+    <value>Sign in to WAFE Control</value>
+  </data>
+  <data name="BiometricPromptSubtitle" xml:space="preserve">
+    <value>Confirm it's you</value>
+  </data>
+  <data name="BiometricUsePassword" xml:space="preserve">
+    <value>Use password</value>
+  </data>
+  <data name="BiometricOfferTitle" xml:space="preserve">
+    <value>Sign in with fingerprint or face?</value>
+  </data>
+  <data name="BiometricOfferMessage" xml:space="preserve">
+    <value>Each time you open the app, your phone asks for your fingerprint or face instead of keeping you signed in for a set time. You can change this any time in Settings → Sign-in.</value>
+  </data>
+  <data name="BiometricOfferAccept" xml:space="preserve">
+    <value>Use fingerprint or face</value>
+  </data>
+  <data name="BiometricOfferDecline" xml:space="preserve">
+    <value>Not now</value>
+  </data>
+  <data name="BiometricTurnedOn" xml:space="preserve">
+    <value>Fingerprint or face turned on.</value>
+  </data>
+  <data name="HelpSignInStay" xml:space="preserve">
+    <value>The app opens straight away, without asking. After the chosen time, counted from when you last typed your password, it asks for the password again. Anyone who can unlock your phone can open the app until then.</value>
+  </data>
+  <data name="HelpSignInBiometric" xml:space="preserve">
+    <value>Each time you open the app, and when you return to it after 5 minutes, your phone asks for your fingerprint or face. There's no time limit. If it doesn't recognise you, sign in with your password.</value>
+  </data>
+  <data name="HelpRememberLogin" xml:space="preserve">
+    <value>Your password is saved encrypted on this phone only, so the app can sign you in next time. How (for a set time, or with fingerprint or face) is chosen in Settings → Sign-in. Unchecked: nothing is saved and you type the password every time.</value>
+  </data>
+  <data name="HelpExplain" xml:space="preserve">
+    <value>Explain: {0}</value>
+  </data>
+  <data name="UpdateApkMessage" xml:space="preserve">
+    <value>Download the APK and open it to install it over this version. Your login and settings stay.</value>
+  </data>
 </root>

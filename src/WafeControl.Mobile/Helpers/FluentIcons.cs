@@ -12,6 +12,7 @@ public static class FluentIcons
     public const string Add = "\uF10A";
     public const string Airplane = "\uF110";
     public const string ArrowClockwise = "\uF13E";
+    public const string ArrowDownload = "\uF151";
     public const string ArrowExportLtr = "\uE0C8";
     public const string ArrowImport = "\uF15A";
     public const string CalendarLtr = "\uE24F";
@@ -28,6 +29,7 @@ public static class FluentIcons
     public const string Drop = "\uE591";
     public const string ErrorCircle = "\uF3F2";
     public const string Filter = "\uF407";
+    public const string Fingerprint = "\uF409";
     public const string Flash = "\uE619";
     public const string Globe = "\uF45B";
     public const string Home = "\uF481";
@@ -39,6 +41,7 @@ public static class FluentIcons
     public const string Person = "\uF5BE";
     public const string PersonSupport = "\uF5DA";
     public const string Power = "\uF60F";
+    public const string QuestionCircle = "\uF63E";
     public const string Rename = "\uF66A";
     public const string Settings = "\uF6AA";
     public const string SignOut = "\uF6DA";

@@ -182,6 +182,9 @@ both apps:
 | Unit | `E772` | `cube` |
 | Rename | `E8AC` | `rename` |
 | Service | `E779` | `person_support` |
+| Sign-in method | `E928` | `fingerprint` |
+| Explain (?) | `E9CE` | `question_circle` |
+| New version | `E896` | `arrow_download` |
 
 ---
 

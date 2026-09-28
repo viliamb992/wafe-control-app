@@ -12,15 +12,18 @@ public partial class App : Application
     private readonly IServiceProvider _services;
     private readonly AppViewModel _app;
     private readonly SettingsViewModel _settings;
+    private readonly ReleaseCheckViewModel _releases;
     private readonly ILocalizationService _localization;
     private Window? _window;
-    private bool _consentAsked;
+    private bool _promptsShowing;
 
-    public App(IServiceProvider services, AppViewModel app, SettingsViewModel settings, ILocalizationService localization)
+    public App(IServiceProvider services, AppViewModel app, SettingsViewModel settings, ReleaseCheckViewModel releases,
+        ILocalizationService localization)
     {
         _services = services;
         _app = app;
         _settings = settings;
+        _releases = releases;
         _localization = localization;
         InitializeComponent();
 
@@ -37,6 +40,12 @@ public partial class App : Application
         RequestedThemeChanged += (_, _) => SystemBars.Apply();
 #endif
         localization.LanguageChanged += OnLanguageChanged;
+
+#if ANDROID
+        // Sideloaded: nothing else tells about a new version.
+        _releases.Enable(ReleaseCheckViewModel.AndroidTagPrefix);
+        _releases.OpenRequested += (_, uri) => SafeAsync.Run(() => Launcher.Default.TryOpenAsync(uri));
+#endif
     }
 
     protected override Window CreateWindow(IActivationState? activationState)
@@ -48,12 +57,29 @@ public partial class App : Application
             await _app.StartAsync();
             if (lastCrash is not null)
                 await ShowCrashNoticeAsync(lastCrash);
+            await CheckForNewVersionAsync();
         });
 
         // No polling in the background; fresh data as soon as the app is back.
         _window.Stopped += (_, _) => _app.Pause();
-        _window.Resumed += (_, _) => SafeAsync.Run(_app.ResumeAsync);
+        _window.Resumed += (_, _) => SafeAsync.Run(async () =>
+        {
+            await _app.ResumeAsync();
+            await CheckForNewVersionAsync();
+        });
         return _window;
+    }
+
+    /// <summary>
+    /// At most every few hours. Debug builds check only from Settings (their version is older than every release).
+    /// </summary>
+    private Task CheckForNewVersionAsync()
+    {
+#if DEBUG
+        return Task.CompletedTask;
+#else
+        return _releases.CheckIfDueAsync();
+#endif
     }
 
     /// <summary>
@@ -75,30 +101,63 @@ public partial class App : Application
             await ProblemReporting.ReportAsync(page, _app, _localization);
     }
 
-    // Once, after the first real sign-in.
+    // After a real sign-in: the fingerprint or face offer, then the crash-report question, never both on screen.
     private void OnAppPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName != nameof(AppViewModel.IsAuthenticated) || !_app.IsAuthenticated || _app.IsDemo
-            || _consentAsked || !_settings.NeedsCrashReportConsent)
+        if (e.PropertyName != nameof(AppViewModel.IsAuthenticated) || !_app.IsAuthenticated || _app.IsDemo || _promptsShowing
+            || !(_settings.NeedsBiometricOffer || _settings.NeedsCrashReportConsent))
             return;
 
-        _consentAsked = true;
+        _promptsShowing = true;
         Dispatcher.Dispatch(() => SafeAsync.Run(async () =>
         {
-            if (CurrentPage is not { } page)
-                return;
-
-            var send = await page.DisplayAlertAsync(Strings.CrashConsentTitle,
-                $"{Strings.CrashConsentMessage}\n\n{Strings.SettingsCrashReportsRestart}",
-                Strings.CrashConsentSend, Strings.CrashConsentDontSend);
-            _settings.AnswerCrashReportConsent(send);
+            try
+            {
+                await OfferBiometricAsync();
+                await AskCrashReportConsentAsync();
+            }
+            finally
+            {
+                _promptsShowing = false;
+            }
         }));
+    }
+
+    private async Task OfferBiometricAsync()
+    {
+        if (!_settings.NeedsBiometricOffer || CurrentPage is not { } page)
+            return;
+
+        if (!await page.DisplayAlertAsync(Strings.BiometricOfferTitle, Strings.BiometricOfferMessage,
+                Strings.BiometricOfferAccept, Strings.BiometricOfferDecline))
+        {
+            _settings.DeclineBiometricOffer();
+            return;
+        }
+
+        if (await _settings.AcceptBiometricOfferAsync())
+            _app.Feedback = Feedback.Success(Strings.BiometricTurnedOn);
+    }
+
+    private async Task AskCrashReportConsentAsync()
+    {
+        if (!_settings.NeedsCrashReportConsent || CurrentPage is not { } page)
+            return;
+
+        var send = await page.DisplayAlertAsync(Strings.CrashConsentTitle,
+            $"{Strings.CrashConsentMessage}\n\n{Strings.SettingsCrashReportsRestart}",
+            Strings.CrashConsentSend, Strings.CrashConsentDontSend);
+        _settings.AnswerCrashReportConsent(send);
     }
 
     private void OnSettingsPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(SettingsViewModel.Theme))
             ApplyTheme();
+        else if (e.PropertyName is nameof(SettingsViewModel.SignInMethod) or nameof(SettingsViewModel.StaySignedInFor))
+            _app.SignInSettingsChanged();
+        else if (e.PropertyName == nameof(SettingsViewModel.BetaUpdates))
+            SafeAsync.Run(_releases.CheckAsync);
     }
 
     private void ApplyTheme()

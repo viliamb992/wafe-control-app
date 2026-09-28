@@ -56,6 +56,10 @@
     <PackageReference Include="Serilog.Extensions.Logging" />
   </ItemGroup>
 
+  <ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">
+    <PackageReference Include="Xamarin.AndroidX.Biometric" />
+  </ItemGroup>
+
   <!-- Crash reports go to GlitchTip only from release builds: the workflow passes -p:CrashReportsDsn=… from a secret.
        Local and pull request builds have none, so nothing is reported from development. -->
   <ItemGroup Condition="'$(CrashReportsDsn)' != ''">

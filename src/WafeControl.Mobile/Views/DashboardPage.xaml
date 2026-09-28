@@ -60,6 +60,12 @@
                     <controls:InfoBanner x:Name="DataBanner" Severity="Warning"
                                          Title="{Binding DataBannerTitle}" Message="{Binding DataBannerMessage}"
                                          ActionText="{x:Static loc:Strings.TitleBarRefresh}" ActionCommand="{Binding RefreshStatusCommand}" />
+                    <!-- A newer APK on GitHub (Android); closing it hides this version's banner -->
+                    <controls:InfoBanner x:Name="UpdateBanner" x:DataType="vm:ReleaseCheckViewModel" Severity="Informational"
+                                         Icon="{x:Static helpers:FluentIcons.ArrowDownload}"
+                                         Title="{Binding BannerTitle}" Message="{Binding BannerMessage}"
+                                         ActionText="{x:Static loc:Strings.UpdateDownloadNow}" ActionCommand="{Binding DownloadCommand}"
+                                         DismissCommand="{Binding DismissCommand}" />
 
                     <!-- ── System state + power ────────────────────────────── -->
                     <Border Style="{StaticResource Card}">

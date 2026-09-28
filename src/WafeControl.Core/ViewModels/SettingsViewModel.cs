@@ -14,14 +14,24 @@ public sealed partial class SettingsViewModel : ObservableObject
     private readonly ISettingsStore _settings;
     private readonly IStartupRegistration _startup;
     private readonly ICrashReports _crashReports;
+    private readonly IBiometricAuth _biometric;
+    private readonly IAuthenticationService? _authentication;
     private readonly bool _loaded;
 
-    public SettingsViewModel(ILocalizationService localization, ISettingsStore settings, IStartupRegistration startup, ICrashReports? crashReports = null)
+    public SettingsViewModel(
+        ILocalizationService localization,
+        ISettingsStore settings,
+        IStartupRegistration startup,
+        ICrashReports? crashReports = null,
+        IBiometricAuth? biometric = null,
+        IAuthenticationService? authentication = null)
     {
         _localization = localization;
         _settings = settings;
         _startup = startup;
         _crashReports = crashReports ?? new NoCrashReports();
+        _biometric = biometric ?? new NoBiometricAuth();
+        _authentication = authentication;
 
         var saved = settings.Load();
         SelectedLanguage = localization.Current;
@@ -32,6 +42,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         CrashReportsEnabled = saved.CrashReports == true;
         AutoDownloadUpdates = saved.AutoDownloadUpdates;
         BetaUpdates = saved.BetaUpdates;
+        SignInMethod = saved.SignInMethod;
+        StaySignedInFor = saved.StaySignedInFor ?? SignInDuration.ThirtyDays;
         _loaded = true;
     }
 
@@ -129,6 +141,144 @@ public sealed partial class SettingsViewModel : ObservableObject
     /// </summary>
     [ObservableProperty]
     public partial bool BetaUpdates { get; set; }
+
+    #region Sign-in (Android)
+
+    /// <summary>
+    /// The platform offers sign-in methods (Android); otherwise the card is hidden.
+    /// </summary>
+    public bool IsSignInCardVisible => _biometric.IsSupported;
+
+    /// <summary>
+    /// How a remembered login is used. Changed only through <see cref="SetSignInMethodAsync"/>, which checks the
+    /// fingerprint or face first.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsStaySignedIn), nameof(CanChooseBiometric))]
+    public partial SignInMethod SignInMethod { get; private set; }
+
+    public bool IsStaySignedIn => SignInMethod == SignInMethod.StaySignedIn;
+
+    /// <summary>
+    /// How long Stay signed in lasts after the password was typed. A change applies to the saved login at once.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(StaySignedInForIndex))]
+    public partial SignInDuration StaySignedInFor { get; set; }
+
+    /// <summary>
+    /// The choices for <see cref="StaySignedInFor"/>, shortest first.
+    /// </summary>
+    public IReadOnlyList<SignInDuration> Durations { get; } = Enum.GetValues<SignInDuration>();
+
+    /// <summary>
+    /// <see cref="StaySignedInFor"/> as a position in <see cref="Durations"/>; -1 (no selection) is ignored.
+    /// </summary>
+    public int StaySignedInForIndex
+    {
+        get => Durations.ToList().IndexOf(StaySignedInFor);
+        set
+        {
+            if (value >= 0 && value < Durations.Count)
+                StaySignedInFor = Durations[value];
+        }
+    }
+
+    /// <summary>
+    /// A fingerprint or face is set up, so the check can be shown.
+    /// </summary>
+    public bool IsBiometricAvailable => _biometric.Availability == BiometricAvailability.Available;
+
+    /// <summary>
+    /// The fingerprint or face option can be picked: it's available, or already on (to switch away from).
+    /// </summary>
+    public bool CanChooseBiometric => IsBiometricAvailable || SignInMethod == SignInMethod.Biometric;
+
+    /// <summary>
+    /// Why fingerprint or face can't be picked; null when it can.
+    /// </summary>
+    public string? BiometricUnavailableReason => _biometric.Availability switch
+    {
+        BiometricAvailability.Available => null,
+        BiometricAvailability.NoHardware => Strings.SettingsSignInBiometricNoHardware,
+        _ => Strings.SettingsSignInBiometricUnavailable,
+    };
+
+    /// <summary>
+    /// Reads the phone's fingerprint and face setup again (it may have changed in Android settings meanwhile).
+    /// </summary>
+    public void RefreshBiometricAvailability()
+    {
+        OnPropertyChanged(nameof(IsBiometricAvailable));
+        OnPropertyChanged(nameof(CanChooseBiometric));
+        OnPropertyChanged(nameof(BiometricUnavailableReason));
+    }
+
+    /// <summary>
+    /// Switches the sign-in method once the fingerprint or face check passes, both ways: turning it off must not
+    /// be a way around it. False when the method stays as it was.
+    /// </summary>
+    public async Task<bool> SetSignInMethodAsync(SignInMethod method)
+    {
+        if (method == SignInMethod)
+            return true;
+        if (!IsSignInCardVisible || (method == SignInMethod.Biometric && !IsBiometricAvailable))
+            return false;
+
+        // Switching away with no fingerprint or face left: there's nothing to check (removing them needs the
+        // phone's own PIN), and the next start would fall back anyway.
+        var needsCheck = method == SignInMethod.Biometric || IsBiometricAvailable;
+        if (needsCheck && await _biometric.AuthenticateAsync() != BiometricResult.Succeeded)
+            return false;
+
+        _settings.Save(_settings.Load() with { SignInMethod = method });
+        SignInMethod = method;
+
+        // The time limit starts now, not from a password typed long ago.
+        if (method == SignInMethod.StaySignedIn && _authentication is not null)
+            await _authentication.RestartSignInPeriodAsync();
+
+        return true;
+    }
+
+    /// <summary>
+    /// Ask once, after a sign-in, whether to use fingerprint or face: not answered yet, one is set up, and a login
+    /// is saved to unlock. Users of earlier versions have no answer saved, so they are asked after the update too.
+    /// </summary>
+    public bool NeedsBiometricOffer =>
+        IsSignInCardVisible
+        && !_settings.Load().BiometricOfferAnswered
+        && IsBiometricAvailable
+        && _authentication is { HasRememberedLogin: true, IsDemo: false };
+
+    /// <summary>
+    /// "Use fingerprint or face": checks it once; on success the method becomes <see cref="SignInMethod.Biometric"/>.
+    /// The answer is saved either way. True when it was turned on.
+    /// </summary>
+    public async Task<bool> AcceptBiometricOfferAsync()
+    {
+        AnswerBiometricOffer();
+        return await SetSignInMethodAsync(SignInMethod.Biometric);
+    }
+
+    /// <summary>
+    /// "Not now": Stay signed in remains, and the question isn't asked again.
+    /// </summary>
+    public void DeclineBiometricOffer() => AnswerBiometricOffer();
+
+    private void AnswerBiometricOffer() => _settings.Save(_settings.Load() with { BiometricOfferAnswered = true });
+
+    partial void OnStaySignedInForChanged(SignInDuration value)
+    {
+        if (!_loaded || !IsSignInCardVisible)
+            return;
+
+        var saved = _settings.Load();
+        if (saved.StaySignedInFor != value)
+            _settings.Save(saved with { StaySignedInFor = value });
+    }
+
+    #endregion
 
     partial void OnSelectedLanguageChanged(AppLanguage value)
     {

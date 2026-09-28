@@ -269,7 +269,7 @@ public class SignInTests : CardViewModelTestBase
     [Fact]
     public async Task RememberedLoginFails_FormShowsWhyAndTheEmail()
     {
-        AuthService.TryAutoLoginAsync(Arg.Any<CancellationToken>()).Returns(ApiResult.Fail(ApiError.Offline));
+        AuthService.TryAutoLoginAsync(Arg.Any<CancellationToken>()).Returns(AutoLoginResult.Attempted(ApiResult.Fail(ApiError.Offline)));
         AuthService.Username.Returns("alice@example.com");
 
         await App.StartAsync();

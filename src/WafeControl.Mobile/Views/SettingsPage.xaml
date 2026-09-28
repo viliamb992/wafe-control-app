@@ -78,6 +78,33 @@
                 </controls:SettingRow>
             </Border>
 
+            <!-- ── Sign-in (Android): stay signed in for a time, or fingerprint or face ── -->
+            <Border Style="{StaticResource Card}" IsVisible="{Binding IsSignInCardVisible}">
+                <VerticalStackLayout Spacing="4">
+                    <controls:SettingRow Icon="{x:Static helpers:FluentIcons.Fingerprint}" Title="{x:Static loc:Strings.SettingsSignIn}"
+                                         Description="{x:Static loc:Strings.SettingsSignInDescription}" />
+                    <VerticalStackLayout Margin="28,0,0,0" Spacing="0">
+                        <HorizontalStackLayout>
+                            <RadioButton x:Name="StayChoice" GroupName="SignIn" Content="{x:Static loc:Strings.SettingsSignInStay}"
+                                         CheckedChanged="OnSignInMethodChecked" />
+                            <controls:HelpTip Tip="{x:Static loc:Strings.HelpSignInStay}" Subject="{x:Static loc:Strings.SettingsSignInStay}" />
+                        </HorizontalStackLayout>
+                        <Border Style="{StaticResource InputBox}" Margin="36,0,0,8" HorizontalOptions="Start" MinimumWidthRequest="160"
+                                IsEnabled="{Binding IsStaySignedIn}">
+                            <Picker x:Name="DurationPicker" SelectedIndexChanged="OnDurationChanged"
+                                    SemanticProperties.Description="{x:Static loc:Strings.SettingsSignInDuration}" />
+                        </Border>
+                        <HorizontalStackLayout>
+                            <RadioButton x:Name="BiometricChoice" GroupName="SignIn" Content="{x:Static loc:Strings.SettingsSignInBiometric}"
+                                         IsEnabled="{Binding CanChooseBiometric}" CheckedChanged="OnSignInMethodChecked" />
+                            <controls:HelpTip Tip="{x:Static loc:Strings.HelpSignInBiometric}" Subject="{x:Static loc:Strings.SettingsSignInBiometric}" />
+                        </HorizontalStackLayout>
+                        <Label Text="{Binding BiometricUnavailableReason}" Style="{StaticResource SecondaryCaption}" Margin="36,-4,0,0"
+                               IsVisible="{Binding BiometricUnavailableReason, Converter={x:Static helpers:Converters.IsNotNull}}" />
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
             <!-- ── Crash reports (release builds with a reporting address) ── -->
             <Border Style="{StaticResource Card}" IsVisible="{Binding IsCrashReportsAvailable}">
                 <VerticalStackLayout Spacing="4">
@@ -87,6 +114,24 @@
                     </controls:SettingRow>
                     <Label Text="{x:Static loc:Strings.SettingsCrashReportsRestart}" Style="{StaticResource SecondaryCaption}" Margin="36,0,0,0"
                            IsVisible="{Binding ShowsCrashReportsRestartHint}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- ── Updates (Android): newer APKs on GitHub; nothing installs them on its own ── -->
+            <Border x:Name="UpdatesCard" Style="{StaticResource Card}" x:DataType="vm:ReleaseCheckViewModel" IsVisible="{Binding IsEnabled}">
+                <VerticalStackLayout Spacing="4">
+                    <controls:SettingRow Icon="{x:Static helpers:FluentIcons.ArrowDownload}" Title="{x:Static loc:Strings.UpdatesTitle}"
+                                         Description="{Binding StatusText}">
+                        <Button Text="{x:Static loc:Strings.UpdateCheckNow}" Command="{Binding CheckCommand}" />
+                    </controls:SettingRow>
+                    <HorizontalStackLayout Spacing="8" Margin="28,0,0,0" IsVisible="{Binding IsAvailable}">
+                        <Button Style="{StaticResource AccentButton}" Text="{x:Static loc:Strings.UpdateDownloadNow}" Command="{Binding DownloadCommand}" />
+                        <Button Style="{StaticResource AccentTextButton}" Text="{x:Static loc:Strings.UpdateWhatsNew}" Command="{Binding OpenReleaseNotesCommand}" />
+                    </HorizontalStackLayout>
+                    <Grid ColumnDefinitions="*,Auto" Margin="36,4,0,0" x:DataType="vm:SettingsViewModel" x:Name="BetaRow">
+                        <Label Text="{x:Static loc:Strings.UpdateBeta}" VerticalOptions="Center" />
+                        <Switch Grid.Column="1" IsToggled="{Binding BetaUpdates}" SemanticProperties.Description="{x:Static loc:Strings.UpdateBeta}" />
+                    </Grid>
                 </VerticalStackLayout>
             </Border>
 

@@ -1,4 +1,5 @@
 using System.Globalization;
+using WafeControl.Core.Services;
 using WafeControl.Core.ViewModels.Schedule;
 using WafeControl.Shared;
 using WafeControl.Shared.Models;
@@ -98,6 +99,17 @@ public static class DisplayFormat
     /// "12:05" for a number of seconds, as the boost countdown shows it.
     /// </summary>
     public static string Countdown(int seconds) => seconds <= 0 ? Strings.BoostOff : $"{seconds / 60:D2}:{seconds % 60:D2}";
+
+    /// <summary>
+    /// "30 days": how long a remembered login lasts.
+    /// </summary>
+    public static string SignInDuration(SignInDuration duration) => duration switch
+    {
+        Services.SignInDuration.OneDay => Strings.SignInDays1,
+        Services.SignInDuration.TwoWeeks => Strings.SignInDays14,
+        Services.SignInDuration.NinetyDays => Strings.SignInDays90,
+        _ => Strings.SignInDays30,
+    };
 
     public static string Version(string version) => string.Format(Strings.SettingsVersion, version);
 

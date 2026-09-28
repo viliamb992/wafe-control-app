@@ -10,8 +10,8 @@ Vibe coded with [Claude Code](https://claude.com/claude-code): the code, tests a
 
 | Platform | Version | Release build |
 | --- | --- | --- |
-| 🖥️ Windows 11 (x64, ARM64) | [v1.1.1](https://github.com/viliamb992/wafe-control-app/releases/tag/v1.1.1) | [![Release](https://github.com/viliamb992/wafe-control-app/actions/workflows/release.yml/badge.svg)](https://github.com/viliamb992/wafe-control-app/actions/workflows/release.yml) |
-| 🤖 Android 8+ | [android-v1.1.1](https://github.com/viliamb992/wafe-control-app/releases/tag/android-v1.1.1) | [![Release Android](https://github.com/viliamb992/wafe-control-app/actions/workflows/release-android.yml/badge.svg)](https://github.com/viliamb992/wafe-control-app/actions/workflows/release-android.yml) |
+| 🖥️ Windows 11 (x64, ARM64) | [v1.3.0](https://github.com/viliamb992/wafe-control-app/releases/tag/v1.3.0) | [![Release](https://github.com/viliamb992/wafe-control-app/actions/workflows/release.yml/badge.svg)](https://github.com/viliamb992/wafe-control-app/actions/workflows/release.yml) |
+| 🤖 Android 8+ | [android-v1.3.0](https://github.com/viliamb992/wafe-control-app/releases/tag/android-v1.3.0) | [![Release Android](https://github.com/viliamb992/wafe-control-app/actions/workflows/release-android.yml/badge.svg)](https://github.com/viliamb992/wafe-control-app/actions/workflows/release-android.yml) |
 | 🍎 iOS 15+ | – | Not released |
 
 A release is **stable** when its tag has no suffix (`v1.1.0`, `android-v1.1.0`) and its release build passed. A suffix (`v1.2.0-beta.1`) publishes a pre-release. The badges show the result of each app's latest release build.
@@ -43,17 +43,19 @@ Both apps follow one design manual, [docs/DESIGN.md](docs/DESIGN.md): colors, ty
 - 💬 **Feedback:** the footer shows what a command is doing ("Activating boost…"), the result, and Retry when trying again can help. Stopping the unit asks first. When the readings are out of date or the server can't be reached, a banner says so and the readings are dimmed.
 - ⬆️ **Updates:** a new version downloads in the background; the title bar then offers "Restart to update" (about a second), and it also installs on exit. Settings → Updates: automatic download, beta versions, check now.
 - 🐞 **Report a problem** (⋯ menu, Settings): a GitHub issue with the version and device filled in, or diagnostics to copy. After a crash, the next start offers it. Crash reports are opt-in (see [Privacy](#privacy)).
-- 🔔 **Tray:** closing the window keeps the app in the tray (in Efficiency Mode), or exits it if you choose that in Settings. Pointing at the tray icon shows whether the unit is running, its mode, air flow and CO₂. The tray menu offers boost shortcuts and Exit. Launching the app again brings the existing window back (single instance).
+- 🔔 **Tray:** closing the window keeps the app in the tray (in Efficiency Mode), or exits it if you choose that in Settings. Pointing at the tray icon shows whether the unit is running, its mode, air flow and CO₂. The tray menu offers boost shortcuts and Exit. Only one copy runs: launching the app again brings the existing window back, even from the tray or when the other copy is installed in a different folder.
 - 🚀 **Startup (optional):** start with Windows, and start hidden in the tray (the window still opens if you need to sign in).
 - 🌐 **Languages:** Czech (default), Slovak and English. Switch in Settings (gear in the footer, also on the sign-in screen). The change applies right away and is kept for the next launch.
 
 ### 📱 Mobile app features
 
 - 🔐 **Sign-in:** same sign-in, remembered login (Android Keystore / iOS Keychain), demo mode and languages as on Windows; language and appearance can be set before signing in (gear on the sign-in screen). The password can be shown.
+- 👆 **Sign-in methods (Android):** Settings → Sign-in. **Stay signed in** for 1, 14, 30 (default) or 90 days after the password was last typed; after that the app asks for the password again and says why. **Fingerprint or face** (any biometric the phone offers, including face unlock) is asked for each time the app opens and after 5 minutes in the background, with no time limit. "Use password" always works. Changing the method asks for the fingerprint or face first, both ways. After signing in, the app asks once whether to use it. A (?) next to each option, and next to the checkbox on the sign-in form, explains it (tap for a bubble, long press for the tooltip, read by TalkBack).
 - 🧭 **Tabs:** Overview, Schedule, Settings. Pull down to refresh; banners for no internet, an unreachable server, old data and an offline unit; command results show as a short message at the bottom, with Retry when it can help.
 - 📊 **Overview:** unit name as the title, online state, running state with Start/Stop (stopping asks first), the sensor tiles, operating mode, flow slider (sends when you let go, with a haptic tick every 10 m³/h), Boost 15/30/60 min with a live countdown, Silent/Holiday switches, filter health.
 - 📅 **Schedule:** one day at a time on a 24-hour timeline with a "now" line. Tap an empty time to add an action, tap an action to edit or delete it (same rules as the Windows grid).
-- ⚙️ **Settings:** language, appearance (system/light/dark), the unit (rename, model, serial number, service contact), sign out, crash reports, about with Report a problem and Share logs.
+- ⬆️ **New versions (Android):** the app is sideloaded, so it looks for a newer `android-v*` release on GitHub at start and when you return to it (at most every 12 hours). A banner on Overview offers Download (the APK; opening it installs over the current version and keeps the login). Closing the banner hides it until the next version. Settings → Updates: check now, what's new, beta versions.
+- ⚙️ **Settings:** language, appearance (system/light/dark), the unit (rename, model, serial number, service contact), sign out, sign-in method (Android), crash reports, updates (Android), about with Report a problem and Share logs.
 
 ## Translations
 
@@ -131,6 +133,8 @@ Before tagging, add a `## 1.2.0` section to [CHANGELOG.md](CHANGELOG.md): it bec
 
 Up to 1.1.x the Windows app used an Inno Setup installer in Program Files. Version 1.2.0 installs per user (no administrator rights, needed for silent updates): uninstall 1.1.x from Settings → Apps, then run the new Setup. Settings and the remembered login stay; turn "Run when Windows starts" on again if you used it (the old entry pointed to Program Files).
 
+**Crash reports:** the release builds send them only when they carry a GlitchTip DSN. Add the repository secrets `GLITCHTIP_DSN_WINDOWS` and `GLITCHTIP_DSN_ANDROID` (Settings → Secrets and variables → Actions); with a single GlitchTip project, use the same DSN for both (reports stay apart by release name, `wafe-control-windows@…` / `wafe-control-android@…`). Without a DSN the app has no crash reports and hides the setting. To try it locally: `dotnet build src/WafeControl.WinUI -p:Platform=x64 "-p:CrashReportsDsn=<your DSN>"`, turn crash reports on, then Settings → "Demo unit faults (Debug build)"; the issue appears under environment `dev`.
+
 **Android:** push an Android tag (`git tag android-v1.0.0 && git push origin android-v1.0.0`). `.github/workflows/release-android.yml` tests, builds a signed APK and attaches it to its own GitHub Release (never marked "latest", so the Windows release stays the latest one). The app is sideloaded, not in a store: open the release on the phone, download the APK and install it (Android asks once to allow installs from the browser). Later versions install over it and keep the login.
 
 ### Android signing
@@ -161,7 +165,7 @@ dotnet publish src/WafeControl.Mobile -f net10.0-android -c Release -o publish -
 
 - **Remembered login:** `%AppData%\WafeControl\credentials.dat`, encrypted with Windows DPAPI for the current user. "Sign out" in the ⋯ menu deletes it.
 - **Settings (WinUI app):** `%AppData%\WafeControl\settings.json` (language, theme, closing and startup behaviour, window position). Start with Windows is the `WafeControl` entry under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` (also listed in Task Manager → Startup apps).
-- **Mobile app:** the remembered login is in the platform's secure storage (Android Keystore, iOS Keychain), language and theme in the app's preferences. App backup is off on Android, since a restored login couldn't be decrypted anyway.
+- **Mobile app:** the remembered login is in the platform's secure storage (Android Keystore, iOS Keychain), together with the time the password was last typed (for the Android time limit). Language, theme, crash reports and the sign-in method are in the app's preferences. App backup is off on Android, since a restored login couldn't be decrypted anyway.
 - **App (Windows):** installed per user in `%LocalAppData%\WafeControl.App` (Velopack: `current\` is the app, downloaded updates wait in `packages\`). Uninstalling removes it and the Start with Windows entry.
 - **Logs:** Windows `%LocalAppData%\WafeControl\logs` (open via ⋯ → "Open log folder"), Android the app's private storage (Settings → Share logs). One file per day, 7 days, at most 2 MB each. Passwords are never logged; emails are logged masked (`v***@g***.com`). A crash leaves `last-crash.json` next to the logs until the next start.
 - **Crash reports waiting to be sent** (only with crash reports on): Windows `%LocalAppData%\WafeControl\reports`, Android the app's cache.
@@ -169,7 +173,7 @@ dotnet publish src/WafeControl.Mobile -f net10.0-android -c Release -o publish -
 
 ## Privacy
 
-The apps talk to go2my.wafe.eu (your unit) and, on Windows, to GitHub (update checks). Nothing else leaves the device unless you agree:
+The apps talk to go2my.wafe.eu (your unit) and to GitHub (update checks; the Android app reads the public releases list, sending only its version in the User-Agent). Nothing else leaves the device unless you agree:
 
 - **Crash reports** are off until you say yes (asked once after the first sign-in; Settings → Send crash reports). They go to [GlitchTip](https://glitchtip.com) and contain the app version, platform, device model, language, whether demo mode is on, the unit model, and the error with its stack trace and the app's last log lines. Never your email, password, unit name or serial number: emails are removed before anything is sent. Development builds never send reports.
 - **Report a problem** sends nothing by itself: it opens a GitHub issue in your browser, or your share sheet, with text you can read first.
@@ -210,9 +214,8 @@ Request bodies must be sent with a `Content-Length`: the server answers chunked 
 
 **📱 Mobile**
 
-- ⬆️ "New version available" banner linking the APK of the latest `android-v*` release (the app is sideloaded, so nothing updates it).
 - ⚡ App shortcuts: Boost 15/30, Stop boost.
-- 🤖 Android: edge-to-edge, optional biometric unlock. iOS: haptics, optional Face ID.
+- 🤖 Android: edge-to-edge. iOS: haptics, the Android sign-in methods with Face ID / Touch ID (the Core part is ready: an `IBiometricAuth` for iOS).
 - 🍎 iOS: first run on a Mac (page sheets, safe areas, tab icons, input borders), then an ad hoc `.ipa` from a macOS runner.
 - ♿ Screen reader pass (TalkBack, VoiceOver), possibly with a list view of the day's actions.
 - 🔔 Background notifications (Android `WorkManager`, iOS `BGAppRefreshTask`).

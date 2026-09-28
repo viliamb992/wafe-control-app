@@ -11,6 +11,7 @@ namespace WafeControl.WinUI.Services;
 
 /// <summary>
 /// Remembers the login in %AppData%\WafeControl\credentials.dat, encrypted with DPAPI for the current Windows user.
+/// It never expires on Windows, so the time it was saved isn't kept.
 /// </summary>
 public sealed class DpapiCredentialStore : ICredentialStore
 {
@@ -19,7 +20,7 @@ public sealed class DpapiCredentialStore : ICredentialStore
         "WafeControl",
         "credentials.dat");
 
-    public async Task<(string Username, string Password)?> TryGetAsync(CancellationToken cancellationToken = default)
+    public async Task<StoredLogin?> TryGetAsync(CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -52,7 +53,7 @@ public sealed class DpapiCredentialStore : ICredentialStore
             if (payload is null || string.IsNullOrWhiteSpace(payload.Username) || string.IsNullOrEmpty(payload.Password))
                 return null;
 
-            return (payload.Username, payload.Password);
+            return new StoredLogin(payload.Username, payload.Password);
         }
         catch (JsonException)
         {
@@ -60,13 +61,13 @@ public sealed class DpapiCredentialStore : ICredentialStore
         }
     }
 
-    public async Task SaveAsync(string username, string password, CancellationToken cancellationToken = default)
+    public async Task SaveAsync(StoredLogin login, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
         Directory.CreateDirectory(Path.GetDirectoryName(CredPath)!);
 
-        var payload = new CredentialPayload(username, password);
+        var payload = new CredentialPayload(login.Username, login.Password);
         var jsonBytes = JsonSerializer.SerializeToUtf8Bytes(payload);
 
         var protectedBytes = ProtectedData.Protect(jsonBytes, optionalEntropy: null, DataProtectionScope.CurrentUser);

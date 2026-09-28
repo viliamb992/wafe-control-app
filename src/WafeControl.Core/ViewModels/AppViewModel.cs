@@ -29,6 +29,7 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
     private readonly PollingConfiguration _pollingConfig;
     private readonly INetworkStatus _network;
     private readonly TimeProvider _time;
+    private readonly ISettingsStore? _settings;
     private readonly ILogger<AppViewModel> _logger;
     private readonly SynchronizationContext? _uiContext;
     private readonly ITimer _dataStateTimer;
@@ -36,6 +37,7 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
     private CancellationTokenSource? _feedbackClearCts;
     private bool _isLoadingUnit;
     private bool _isPaused;
+    private DateTimeOffset _pausedAt;
     private bool _disposed;
 
     public AppViewModel(
@@ -44,13 +46,15 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
         IOptions<PollingConfiguration> pollingConfig,
         ILoggerFactory loggerFactory,
         INetworkStatus? network = null,
-        TimeProvider? timeProvider = null)
+        TimeProvider? timeProvider = null,
+        ISettingsStore? settings = null)
     {
         _authService = authService;
         _systemControl = systemControl;
         _pollingConfig = pollingConfig.Value;
         _network = network ?? new SystemNetworkStatus();
         _time = timeProvider ?? TimeProvider.System;
+        _settings = settings;
         _logger = loggerFactory.CreateLogger<AppViewModel>();
         _uiContext = SynchronizationContext.Current;
 
@@ -135,6 +139,22 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
     public string AccountName => !IsAuthenticated ? string.Empty : IsDemo ? Strings.DemoBannerTitle : _authService.Username;
 
     public bool IsLoginRequired => !IsAuthenticated && !IsStarting;
+
+    /// <summary>
+    /// The sign-in form's checkbox says what it will do: "Stay signed in for 30 days", "Sign in with fingerprint
+    /// or face next time", or just "Keep me signed in" where a remembered login doesn't expire.
+    /// </summary>
+    public string RememberMeText => _settings?.Load() switch
+    {
+        { SignInMethod: SignInMethod.Biometric } => Strings.LoginBiometricNextTime,
+        { StaySignedInFor: { } duration } => string.Format(Strings.LoginStaySignedInFor, DisplayFormat.SignInDuration(duration)),
+        _ => Strings.LoginRememberMe,
+    };
+
+    /// <summary>
+    /// A login is saved on this device.
+    /// </summary>
+    public bool HasRememberedLogin => _authService.HasRememberedLogin;
 
     // Expose properties from card VMs for convenience and bindings
     public bool IsManualMode => OperatingMode.IsManualMode;
@@ -301,15 +321,25 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
         try
         {
             var result = await _authService.TryAutoLoginAsync();
-            if (result is { Ok: false } failed)
-            {
-                // The form opens with the reason, and the email to try again with.
-                Login.Username = _authService.Username;
-                Login.ErrorMessage = ErrorText.For(failed.Error);
-            }
 
-            if (result is not { Ok: true })
+            // The form opens with the reason, and the email to try again with.
+            if (result.Outcome != AutoLoginOutcome.None && !result.Ok)
+                Login.Username = _authService.Username;
+
+            Login.ErrorMessage = result.Outcome switch
+            {
+                AutoLoginOutcome.Attempted when result.SignIn is { Ok: false } failed => ErrorText.For(failed.Error),
+                AutoLoginOutcome.Expired => ExpiredText(),
+                AutoLoginOutcome.BiometricLockedOut => Strings.LoginBiometricLockedOut,
+                AutoLoginOutcome.BiometricUnavailable => Strings.LoginBiometricRemoved,
+                _ => Login.ErrorMessage,
+            };
+
+            if (!result.Ok)
                 StatusMessage = Strings.AppStatusSignInPrompt;
+
+            // Falling back from fingerprint or face changes what the checkbox does.
+            OnPropertyChanged(nameof(RememberMeText));
         }
         catch (Exception ex)
         {
@@ -369,8 +399,17 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
     public void Pause()
     {
         _isPaused = true;
+        _pausedAt = _time.GetUtcNow();
         StopAutoRefresh();
     }
+
+    /// <summary>
+    /// The sign-in method or its time limit changed in Settings.
+    /// </summary>
+    public void SignInSettingsChanged() => OnPropertyChanged(nameof(RememberMeText));
+
+    private string ExpiredText() =>
+        string.Format(Strings.LoginExpired, DisplayFormat.SignInDuration(_settings?.Load().StaySignedInFor ?? SignInDuration.ThirtyDays));
 
     /// <summary>
     /// Back in the foreground: refreshes at once and polls again. Does nothing unless <see cref="Pause"/> was called.
@@ -383,6 +422,23 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
         _isPaused = false;
         if (!IsAuthenticated)
             return;
+
+        switch (await _authService.CheckResumeAsync(_time.GetUtcNow() - _pausedAt))
+        {
+            case ResumeCheck.Expired:
+                _authService.Logout();
+                Login.Username = _authService.Username;
+                Login.Password = string.Empty;
+                Login.ErrorMessage = ExpiredText();
+                StatusMessage = Strings.AppStatusSignInPrompt;
+                return;
+
+            case ResumeCheck.Unlock:
+                // As on a cold start: nothing on screen until the fingerprint or face is checked.
+                _authService.Logout();
+                await StartAsync();
+                return;
+        }
 
         StartAutoRefresh();
         await RefreshCoreAsync();
@@ -483,6 +539,7 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
             OnPropertyChanged(nameof(IsDemo));
             OnPropertyChanged(nameof(AccountName));
             OnPropertyChanged(nameof(IsLoginRequired));
+            OnPropertyChanged(nameof(HasRememberedLogin));
             OnPropertyChanged(nameof(CanSendCommands));
             OnPropertyChanged(nameof(UnitName));
             OnPropertyChanged(nameof(PortalUnitName));

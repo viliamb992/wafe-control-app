@@ -2,7 +2,6 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
-using Microsoft.Windows.AppLifecycle;
 using Velopack;
 using WafeControl.Core.Diagnostics;
 using WafeControl.WinUI.Services;
@@ -11,11 +10,21 @@ namespace WafeControl.WinUI;
 
 /// <summary>
 /// Custom entry point (DISABLE_XAML_GENERATED_MAIN) that keeps the app single-instance:
-/// a second launch hands its activation to the running instance, which brings its window back from the tray.
+/// a second launch signals the running instance, which brings its window back from the tray, and exits.
 /// </summary>
 public static partial class Program
 {
-    private const string InstanceKey = "WafeControl.Main";
+    // One per Windows sign-in session, wherever the exe is. (AppInstance keys of an unpackaged app depend on the
+    // exe's path, so they don't stop a copy of the app in another folder.)
+    private const string ActivateSignalName = @"Local\WafeControl.Main";
+
+    // ASFW_ANY: the running instance's process id isn't known here.
+    private const uint AnyProcess = uint.MaxValue;
+
+    private static EventWaitHandle? _activateSignal;
+
+    // Null until the app is created; a launch signalled before then finds the window opening anyway.
+    private static App? _app;
 
     [STAThread]
     private static int Main(string[] args)
@@ -44,7 +53,7 @@ public static partial class Program
         {
             var context = new DispatcherQueueSynchronizationContext(DispatcherQueue.GetForCurrentThread());
             SynchronizationContext.SetSynchronizationContext(context);
-            new App();
+            _app = new App();
         });
 
         return 0;
@@ -53,20 +62,31 @@ public static partial class Program
     /// <returns>True if another instance owns the app and this process should exit.</returns>
     private static bool RedirectToRunningInstance()
     {
-        var mainInstance = AppInstance.FindOrRegisterForKey(InstanceKey);
-        if (mainInstance.IsCurrent)
+        bool createdNew;
+        try
         {
-            mainInstance.Activated += (_, _) => App.Current.ActivateMainWindow();
+            _activateSignal = new EventWaitHandle(false, EventResetMode.AutoReset, ActivateSignalName, out createdNew);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // Held by an instance running as administrator, which this one can't signal. Still only one runs.
+            Debug.WriteLine("Another instance runs elevated; exiting");
+            return true;
+        }
+
+        if (createdNew)
+        {
+            // Stays registered for the whole run; each later launch sets the signal once.
+            ThreadPool.RegisterWaitForSingleObject(_activateSignal, (_, _) => _app?.ActivateMainWindow(), null, Timeout.Infinite, executeOnlyOnce: false);
             return false;
         }
 
         // Let the running instance take the foreground; this process holds the right because the user just launched it.
-        AllowSetForegroundWindow(mainInstance.ProcessId);
+        AllowSetForegroundWindow(AnyProcess);
+        _activateSignal.Set();
+        _activateSignal.Dispose();
 
-        var activation = AppInstance.GetCurrent().GetActivatedEventArgs();
-        Task.Run(() => mainInstance.RedirectActivationToAsync(activation).AsTask()).Wait();
-
-        Debug.WriteLine($"Redirected activation to running instance (PID {mainInstance.ProcessId})");
+        Debug.WriteLine("Asked the running instance to show its window");
         return true;
     }
 
