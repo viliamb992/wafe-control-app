@@ -108,7 +108,7 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
         if (UsesBiometric(settings))
         {
             var check = await _biometric.AuthenticateAsync(cancellationToken);
-            _logger.LogInformation("Fingerprint or face check: {Result}", check);
+            _logger.LogInformation("Fingerprint or face check completed.");
             switch (check)
             {
                 case BiometricResult.UsePassword:
