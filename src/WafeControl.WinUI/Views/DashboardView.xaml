@@ -77,7 +77,7 @@
                                 </Border>
                             </StackPanel>
                             <TextBlock Style="{StaticResource SecondaryTextStyle}" TextTrimming="CharacterEllipsis"
-                                       Text="{x:Bind helpers:Xaml.SystemSummary(ViewModel.SystemControl.CurrentAuthority, ViewModel.CurrentFlow, ViewModel.HasSensorData), Mode=OneWay}" />
+                                       Text="{x:Bind helpers:Xaml.SystemSummary(ViewModel.SystemControl.CurrentAuthority), Mode=OneWay}" />
                             <TextBlock Style="{StaticResource CaptionTextBlockStyle}" TextWrapping="Wrap" Margin="0,2,0,0"
                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                        Text="{x:Bind loc:Strings.SystemNoSensorData}"
@@ -140,6 +140,15 @@
                     <Border Style="{StaticResource TileStyle}">
                         <StackPanel Spacing="4">
                             <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xEC4A;" FontSize="16" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                                <TextBlock Text="{x:Bind loc:Strings.SensorAirflow}" Style="{StaticResource SecondaryTextStyle}" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <TextBlock Style="{StaticResource TileValueStyle}" Text="{x:Bind ViewModel.CurrentFlowText, Mode=OneWay}" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource TileStyle}">
+                        <StackPanel Spacing="4">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
                                 <FontIcon Glyph="&#xEA91;" FontSize="16" Foreground="{x:Bind helpers:Xaml.Co2Brush(ViewModel.Co2Level), Mode=OneWay}" />
                                 <TextBlock Text="CO₂" Style="{StaticResource SecondaryTextStyle}" VerticalAlignment="Center" />
                             </StackPanel>
@@ -183,7 +192,8 @@
                                            SelectionChanged="OnModeSelectionChanged"
                                            IsEnabled="{x:Bind helpers:Xaml.Not(ViewModel.OperatingMode.IsModeChanging), Mode=OneWay}" />
 
-                        <Grid Margin="0,12,0,0">
+                        <!-- The manual flow rate only in Manual mode; Intelligent and Schedule set it themselves. -->
+                        <Grid Margin="0,12,0,0" Visibility="{x:Bind helpers:Xaml.VisibleIf(ViewModel.IsManualMode), Mode=OneWay}">
                             <TextBlock Text="{x:Bind loc:Strings.FlowRateLabel}" Style="{StaticResource SecondaryTextStyle}" />
                             <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
                                 <ProgressRing Width="14" Height="14" IsActive="{x:Bind ViewModel.FlowSpeed.IsChanging, Mode=OneWay}" />
@@ -193,8 +203,9 @@
                         <Slider x:Name="FlowSlider" Minimum="50" Maximum="220" StepFrequency="1" TickFrequency="10" TickPlacement="Outside"
                                 AutomationProperties.Name="{x:Bind loc:Strings.FlowRateLabel}"
                                 ValueChanged="OnFlowSliderValueChanged"
-                                IsEnabled="{x:Bind helpers:Xaml.CanAdjustFlow(ViewModel.IsManualMode, ViewModel.FlowSpeed.IsChanging), Mode=OneWay}" />
-                        <TextBlock Style="{StaticResource SecondaryTextStyle}" TextWrapping="Wrap"
+                                Visibility="{x:Bind helpers:Xaml.VisibleIf(ViewModel.IsManualMode), Mode=OneWay}"
+                                IsEnabled="{x:Bind helpers:Xaml.Not(ViewModel.FlowSpeed.IsChanging), Mode=OneWay}" />
+                        <TextBlock Style="{StaticResource SecondaryTextStyle}" TextWrapping="Wrap" Margin="0,12,0,0"
                                    Text="{x:Bind loc:Strings.FlowManualHint}"
                                    Visibility="{x:Bind helpers:Xaml.CollapsedIf(ViewModel.IsManualMode), Mode=OneWay}" />
                     </StackPanel>

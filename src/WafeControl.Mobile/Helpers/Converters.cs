@@ -72,10 +72,9 @@ public static class Converters
     public static IValueConverter UnitTitle { get; } = Create<string?>(v => string.IsNullOrEmpty(v) ? "WAFE Control" : v);
 
     /// <summary>
-    /// Values: operating mode (authority), current flow, has sensor data.
+    /// Operating mode (authority).
     /// </summary>
-    public static IMultiValueConverter SystemSummary { get; } =
-        Create<string?, int, bool>(DisplayFormat.SystemSummary);
+    public static IValueConverter SystemSummary { get; } = Create<string?>(DisplayFormat.SystemSummary);
 
     /// <summary>
     /// Values: next start, operating mode (authority), is running.

@@ -85,15 +85,8 @@
                             <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
                                 <Label Text="{Binding SystemControl.IsSystemRunning, Converter={x:Static helpers:Converters.SystemState}}"
                                        Style="{StaticResource Subtitle}" />
-                                <Label Style="{StaticResource SecondaryCaption}">
-                                    <Label.Text>
-                                        <MultiBinding Converter="{x:Static helpers:Converters.SystemSummary}">
-                                            <Binding Path="SystemControl.CurrentAuthority" />
-                                            <Binding Path="CurrentFlow" />
-                                            <Binding Path="HasSensorData" />
-                                        </MultiBinding>
-                                    </Label.Text>
-                                </Label>
+                                <Label Style="{StaticResource SecondaryCaption}"
+                                       Text="{Binding SystemControl.CurrentAuthority, Converter={x:Static helpers:Converters.SystemSummary}}" />
                                 <!-- Next start while running on the schedule -->
                                 <Border x:Name="NextStartPill" Style="{StaticResource Pill}" HorizontalOptions="Start" Margin="0,6,0,0" IsVisible="False">
                                     <HorizontalStackLayout Spacing="6">
@@ -179,6 +172,16 @@
                         <Border Style="{StaticResource Tile}">
                             <VerticalStackLayout Spacing="4">
                                 <HorizontalStackLayout Spacing="8">
+                                    <Label Text="{x:Static helpers:FluentIcons.TopSpeed}" Style="{StaticResource Icon16}"
+                                           TextColor="{AppThemeBinding Light={StaticResource AccentLight}, Dark={StaticResource AccentDark}}" />
+                                    <Label Text="{x:Static loc:Strings.SensorAirflow}" Style="{StaticResource SecondaryCaption}" VerticalOptions="Center" />
+                                </HorizontalStackLayout>
+                                <Label Text="{Binding CurrentFlowText}" Style="{StaticResource Metric}" />
+                            </VerticalStackLayout>
+                        </Border>
+                        <Border Style="{StaticResource Tile}">
+                            <VerticalStackLayout Spacing="4">
+                                <HorizontalStackLayout Spacing="8">
                                     <Label Text="{x:Static helpers:FluentIcons.Molecule}" Style="{StaticResource Icon16}"
                                            TextColor="{AppThemeBinding Light={StaticResource TextSecondaryLight}, Dark={StaticResource TextSecondaryDark}}">
                                         <Label.Triggers>
@@ -244,7 +247,8 @@
                                 <controls:SegmentedControl x:Name="ModeSelector" SegmentTapped="OnModeTapped"
                                                            IsEnabled="{Binding OperatingMode.IsModeChanging, Converter={x:Static helpers:Converters.Not}}" />
 
-                                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" Margin="0,12,0,0">
+                                <!-- The manual flow rate only in Manual mode; Intelligent and Schedule set it themselves. -->
+                                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" Margin="0,12,0,0" IsVisible="{Binding IsManualMode}">
                                     <Label Text="{x:Static loc:Strings.FlowRateLabel}" Style="{StaticResource SecondaryCaption}" VerticalOptions="Center" />
                                     <ActivityIndicator Grid.Column="1" Style="{StaticResource SmallSpinner}"
                                                        IsRunning="{Binding FlowSpeed.IsChanging}" IsVisible="{Binding FlowSpeed.IsChanging}" />
@@ -252,15 +256,10 @@
                                 </Grid>
                                 <Slider x:Name="FlowSlider" Minimum="50" Maximum="220"
                                         SemanticProperties.Description="{x:Static loc:Strings.FlowRateLabel}"
-                                        DragStarted="OnFlowDragStarted" DragCompleted="OnFlowDragCompleted" ValueChanged="OnFlowValueChanged">
-                                    <Slider.IsEnabled>
-                                        <MultiBinding Converter="{x:Static helpers:Converters.AllTrue}">
-                                            <Binding Path="IsManualMode" />
-                                            <Binding Path="FlowSpeed.IsChanging" Converter="{x:Static helpers:Converters.Not}" />
-                                        </MultiBinding>
-                                    </Slider.IsEnabled>
-                                </Slider>
-                                <Label Text="{x:Static loc:Strings.FlowManualHint}" Style="{StaticResource SecondaryCaption}"
+                                        DragStarted="OnFlowDragStarted" DragCompleted="OnFlowDragCompleted" ValueChanged="OnFlowValueChanged"
+                                        IsVisible="{Binding IsManualMode}"
+                                        IsEnabled="{Binding FlowSpeed.IsChanging, Converter={x:Static helpers:Converters.Not}}" />
+                                <Label Text="{x:Static loc:Strings.FlowManualHint}" Style="{StaticResource SecondaryCaption}" Margin="0,12,0,0"
                                        IsVisible="{Binding IsManualMode, Converter={x:Static helpers:Converters.Not}}" />
                             </VerticalStackLayout>
                         </Border>

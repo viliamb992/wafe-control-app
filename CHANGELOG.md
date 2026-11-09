@@ -2,6 +2,13 @@
 
 What changed in each version. The release workflows copy a version's section into the GitHub release, and the Windows app shows it when it offers the update. Windows and Android are released separately (`v1.2.0`, `android-v1.2.0`) but share version numbers.
 
+## 1.3.1
+
+- **No internet at start:** when the app starts without internet (or the Wafe server doesn't answer), it no longer signs you out and asks for your password. A screen says there is no connection; you stay signed in, and the app connects on its own as soon as the connection is back. Retry tries at once; Sign out is there if you want a different account. A wrong or changed password still opens the sign-in form.
+- **Airflow tile:** the current airflow (m³/h) now has its own tile next to the temperatures, before CO₂, instead of following the mode under Start/Stop.
+- **Flow rate slider only in Manual mode:** in Intelligent and Schedule mode the slider is hidden, since the unit sets the flow itself; a note says to switch to Manual to set it.
+- **Updated libraries:** .NET, MAUI, Windows App SDK, Sentry, Velopack and others to their latest versions.
+
 ## 1.3.0
 
 - **Sign-in methods (Android):** Settings → Sign-in. "Stay signed in" keeps you signed in for 1, 14, 30 (default) or 90 days after you last typed your password, then asks for it again. "Fingerprint or face" asks for your fingerprint or face each time the app opens and when you return after 5 minutes, with no time limit. After signing in, the app asks once whether to use fingerprint or face. A login remembered by an earlier version counts its days from the first start of this one. The (?) next to each option explains it.

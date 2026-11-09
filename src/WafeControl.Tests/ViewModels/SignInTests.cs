@@ -6,6 +6,7 @@ using WafeControl.Core.Configuration;
 using WafeControl.Core.Localization;
 using WafeControl.Core.Services;
 using WafeControl.Core.ViewModels;
+using WafeControl.Shared.Services;
 using WafeControl.Tests.Localization;
 
 namespace WafeControl.Tests.ViewModels;
@@ -17,13 +18,14 @@ public sealed class AppViewModelSignInTests : IDisposable
     private readonly IAuthenticationService _auth = Substitute.For<IAuthenticationService>();
     private readonly InMemorySettingsStore _settings = new();
     private readonly FakeTimeProvider _time = new();
+    private readonly FakeNetworkStatus _network = new();
     private readonly AppViewModel _app;
 
     public AppViewModelSignInTests()
     {
         _auth.Username.Returns("alice@example.com");
         _app = new AppViewModel(_auth, new FakeSystemControlService(), Options.Create(new PollingConfiguration()),
-            NullLoggerFactory.Instance, new FakeNetworkStatus(), _time, _settings);
+            NullLoggerFactory.Instance, _network, _time, _settings);
     }
 
     public void Dispose() => _app.Dispose();
@@ -128,6 +130,154 @@ public sealed class AppViewModelSignInTests : IDisposable
 
         _auth.Received(1).Logout();
         await _auth.Received(1).TryAutoLoginAsync(Arg.Any<CancellationToken>());
+    }
+
+    // ─── No connection at start: the reconnect screen, not the sign-in form ───
+
+    private async Task StartWithoutConnectionAsync(ApiError error = ApiError.Offline)
+    {
+        _network.IsAvailable = error == ApiError.ServerError;
+        _auth.TryAutoLoginAsync(Arg.Any<CancellationToken>())
+            .Returns(AutoLoginResult.Attempted(ApiResult.Fail(error)));
+        await _app.StartAsync();
+    }
+
+    private static async Task WaitUntilAsync(Func<bool> condition)
+    {
+        for (var i = 0; i < 200 && !condition(); i++)
+            await Task.Delay(10);
+        Assert.True(condition());
+    }
+
+    [Theory]
+    [InlineData(ApiError.Offline)]
+    [InlineData(ApiError.Timeout)]
+    [InlineData(ApiError.ServerError)]
+    public async Task StartAsync_NoConnection_ShowsReconnectAndKeepsTheLogin(ApiError error)
+    {
+        await StartWithoutConnectionAsync(error);
+
+        Assert.True(_app.IsReconnecting);
+        Assert.False(_app.IsLoginRequired);
+        Assert.Null(_app.Login.ErrorMessage);
+        Assert.Contains("alice@example.com", _app.ReconnectMessage);
+        await _auth.DidNotReceive().ClearRememberedLoginAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task StartAsync_WrongPassword_StillShowsTheForm()
+    {
+        _auth.TryAutoLoginAsync(Arg.Any<CancellationToken>())
+            .Returns(AutoLoginResult.Attempted(ApiResult.Fail(ApiError.Unauthorized, 401)));
+
+        await _app.StartAsync();
+
+        Assert.False(_app.IsReconnecting);
+        Assert.True(_app.IsLoginRequired);
+    }
+
+    [Fact]
+    public async Task Reconnect_TitleSaysWhetherTheDeviceHasANetwork()
+    {
+        await StartWithoutConnectionAsync();
+        Assert.Equal("No internet connection", _app.ReconnectTitle);
+
+        _auth.AuthenticateAsync(Arg.Any<CancellationToken>()).Returns(ApiResult.Fail(ApiError.ServerError, 503));
+        _network.IsAvailable = true;
+        _network.Raise();
+
+        Assert.Equal("Can't reach the Wafe server", _app.ReconnectTitle);
+    }
+
+    [Fact]
+    public async Task Reconnect_NetworkBack_SignsInWithTheRememberedLogin()
+    {
+        await StartWithoutConnectionAsync();
+        _auth.AuthenticateAsync(Arg.Any<CancellationToken>()).Returns(_ =>
+        {
+            SignIn();
+            return ApiResult.Success;
+        });
+
+        _network.IsAvailable = true;
+        _network.Raise();
+
+        await WaitUntilAsync(() => !_app.IsReconnecting);
+        Assert.True(_app.IsAuthenticated);
+        Assert.False(_app.IsLoginRequired);
+    }
+
+    [Fact]
+    public async Task Reconnect_RetriesOnItsOwn()
+    {
+        await StartWithoutConnectionAsync();
+        _auth.AuthenticateAsync(Arg.Any<CancellationToken>()).Returns(ApiResult.Fail(ApiError.Offline));
+
+        _time.Advance(AppViewModel.ReconnectInterval);
+
+        await WaitUntilAsync(() => _auth.ReceivedCalls().Any(c => c.GetMethodInfo().Name == nameof(IAuthenticationService.AuthenticateAsync)));
+        Assert.True(_app.IsReconnecting);
+    }
+
+    [Fact]
+    public async Task Reconnect_Refused_ShowsTheFormWithTheReason()
+    {
+        await StartWithoutConnectionAsync();
+        _auth.AuthenticateAsync(Arg.Any<CancellationToken>()).Returns(ApiResult.Fail(ApiError.Unauthorized, 401));
+
+        await _app.ReconnectCommand.ExecuteAsync(null);
+
+        Assert.False(_app.IsReconnecting);
+        Assert.True(_app.IsLoginRequired);
+        Assert.Equal("alice@example.com", _app.Login.Username);
+        Assert.NotNull(_app.Login.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task Reconnect_SignOut_ForgetsTheLoginAndShowsTheForm()
+    {
+        await StartWithoutConnectionAsync();
+        Assert.True(_app.SignOutCommand.CanExecute(null));
+
+        await _app.SignOutCommand.ExecuteAsync(null);
+
+        Assert.False(_app.IsReconnecting);
+        Assert.True(_app.IsLoginRequired);
+        await _auth.Received(1).ClearRememberedLoginAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Reconnect_SignOut_CancelsAndWaitsForAnInFlightAttempt()
+    {
+        await StartWithoutConnectionAsync();
+        var authentication = new TaskCompletionSource<ApiResult>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var reconnectToken = CancellationToken.None;
+        var authenticated = false;
+        _auth.IsAuthenticated.Returns(_ => authenticated);
+        _auth.When(x => x.Logout()).Do(_ => authenticated = false);
+        _auth.AuthenticateAsync(Arg.Any<CancellationToken>()).Returns(call =>
+        {
+            reconnectToken = call.Arg<CancellationToken>();
+            return authentication.Task;
+        });
+
+        var reconnectTask = _app.ReconnectCommand.ExecuteAsync(null);
+        await WaitUntilAsync(() => _app.IsRetryingConnection);
+        var signOutTask = _app.SignOutCommand.ExecuteAsync(null);
+        await WaitUntilAsync(() => reconnectToken.IsCancellationRequested);
+
+        Assert.False(signOutTask.IsCompleted);
+        await _auth.DidNotReceive().ClearRememberedLoginAsync(Arg.Any<CancellationToken>());
+
+        authenticated = true;
+        _auth.AuthenticationChanged += Raise.Event<EventHandler<bool>>(_auth, true);
+        authentication.SetResult(ApiResult.Success);
+
+        await Task.WhenAll(reconnectTask, signOutTask);
+
+        Assert.False(_app.IsAuthenticated);
+        await _auth.Received(1).ClearRememberedLoginAsync(Arg.Any<CancellationToken>());
+        _auth.Received(1).Logout();
     }
 }
 
