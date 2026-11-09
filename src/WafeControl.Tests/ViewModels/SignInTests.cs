@@ -245,6 +245,40 @@ public sealed class AppViewModelSignInTests : IDisposable
         Assert.True(_app.IsLoginRequired);
         await _auth.Received(1).ClearRememberedLoginAsync(Arg.Any<CancellationToken>());
     }
+
+    [Fact]
+    public async Task Reconnect_SignOut_CancelsAndWaitsForAnInFlightAttempt()
+    {
+        await StartWithoutConnectionAsync();
+        var authentication = new TaskCompletionSource<ApiResult>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var reconnectToken = CancellationToken.None;
+        var authenticated = false;
+        _auth.IsAuthenticated.Returns(_ => authenticated);
+        _auth.When(x => x.Logout()).Do(_ => authenticated = false);
+        _auth.AuthenticateAsync(Arg.Any<CancellationToken>()).Returns(call =>
+        {
+            reconnectToken = call.Arg<CancellationToken>();
+            return authentication.Task;
+        });
+
+        var reconnectTask = _app.ReconnectCommand.ExecuteAsync(null);
+        await WaitUntilAsync(() => _app.IsRetryingConnection);
+        var signOutTask = _app.SignOutCommand.ExecuteAsync(null);
+        await WaitUntilAsync(() => reconnectToken.IsCancellationRequested);
+
+        Assert.False(signOutTask.IsCompleted);
+        await _auth.DidNotReceive().ClearRememberedLoginAsync(Arg.Any<CancellationToken>());
+
+        authenticated = true;
+        _auth.AuthenticationChanged += Raise.Event<EventHandler<bool>>(_auth, true);
+        authentication.SetResult(ApiResult.Success);
+
+        await Task.WhenAll(reconnectTask, signOutTask);
+
+        Assert.False(_app.IsAuthenticated);
+        await _auth.Received(1).ClearRememberedLoginAsync(Arg.Any<CancellationToken>());
+        _auth.Received(1).Logout();
+    }
 }
 
 // ─── Settings → Sign-in and the biometric offer (SettingsViewModel) ─────────────

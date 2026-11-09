@@ -41,6 +41,8 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
     private CancellationTokenSource? _autoRefreshCts;
     private CancellationTokenSource? _feedbackClearCts;
     private CancellationTokenSource? _reconnectCts;
+    private CancellationTokenSource? _reconnectAttemptCts;
+    private TaskCompletionSource<bool>? _reconnectAttemptCompletion;
     private bool _isLoadingUnit;
     private bool _isPaused;
     private DateTimeOffset _pausedAt;
@@ -404,6 +406,7 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
     private async Task SignOutAsync()
     {
         StopReconnecting();
+        await CancelAndWaitForReconnectAttemptAsync();
         if (!_authService.IsDemo)
             await _authService.ClearRememberedLoginAsync();
 
@@ -777,6 +780,15 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
         _reconnectCts?.Cancel();
         _reconnectCts?.Dispose();
         _reconnectCts = null;
+        _reconnectAttemptCts?.Cancel();
+    }
+
+    private async Task CancelAndWaitForReconnectAttemptAsync()
+    {
+        var completion = _reconnectAttemptCompletion;
+        _reconnectAttemptCts?.Cancel();
+        if (completion is not null)
+            await completion.Task;
     }
 
     private async Task ReconnectLoopAsync(CancellationToken token)
@@ -786,7 +798,7 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
             while (!token.IsCancellationRequested)
             {
                 await Task.Delay(ReconnectInterval, _time, token);
-                await TryReconnectAsync();
+                await TryReconnectAsync(token);
             }
         }
         catch (OperationCanceledException)
@@ -795,15 +807,19 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
         }
     }
 
-    private async Task TryReconnectAsync()
+    private async Task TryReconnectAsync(CancellationToken cancellationToken = default)
     {
         if (!IsReconnecting || IsRetryingConnection)
             return;
 
+        var attemptCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        var completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _reconnectAttemptCts = attemptCts;
+        _reconnectAttemptCompletion = completion;
         IsRetryingConnection = true;
         try
         {
-            var result = await _authService.AuthenticateAsync();
+            var result = await _authService.AuthenticateAsync(attemptCts.Token);
             if (result.Ok || IsConnectionError(result.Error))
                 return;
 
@@ -815,14 +831,24 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
             Login.ErrorMessage = result.Error == ApiError.Unauthorized ? Strings.LoginInvalidCredentials : ErrorText.For(result.Error);
             StatusMessage = Strings.AppStatusSignInPrompt;
         }
+        catch (OperationCanceledException) when (attemptCts.IsCancellationRequested)
+        {
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Reconnect failed");
         }
         finally
         {
+            if (ReferenceEquals(_reconnectAttemptCts, attemptCts))
+            {
+                _reconnectAttemptCts = null;
+                _reconnectAttemptCompletion = null;
+            }
+            attemptCts.Dispose();
             IsRetryingConnection = false;
             OnPropertyChanged(nameof(ReconnectTitle));
+            completion.TrySetResult(true);
         }
     }
 
