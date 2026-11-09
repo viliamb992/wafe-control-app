@@ -120,7 +120,7 @@ public partial class App : Application
         await viewModel.StartAsync();
 
         // Nobody would notice a sign-in form hidden in the tray.
-        if (startInTray && viewModel.IsLoginRequired)
+        if (startInTray && (viewModel.IsLoginRequired || viewModel.IsReconnecting))
             _window.ShowFromTray();
 
         _services.GetRequiredService<UpdateViewModel>().Start();
