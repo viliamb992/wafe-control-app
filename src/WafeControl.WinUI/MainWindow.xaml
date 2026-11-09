@@ -152,6 +152,28 @@
                        HorizontalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
         </StackPanel>
 
+        <!-- Reconnect: the remembered login got no answer (no internet, server down); it stays and retries on its own -->
+        <StackPanel Grid.Row="2" Spacing="16" MaxWidth="420" Margin="24" HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Visibility="{x:Bind helpers:Xaml.VisibleIfAndNot(ViewModel.IsReconnecting, Settings.IsOpen), Mode=OneWay}">
+            <FontIcon Glyph="&#xF384;" FontSize="48" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            <TextBlock Text="{x:Bind ViewModel.ReconnectTitle, Mode=OneWay}" Style="{StaticResource SubtitleTextBlockStyle}"
+                       HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" />
+            <TextBlock Text="{x:Bind ViewModel.ReconnectMessage, Mode=OneWay}" Style="{StaticResource BodyTextBlockStyle}"
+                       HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                <Button Style="{StaticResource AccentButtonStyle}" MinWidth="120" Command="{x:Bind ViewModel.ReconnectCommand}">
+                    <Grid>
+                        <TextBlock Text="{x:Bind loc:Strings.ButtonRetry}"
+                                   Visibility="{x:Bind helpers:Xaml.CollapsedIf(ViewModel.IsRetryingConnection), Mode=OneWay}" />
+                        <ProgressRing Width="16" Height="16" IsActive="{x:Bind ViewModel.IsRetryingConnection, Mode=OneWay}"
+                                      Visibility="{x:Bind helpers:Xaml.VisibleIf(ViewModel.IsRetryingConnection), Mode=OneWay}" />
+                    </Grid>
+                </Button>
+                <Button Content="{x:Bind loc:Strings.MenuSignOut}" Command="{x:Bind ViewModel.SignOutCommand}" />
+            </StackPanel>
+        </StackPanel>
+
         <views:LoginView x:Name="LoginView" Grid.Row="2"
                          Visibility="{x:Bind helpers:Xaml.VisibleIfAndNot(ViewModel.IsLoginRequired, Settings.IsOpen), Mode=OneWay}" />
 

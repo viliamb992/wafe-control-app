@@ -32,8 +32,6 @@ public static class Xaml
 
     public static bool HasText(string? value) => !string.IsNullOrEmpty(value);
 
-    public static bool CanAdjustFlow(bool isManualMode, bool isChanging) => isManualMode && !isChanging;
-
     public static bool CanTogglePower(bool canSendCommands, bool isInProgress) => canSendCommands && !isInProgress;
 
     public static string Temperature(double? value) => DisplayFormat.Temperature(value);
@@ -61,8 +59,7 @@ public static class Xaml
     public static Brush SystemStateBrush(bool isRunning) =>
         Resource<Brush>(isRunning ? "SystemFillColorSuccessBrush" : "ControlStrongFillColorDefaultBrush");
 
-    public static string SystemSummary(string authority, int currentFlow, bool hasSensorData) =>
-        DisplayFormat.SystemSummary(authority, currentFlow, hasSensorData);
+    public static string SystemSummary(string authority) => DisplayFormat.SystemSummary(authority);
 
     public static string NextStart(DateTime? nextStart) => DisplayFormat.NextStart(nextStart);
 

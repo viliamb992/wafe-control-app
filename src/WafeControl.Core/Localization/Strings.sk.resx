@@ -130,9 +130,6 @@
   <data name="SystemStop" xml:space="preserve">
     <value>Zastaviť systém</value>
   </data>
-  <data name="SystemSummary" xml:space="preserve">
-    <value>Režim: {0} · {1}</value>
-  </data>
   <data name="SystemSummaryModeOnly" xml:space="preserve">
     <value>Režim: {0}</value>
   </data>
@@ -168,6 +165,9 @@
   </data>
   <data name="SensorExhaustAir" xml:space="preserve">
     <value>Odpadový vzduch</value>
+  </data>
+  <data name="SensorAirflow" xml:space="preserve">
+    <value>Prietok vzduchu</value>
   </data>
   <data name="SensorHumidity" xml:space="preserve">
     <value>Vlhkosť</value>
@@ -529,6 +529,9 @@
   </data>
   <data name="BannerNoInternetMessage" xml:space="preserve">
     <value>Zobrazujú sa dáta z {0}. Aplikácia sa pripojí sama.</value>
+  </data>
+  <data name="ReconnectMessage" xml:space="preserve">
+    <value>Zostávate prihlásení ako {0}. Aplikácia sa pripojí sama, hneď ako bude pripojenie späť.</value>
   </data>
   <data name="BannerUnitOfflineMessage" xml:space="preserve">
     <value>Jednotka nie je pripojená k portálu Wafe. Skontrolujte jej napájanie a sieť.</value>

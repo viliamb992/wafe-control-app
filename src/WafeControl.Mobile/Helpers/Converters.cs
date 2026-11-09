@@ -74,8 +74,7 @@ public static class Converters
     /// <summary>
     /// Values: operating mode (authority), current flow, has sensor data.
     /// </summary>
-    public static IMultiValueConverter SystemSummary { get; } =
-        Create<string?, int, bool>(DisplayFormat.SystemSummary);
+    public static IValueConverter SystemSummary { get; } = Create<string?>(DisplayFormat.SystemSummary);
 
     /// <summary>
     /// Values: next start, operating mode (authority), is running.

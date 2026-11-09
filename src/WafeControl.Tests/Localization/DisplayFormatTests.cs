@@ -59,10 +59,16 @@ public class DisplayFormatTests
     public void IsFilterLow(int? health, bool expected) => Assert.Equal(expected, DisplayFormat.IsFilterLow(health));
 
     [Fact]
-    public void SystemSummary_LeavesOutTheFlowWithoutSensorData()
+    public void SystemSummary_IsTheModeOnly()
     {
-        Assert.Equal("Manual mode · 140 m³/h", DisplayFormat.SystemSummary(AppConstants.ModeManual, 140, hasSensorData: true));
-        Assert.Equal("Manual mode", DisplayFormat.SystemSummary(AppConstants.ModeManual, 140, hasSensorData: false));
+        Assert.Equal("Manual mode", DisplayFormat.SystemSummary(AppConstants.ModeManual));
+    }
+
+    [Fact]
+    public void CurrentFlow_DashWithoutSensorData()
+    {
+        Assert.Equal("140 m³/h", DisplayFormat.CurrentFlow(140, hasSensorData: true));
+        Assert.Equal(ModeNames.NoValue, DisplayFormat.CurrentFlow(140, hasSensorData: false));
     }
 
     [Fact]

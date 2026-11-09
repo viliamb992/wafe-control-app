@@ -130,9 +130,6 @@
   <data name="SystemStop" xml:space="preserve">
     <value>Stop System</value>
   </data>
-  <data name="SystemSummary" xml:space="preserve">
-    <value>{0} mode · {1}</value>
-  </data>
   <data name="SystemSummaryModeOnly" xml:space="preserve">
     <value>{0} mode</value>
   </data>
@@ -168,6 +165,9 @@
   </data>
   <data name="SensorExhaustAir" xml:space="preserve">
     <value>Exhaust air</value>
+  </data>
+  <data name="SensorAirflow" xml:space="preserve">
+    <value>Airflow</value>
   </data>
   <data name="SensorHumidity" xml:space="preserve">
     <value>Humidity</value>
@@ -529,6 +529,9 @@
   </data>
   <data name="BannerNoInternetMessage" xml:space="preserve">
     <value>Showing data from {0}. The app reconnects on its own.</value>
+  </data>
+  <data name="ReconnectMessage" xml:space="preserve">
+    <value>You stay signed in as {0}. The app connects on its own as soon as the connection is back.</value>
   </data>
   <data name="BannerUnitOfflineMessage" xml:space="preserve">
     <value>The unit isn't connected to the Wafe portal. Check its power and network.</value>

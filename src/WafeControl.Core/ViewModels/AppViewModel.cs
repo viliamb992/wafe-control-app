@@ -24,6 +24,11 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
 {
     private static readonly TimeSpan DataStateInterval = TimeSpan.FromSeconds(30);
 
+    /// <summary>
+    /// How often the reconnect screen tries the remembered login again, besides when the network comes back.
+    /// </summary>
+    internal static readonly TimeSpan ReconnectInterval = TimeSpan.FromSeconds(15);
+
     private readonly IAuthenticationService _authService;
     private readonly ISystemControlService _systemControl;
     private readonly PollingConfiguration _pollingConfig;
@@ -35,6 +40,7 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
     private readonly ITimer _dataStateTimer;
     private CancellationTokenSource? _autoRefreshCts;
     private CancellationTokenSource? _feedbackClearCts;
+    private CancellationTokenSource? _reconnectCts;
     private bool _isLoadingUnit;
     private bool _isPaused;
     private DateTimeOffset _pausedAt;
@@ -138,7 +144,33 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
     /// </summary>
     public string AccountName => !IsAuthenticated ? string.Empty : IsDemo ? Strings.DemoBannerTitle : _authService.Username;
 
-    public bool IsLoginRequired => !IsAuthenticated && !IsStarting;
+    public bool IsLoginRequired => !IsAuthenticated && !IsStarting && !IsReconnecting;
+
+    /// <summary>
+    /// The remembered login couldn't reach Wafe (no internet, server down): the reconnect screen shows instead of
+    /// the sign-in form, the login is kept, and the app signs in on its own once the connection is back.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsLoginRequired), nameof(ReconnectTitle), nameof(ReconnectMessage))]
+    [NotifyCanExecuteChangedFor(nameof(SignOutCommand))]
+    public partial bool IsReconnecting { get; private set; }
+
+    /// <summary>
+    /// A reconnect attempt is in progress.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(ReconnectCommand))]
+    public partial bool IsRetryingConnection { get; private set; }
+
+    /// <summary>
+    /// "No internet connection", or "Can't reach the Wafe server" when the device has a network.
+    /// </summary>
+    public string ReconnectTitle => _network.IsAvailable ? Strings.BannerUnreachableTitle : Strings.BannerNoInternetTitle;
+
+    /// <summary>
+    /// Who stays signed in, and that nothing needs to be done.
+    /// </summary>
+    public string ReconnectMessage => string.Format(Strings.ReconnectMessage, _authService.Username);
 
     /// <summary>
     /// The sign-in form's checkbox says what it will do: "Stay signed in for 30 days", "Sign in with fingerprint
@@ -202,6 +234,11 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
 
     public int Co2Level => _systemControl.CurrentStatus?.Co2 ?? 0;
     public int CurrentFlow => _systemControl.CurrentStatus?.FlowCurrent ?? 0;
+
+    /// <summary>
+    /// The airflow the unit reports now, "140 m³/h"; "–" without sensor data.
+    /// </summary>
+    public string CurrentFlowText => DisplayFormat.CurrentFlow(CurrentFlow, HasSensorData);
     public double? Humidity => _systemControl.CurrentStatus?.Humidity;
 
     // Filter health in percent; null when the unit doesn't report it.
@@ -335,8 +372,16 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
                 _ => Login.ErrorMessage,
             };
 
-            if (!result.Ok)
+            if (result.Outcome == AutoLoginOutcome.Attempted && result.SignIn is { Ok: false } signIn && IsConnectionError(signIn.Error))
+            {
+                // Not a wrong password: keep the login and wait for the connection instead of asking for it.
+                Login.ErrorMessage = null;
+                StartReconnecting();
+            }
+            else if (!result.Ok)
+            {
                 StatusMessage = Strings.AppStatusSignInPrompt;
+            }
 
             // Falling back from fingerprint or face changes what the checkbox does.
             OnPropertyChanged(nameof(RememberMeText));
@@ -355,15 +400,26 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
     /// <summary>
     /// Signs out and forgets the remembered login; in demo mode, just leaves the demo.
     /// </summary>
-    [RelayCommand(CanExecute = nameof(IsAuthenticated))]
+    [RelayCommand(CanExecute = nameof(CanSignOut))]
     private async Task SignOutAsync()
     {
+        StopReconnecting();
         if (!_authService.IsDemo)
             await _authService.ClearRememberedLoginAsync();
 
         _authService.Logout();
         Login.Password = string.Empty;
     }
+
+    private bool CanSignOut() => IsAuthenticated || IsReconnecting;
+
+    /// <summary>
+    /// Tries the remembered login again now (the reconnect screen's button).
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanReconnect))]
+    private Task ReconnectAsync() => TryReconnectAsync();
+
+    private bool CanReconnect() => !IsRetryingConnection;
 
     /// <summary>
     /// Opens the demo unit instead of signing in.
@@ -401,6 +457,7 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
         _isPaused = true;
         _pausedAt = _time.GetUtcNow();
         StopAutoRefresh();
+        StopReconnectLoop();
     }
 
     /// <summary>
@@ -420,6 +477,13 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
             return;
 
         _isPaused = false;
+        if (IsReconnecting)
+        {
+            StartReconnectLoop();
+            await TryReconnectAsync();
+            return;
+        }
+
         if (!IsAuthenticated)
             return;
 
@@ -553,6 +617,7 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
 
             if (isAuthenticated)
             {
+                StopReconnecting();
                 StatusMessage = Strings.AppStatusConnected;
                 Login.ErrorMessage = null;
                 RefreshCoreAsync().Forget(_logger, "Status refresh");
@@ -580,6 +645,7 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
         OnPropertyChanged(nameof(WasteTemp));
         OnPropertyChanged(nameof(Co2Level));
         OnPropertyChanged(nameof(CurrentFlow));
+        OnPropertyChanged(nameof(CurrentFlowText));
         OnPropertyChanged(nameof(Humidity));
         OnPropertyChanged(nameof(FreshFilterHealth));
         OnPropertyChanged(nameof(WasteFilterHealth));
@@ -600,7 +666,16 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
             LoadUnitAsync().Forget(_logger, "Loading unit info");
     }
 
-    private void OnNetworkChanged(object? sender, EventArgs e) => RunOnUiThread(UpdateDataState);
+    private void OnNetworkChanged(object? sender, EventArgs e) => RunOnUiThread(() =>
+    {
+        UpdateDataState();
+        if (!IsReconnecting)
+            return;
+
+        OnPropertyChanged(nameof(ReconnectTitle));
+        if (_network.IsAvailable && !_isPaused)
+            TryReconnectAsync().Forget(_logger, "Reconnecting");
+    });
 
     private async Task LoadUnitAsync()
     {
@@ -663,6 +738,92 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
             if (ReferenceEquals(Feedback, feedback))
                 Feedback = null;
         });
+    }
+
+    #endregion
+
+    #region Reconnect
+
+    /// <summary>
+    /// The sign-in got no answer (network, timeout, server error), as opposed to the server refusing it.
+    /// </summary>
+    internal static bool IsConnectionError(ApiError error) =>
+        error is ApiError.Offline or ApiError.Timeout or ApiError.ServerError;
+
+    private void StartReconnecting()
+    {
+        _logger.LogInformation("No connection for the remembered login; waiting to reconnect");
+        StatusMessage = Strings.AppStatusConnecting;
+        IsReconnecting = true;
+        if (!_isPaused)
+            StartReconnectLoop();
+    }
+
+    private void StopReconnecting()
+    {
+        StopReconnectLoop();
+        IsReconnecting = false;
+    }
+
+    private void StartReconnectLoop()
+    {
+        StopReconnectLoop();
+        _reconnectCts = new CancellationTokenSource();
+        ReconnectLoopAsync(_reconnectCts.Token).Forget(_logger, "Reconnect loop");
+    }
+
+    private void StopReconnectLoop()
+    {
+        _reconnectCts?.Cancel();
+        _reconnectCts?.Dispose();
+        _reconnectCts = null;
+    }
+
+    private async Task ReconnectLoopAsync(CancellationToken token)
+    {
+        try
+        {
+            while (!token.IsCancellationRequested)
+            {
+                await Task.Delay(ReconnectInterval, _time, token);
+                await TryReconnectAsync();
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Connected, signed out or paused.
+        }
+    }
+
+    private async Task TryReconnectAsync()
+    {
+        if (!IsReconnecting || IsRetryingConnection)
+            return;
+
+        IsRetryingConnection = true;
+        try
+        {
+            var result = await _authService.AuthenticateAsync();
+            if (result.Ok || IsConnectionError(result.Error))
+                return;
+
+            // The server answered and refused (e.g. the password was changed): only the form can help now.
+            _logger.LogWarning("Reconnect refused: {Error}", result.Error);
+            StopReconnecting();
+            Login.Username = _authService.Username;
+            Login.Password = string.Empty;
+            Login.ErrorMessage = result.Error == ApiError.Unauthorized ? Strings.LoginInvalidCredentials : ErrorText.For(result.Error);
+            StatusMessage = Strings.AppStatusSignInPrompt;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Reconnect failed");
+        }
+        finally
+        {
+            IsRetryingConnection = false;
+            OnPropertyChanged(nameof(ReconnectTitle));
+        }
     }
 
     #endregion
@@ -745,6 +906,7 @@ public sealed partial class AppViewModel : ObservableObject, IDisposable, IAppCo
 
         _dataStateTimer.Dispose();
         StopAutoRefresh();
+        StopReconnectLoop();
         _feedbackClearCts?.Cancel();
 
         SystemControl.Dispose();

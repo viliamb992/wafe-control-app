@@ -61,12 +61,15 @@ public static class DisplayFormat
     public static string SystemState(bool isRunning) => isRunning ? Strings.SystemRunning : Strings.SystemStopped;
 
     /// <summary>
-    /// "Intelligent mode · 140 m³/h", or just the mode while the unit reports no sensor data.
+    /// "Intelligent mode"; the current airflow has its own tile.
     /// </summary>
-    public static string SystemSummary(string? authority, int currentFlow, bool hasSensorData) =>
-        hasSensorData
-            ? string.Format(Strings.SystemSummary, ModeNames.Operating(authority), Flow(currentFlow))
-            : string.Format(Strings.SystemSummaryModeOnly, ModeNames.Operating(authority));
+    public static string SystemSummary(string? authority) =>
+        string.Format(Strings.SystemSummaryModeOnly, ModeNames.Operating(authority));
+
+    /// <summary>
+    /// "140 m³/h", or "–" while the unit reports no sensor data.
+    /// </summary>
+    public static string CurrentFlow(int value, bool hasSensorData) => hasSensorData ? Flow(value) : NoValue;
 
     public static string NextStart(DateTime? nextStart) =>
         nextStart is { } next ? string.Format(Strings.SystemNextStart, ScheduleFormat.DateAndTime(next)) : string.Empty;

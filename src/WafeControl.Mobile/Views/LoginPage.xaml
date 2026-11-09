@@ -19,6 +19,30 @@
             <Label Text="{Binding StatusMessage}" Style="{StaticResource SecondaryBody}" HorizontalTextAlignment="Center" />
         </VerticalStackLayout>
 
+        <!-- Reconnect: the remembered login got no answer (no internet, server down); it stays and retries on its own -->
+        <VerticalStackLayout Padding="24" Spacing="16" VerticalOptions="Center" MaximumWidthRequest="440"
+                             IsVisible="{Binding IsReconnecting}">
+            <Label Style="{StaticResource Icon}" FontSize="48" Text="{x:Static helpers:FluentIcons.WifiOff}"
+                   TextColor="{AppThemeBinding Light={StaticResource TextSecondaryLight}, Dark={StaticResource TextSecondaryDark}}" />
+            <Label Text="{Binding ReconnectTitle}" Style="{StaticResource Subtitle}" HorizontalTextAlignment="Center"
+                   LineBreakMode="WordWrap" SemanticProperties.HeadingLevel="Level1" />
+            <Label Text="{Binding ReconnectMessage}" Style="{StaticResource SecondaryBody}" HorizontalTextAlignment="Center" />
+            <Grid>
+                <Button Style="{StaticResource AccentButton}" Text="{x:Static loc:Strings.ButtonRetry}"
+                        Command="{Binding ReconnectCommand}">
+                    <Button.Triggers>
+                        <DataTrigger TargetType="Button" Binding="{Binding IsRetryingConnection}" Value="True">
+                            <Setter Property="Text" Value="" />
+                        </DataTrigger>
+                    </Button.Triggers>
+                </Button>
+                <ActivityIndicator IsRunning="{Binding IsRetryingConnection}" IsVisible="{Binding IsRetryingConnection}" InputTransparent="True"
+                                   WidthRequest="20" HeightRequest="20"
+                                   Color="{AppThemeBinding Light={StaticResource TextOnAccentLight}, Dark={StaticResource TextOnAccentDark}}" />
+            </Grid>
+            <Button Text="{x:Static loc:Strings.MenuSignOut}" Command="{Binding SignOutCommand}" />
+        </VerticalStackLayout>
+
         <ScrollView IsVisible="{Binding IsLoginRequired}">
             <VerticalStackLayout Padding="16,32,16,24" Spacing="24" MaximumWidthRequest="440">
                 <Grid ColumnDefinitions="*,Auto">

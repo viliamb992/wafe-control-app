@@ -269,14 +269,14 @@ public class SignInTests : CardViewModelTestBase
     [Fact]
     public async Task RememberedLoginFails_FormShowsWhyAndTheEmail()
     {
-        AuthService.TryAutoLoginAsync(Arg.Any<CancellationToken>()).Returns(AutoLoginResult.Attempted(ApiResult.Fail(ApiError.Offline)));
+        AuthService.TryAutoLoginAsync(Arg.Any<CancellationToken>()).Returns(AutoLoginResult.Attempted(ApiResult.Fail(ApiError.Unauthorized, 401)));
         AuthService.Username.Returns("alice@example.com");
 
         await App.StartAsync();
 
         Assert.True(App.IsLoginRequired);
         Assert.Equal("alice@example.com", App.Login.Username);
-        Assert.Equal("Can't connect to the Wafe server. Check your internet connection.", App.Login.ErrorMessage);
+        Assert.Equal("Your sign-in has expired. Sign in again.", App.Login.ErrorMessage);
     }
 
     [Fact]
